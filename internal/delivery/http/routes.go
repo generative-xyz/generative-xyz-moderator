@@ -35,6 +35,8 @@ func (h *httpDelivery) RegisterV1Routes() {
 	tokens.HandleFunc("/{tokenID}/thumbnail", h.updateTokenThumbnail).Methods("POST")
 	tokens.HandleFunc("/{tokenID}/minting-info", h.tokenMintingInfo).Methods("GET")
 	tokens.HandleFunc("/{contractAddress}/{tokenID}", h.tokenURIWithResp).Methods("GET")
+	tokens.HandleFunc("/{contractAddress}/{tokenID}/like", h.LikeTokenURI).Methods("POST")
+	tokens.HandleFunc("/{contractAddress}/{tokenID}/dislike", h.DisLikeTokenURI).Methods("POST")
 	tokens.HandleFunc("/{contractAddress}/{tokenID}", h.tokenURIWithResp).Methods("PUT")
 	tokens.HandleFunc("/traits/{contractAddress}/{tokenID}", h.tokenTraitWithResp).Methods("GET")
 
@@ -87,6 +89,8 @@ func (h *httpDelivery) RegisterV1Routes() {
 	project.HandleFunc("/minted-out", h.getMintedOutProjects).Methods("GET")
 	project.HandleFunc("/recent-works", h.getRecentWorksProjects).Methods("GET")
 	project.HandleFunc("/{contractAddress}/tokens/{projectID}", h.projectDetail).Methods("GET")
+	project.HandleFunc("/{contractAddress}/tokens/{projectID}/like", h.LikeProject).Methods("POST")
+	project.HandleFunc("/{contractAddress}/tokens/{projectID}/dislike", h.DisLikeProject).Methods("POST")
 	project.HandleFunc("/{contractAddress}/tokens/{projectID}/marketplace-data", h.projectMarketplaceData).Methods("GET")
 	project.HandleFunc("/{contractAddress}/tokens/{projectID}/volumn", h.projectVolumn).Methods("GET")
 	project.HandleFunc("/{contractAddress}/tokens/{projectID}/random-images", h.projectRandomImages).Methods("GET")

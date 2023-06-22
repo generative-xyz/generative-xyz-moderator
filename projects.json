@@ -1,0 +1,1417 @@
+[{
+  "_id": {
+    "$oid": "641a8e93f202b4a48c9027cf"
+  },
+  "uuid": "641a8e93f202b4a48c9027cf",
+  "deleted_at": null,
+  "created_at": {
+    "$date": "2023-04-07T05:13:55.760Z"
+  },
+  "updated_at": {
+    "$date": "2023-04-27T02:29:26.152Z"
+  },
+  "contractAddress": "0x0000000000000000000000000000000000000000",
+  "tokenid": "1002573",
+  "tokenIDInt": 1002573,
+  "maxSupply": 580,
+  "limitSupply": 0,
+  "mintPrice": "100000000000",
+  "mintpriceeth": "",
+  "networkfeeeth": "",
+  "networkFee": "741069",
+  "maxFileSize": 243500,
+  "name": "Perceptrons",
+  "creatorName": "",
+  "creatorAddress": "0x668ea0470396138acd0b9ccf6fbdb8a845b717b0",
+  "creatorAddrrBTC": "",
+  "description": "<p>Perceptrons is an experimental attempt to deploy run-time AI on-chain. While many projects have attempted to store AI artworks (outputs from AI models) on-chain, Perceptrons attempts to store the actual AI models themselves (the neural networks that produce the outputs) on-chain. Not only are the models stored on-chain, but the feed-forward algorithm is also stored on-chain. Not merely a static piece of art—you can interact with Perceptrons by asking them to do image recognition tasks. Perceptrons permanently live on the Bitcoin network—ever evolving. They grow. They die. And finally, they’re reborn again in a different form. Perceptrons are also upgradeable, i.e., you can plug a newer, smarter model into a Perceptron, which will change both the artwork and the brain behind the artwork. We believe this could open up an entirely new market: buying and selling data for upgradable dynamic artworks.\n\nInteraction\n\nDouble-click to choose an image. With the default AI model, The Perceptron could distinguish collections: CryptoPunks, Nouns, Cryptoadz, and Moonbirds.\n\nPress “i” to show/hide technical information.\n\nPress “b” to hide/show borders\n\nPress “u” to update the AI model\n\nPress “s” to save the screenshot of the Perceptron to your computer\n\nPress “k” to save the hi-res image of the Perceptron to your computer\n\n</p>",
+  "openMintUnixTimestamp": 1679472835,
+  "closeMintUnixTimestamp": 0,
+  "thumbnail": "https://cdn.generative.xyz/upload/1681295872742140678-1681295872-perceptron_thumb_03.jpg",
+  "thirdPartyScripts": [],
+  "scripts": [],
+  "mintFee": 0,
+  "tokenDescription": "",
+  "styles": "",
+  "royalty": 750,
+  "socialWeb": "",
+  "socialTwitter": "",
+  "socialDiscord": "",
+  "socialMedium": "",
+  "socialInstagram": "",
+  "license": "",
+  "genNFTAddr": "1002573",
+  "mintTokenAddress": "",
+  "hash": "",
+  "tags": [],
+  "categories": [
+    "63edb84eced83bb22d0b5921"
+  ],
+  "status": true,
+  "nftTokenUri": "data:application/json;base64,eyJhbmltYXRpb25fdXJsIjoiIiwiYXR0cmlidXRlcyI6W10sImRlc2NyaXB0aW9uIjoiQUkgU2VyaWVzOiBQZXJjZXB0cm9ucyIsImltYWdlIjoiaHR0cHM6Ly9jZG4uZ2VuZXJhdGl2ZS54eXovdXBsb2FkLzE2ODEyOTU4NzI3NDIxNDA2NzgtMTY4MTI5NTg3Mi1wZXJjZXB0cm9uX3RodW1iXzAzLmpwZyIsIm5hbWUiOiJBSSBTZXJpZXM6IFBlcmNlcHRyb25zIn0=",
+  "isSynced": true,
+  "index": 554,
+  "indexReverse": 0,
+  "completeTime": 0,
+  "reservers": [
+    "bc1pvtvqjx4yx9nzceunsppvav3h90nkdd2up7hkyv32nf08y7hwgn7qkfsva8",
+    "bc1pzf2ek6qh8njnlncrhvjqeykcq9aqp8sl4h0wurtgmplakeg2f24qtkwmrs",
+    "bc1pvm0y9arhfq882ykyjwhx6r9af4cwqmy9kjtc3367zzdq4sjmvp6set2cvq",
+    "bc1pgarlrhsxaldsn5722z4tnfezt8zlagvrt8t3n557cn8u2q7ev49q7ssylc",
+    "bc1pmu4565ejwapq5wu3jlpw6gzn399lusft7ts4yszcjg52u7gspx4sn05etv",
+    "bc1ptsrdpyumrntxkg6t9nh6f8lhv5t32qxcnmjgtwqh99y9chwjv4xssv96t0",
+    "bc1p6khqqtclhhckc5c28j5cdzmgq4se06rc7tdqe2lcyt6dx2ks89cqaunndp",
+    "bc1pgxukrq4zwssc7468dytut7u73nv9d9ckf42m8a4ncuufgeatm8psxre6lw",
+    "bc1pjxmkz4dzt6hd78xhq9mf95kwwfpmzjnlckr3n7pfpsa7v7eunweqlyhw66",
+    "bc1p26cj3eajw6hrmz935cwwq28a54gka7vzrjy3268p378mlp0yf6wql4w9mh",
+    "bc1pzz6wd58mqkpsef3wd3jcg9aya9rtt6sfrl69s660xhat6xm8ljrs9hfgxs",
+    "bc1pxn02m8ng04y8pv4stqrm6vhfp86e88k2e288mesewlgsmmkesetsujz0h4",
+    "bc1ptektuxlyqfp2wmug7ayw9g6f5ca0tnznhxsdnhu8dlg0l0k36tyse4g2m7",
+    "bc1pzz2dv7zrpqe25y35z9wxq5wqnzqwe7tktdatpz7e4qr4dz6gpsgst9s865",
+    "bc1pj73uxv2sk5ml6cvz0tpw9ez9uu7zse6slcsyk5z32eryuxp2tk0sc0tt5r",
+    "bc1p6gxgmlhaehqalzy7hg3uqhx3kp70wpru5yrrpt47eg6mefyrxhds39ghyp",
+    "bc1phksrqmyjw4zrflh7y24pkm05cn0anpesnrm4ezy5m8jddgnzs58q46taja",
+    "bc1pc6q26fsd7ql38zdeydp3t87fhve7fm4jv3vgpynkmrd7ecgjeycq0cdeav",
+    "bc1p5rw5v2qjv94vqsrqdz5fjq6yqs02l6g2wfvt8eug2tp80fdhvdcs7xklzt",
+    "bc1p6y768zg75k0jxsass3zwrvcns28y4s6edysxjxaqeuv52qkdfgfqvjvapc",
+    "bc1pe9sv25dut8c2x6trhzw7ecd4qhmdcjxzy3dhsvfnsfufhulhvxrqhvz4z7",
+    "bc1p4jx2j0ut7xfp0df5ee4jgd5uljtmlss60qsf7zmy4mrmatam2ccsxk976f",
+    "bc1p7zclkskzautqa406pqdvy6w7uzhunnta4tf3r0esved0cl60zd6sl5spr2",
+    "bc1phvhw9r3rz7guujszj8ewe25uu4drx4ln0m9qmcguzhghxhv9zjashj26tu",
+    "bc1pe2xnhvwrpjdx9lfgx94fkssq5x8rj94ddgz5g06n7dhukvvpuf9s89tzzv",
+    "bc1pt52hl04fuz357spcdh0jxp9u0vcv0h27j56uw2895vryn72jhans6mqfn7",
+    "bc1psks4q8s2jz5tl50tchsfrvkat7zym8tfh6wgkzxk0pg7lwk5anhq5m2uds",
+    "bc1p5404vxqm48qs6cmkwlv4gqfvrr27x8m7mpaujwt65c9d8churqtsxnxkau",
+    "bc1p9d4yg73jqmax9krfzkseer7swnvz0f26huh3j50d2cn64r0xpdeqtele49",
+    "bc1pxxrc9jel252j35qcc8vy69nzu90f85l7kdvf524kscf7jwel7f3q5gwp69",
+    "bc1p0j38y538favuvqesvv7sql99axqj43dfj0hzax4erurcsnjncguslml8al",
+    "bc1pay93a8qe6kmken0x0qfm9egmdyjxltl8t4q0uhfxu957lyyz6h6qny6u2n",
+    "bc1pphe680n7x9m6vklhhp8vg7wgxzt75yd4sfhfhv2h7krz56vmnflqzrzcwh",
+    "bc1pta3zuw929kcm3g2a3mg5xfdkc8tsyh7um9nev2rp8khsv62qcrsqccg3m0",
+    "bc1ptysmcnv63ymnwumj7gnpehfvptrggw4pzpyn2hsnphgncjmlmpyqn8n2le",
+    "bc1puptm2tersxcqt3y8j3fv3ptqx7c06ezxax9jnp4vw65n8gexj8zqnh5zng",
+    "bc1p5f4dmfq0hmc57trdej02tn59r40mdrkk5ed6553lsu7vlyu88qrqtjdu8v",
+    "bc1papyuuvvjvadrz3dv3ydxexsuzz7e6gnt4tjxf7kf2m2wvrl2k8pqa0xqec",
+    "bc1p5ap7pjfpwr02tmmhlr4rdauaqanhvvnv4qxtzxwwpsfcjgt9k4zsqfvfwm",
+    "bc1pz3pn7sl7hn2etc7x03wedkvcpa8lahnlyrs7pgx92vgrzly9qjsqllnm29",
+    "bc1pty7gej6u9732q0u5c9x3ae359a9kq89whr57c2v5pys2q6nydjrqadc08x",
+    "bc1pe3xc6j6n43s0hcrz92uxnm04eg39wjfe8qvs77gdp6095zu5rdqqlke462",
+    "bc1p8wwzs2j0nc959nzvv2lm0duzgx0wrq2zyckg52l4zevlewdpykmqpphyuy",
+    "bc1prnsgzn4869jxr2jlc5urk9znv8wp792a4p4puzws4enzmrdg6hssdq884r",
+    "bc1pxhn0gq3gy0glykaaxct3wzsppt7vxztjuevnsxccq9ph8vpe5s4q4u3hud",
+    "bc1pt33nwpwa8qrpwvwn49tjqtx0c4ct4mcesw0ens4n6gmxtkxprn4s2xypkp",
+    "bc1p6mzer67trrh36kku9a5mgwqp6z8k7w8azpqywqvxq7xj47tua6dqq8jzlw",
+    "bc1pr87sjdzkxjqhz97f9a4es844jtqvr52z9lwzg4fs936pcssy0kash9rm0w",
+    "bc1ph7aqrdpmh4qx0x05lmz7svffh2kn60jkf3ddfch7r2pfqxjd5yasmam7mr",
+    "bc1p3x8pcxh638sy8ap8gt2nx6jgzp4j7m4s38lkukjwps3n3jptsnpq99fst4",
+    "bc1ph44txjfjk62208uwuha4xflqufj3g7pyg7ahd7aslz2tux4lkc2qw44g8w",
+    "bc1p4ety8tqhqzjpgfr8r5533wew65t62c45a7wc8wscvw6dfl35algqhhepq6",
+    "bc1p64psgfenaws37q9v6d72qg09g38lcravr5vltf37jzx4cx0yalus80039m",
+    "bc1plh7374mcl9esests7dzglzd7e92cvyc4h6wqwze9n85x2pp9ruvsfas94v",
+    "bc1pq624wjh6ezkemcfrhkwj6zgf5t7eyqk6ec45uyfma83mj8htxwrs3zf25w",
+    "bc1p0gx7sp4zvrg3xqwwghkt94pleh9q8dxrgrs6uxzj9zmq923n9jcqs00emw",
+    "bc1p84ywtl948wf79t9u26ve6aym8kh8h5ymr3j6lkj4a7f53csrek0qtreffa",
+    "bc1pvkdastv8wgwx2v3x60dv5z6j7g5lr66eq68grkpwq50wqty0pkjsy2gnam",
+    "bc1p2sdvl8sq2arqxyjjfsvcvrp3yh28xz6vqean3eyqskdnklxsklzsfl2vfq",
+    "bc1p8vs98vvewjpwt4njfp6yq7ern03mjc0xw7a27g8g4ldla0stmj6qcnxu5w",
+    "bc1pu8fh8hr0505602766japt2ntzq6dr2xglfjtduesslk5hz3hykcqjgvker",
+    "bc1py9yacmrqyxd2mhmzw850kcuxd4gp7pntxgpfkx74gsthuzxwe32qm3frpp",
+    "bc1pt74tulsvntkvv33dwar8m0gxyu98qe95f96cdm83nmtjcfewms5sen870u",
+    "bc1pyfyvkr7u6hemz9tpl7phtw7lndxf0tnnm3aq5enr34qppnfr3mzqfgxmx7",
+    "bc1pcvf22ljtwnq78vn3epjukaeqhn4y4lsydadd94hmcrxu8wv9sp2qznk7fe",
+    "bc1pvhw53sk6ryys0xterreauqecwmjh4um29du9e2jsfq9h3yfp7nkqwustvs",
+    "bc1p6z0a5gr7hsqsv9zdlahr2llvaj4fkweh4cvy5jkmegjyry2ztfystks70p",
+    "bc1p0trse0q6ra702nkhuct6aggt84kgsmlexw5qzexc40el0yet4chslk3e23",
+    "bc1puetdlgq4lgay42atj4q9enxpra78fjzk8cztp8ka0c90humpq5gstct958",
+    "bc1pqm4p05rg4p0hspafr6f7cfzp44wac56eetx59xvx4lhsgqlrfenqq34stg",
+    "bc1pmv40un3n3g3vt97v0msda9ajzpvy5uyyvp4qr3yhxewqlgs5t2wqtapxv9",
+    "bc1pk00pgxguheya93fdhhmcky6gaqzmjslelvq99r0xqqmc07trwslqpe45ek",
+    "bc1paalp40m6kv820grl76yv6yhgguezht8vtgjha3fmn5v8ay23htxsl4fyha",
+    "bc1pzlvw4upqz6x8pn4hhdrh6zz75h6zg2d9n4geu2ewsd4l843kmzlqrxppvl",
+    "bc1pr6htp7eahtnzr4385rqn65cd37czxunhxv8ze248sq3v7ws0kqwsmxlsvj",
+    "bc1ps9r7vkcm7up04l782zdq2653mee3mc5cclp48mmx6m83usf6zdks4x9gy2",
+    "bc1p3jgkpvws8zfqnyx9s8dv9haalh4rv5amrk4nhevaphfkq0zvx5hs3lftpn",
+    "bc1pxglrf52vc2duvgzma24r00wc2y7prwsmfejncen3vpy67m0fwr4q09p254",
+    "bc1ps6c7veka6j6fruhk4m68f9as5gec3gdk2gdyzwy7znm504f0kmrqtz2ccf",
+    "bc1pjzzfqedupkf3ka4hppqrw5eydxmrx3cgfw0wvc4mg92k39whrf9qlmkwwg",
+    "bc1pxd44kpkqhsdk00v9tq630u4n7pfmzhr2084vsz2cfl3v89u50hnqdk948k",
+    "bc1p8dplu24h2ax32umjy9hlx22zkcyzvjhhcqadqrlk0dhceh23ryyqg6shd4",
+    "bc1p9lh8s9dxr5dnl05lcff96j00paus7k0pxz6cygurhke7uqs6pfxs77nxas",
+    "bc1plx2tvz3x0z6t38ffjkr56zfjh8qejmfceq6dz7yhd9tg2l5xnkkslhfpr5",
+    "bc1pqycd8tzrkt2gc8lh97aa09mn87ydvqhd7h9qdt7nxkj5vakwawaqt9a2cf",
+    "bc1pqwnvt05mxf278a3d78rkt87h8d95qyc7umr59ddg20w7z4j5v7ws2m9rln",
+    "bc1pqrxqt2mlm8ek43k9vx002kt2r6s9td8rv4k7qppdmgafrajm65jqs6smf5",
+    "bc1p0nrg0uxsjtmp20yustgxkj4cg7yttqfzfj5kyr9gnm2znev9e58q8gc9aa",
+    "bc1pwjnkfs9twdv8x3wk5uxa6qs6f9thkekqs2cksnsmzmrg262t0jqqpvf4gc",
+    "bc1pkwufc2ghzswccc0dyv6ealmfe7nv5nzvd8awd3hk99almkuudwdsz3z722",
+    "bc1pum3cplw0qrawlw6q3h4m4erjf5y4r0h53ujmwuqp57js53f3y96qzcuw6l",
+    "bc1pt5ust33xgp8jkzpkczt5hvzvvwjcfehn3385jgmk0wusmrjz8tdsh49wq9",
+    "bc1pwe25z53k7dxn6ladw9td2y5qvpfp2rhrvgjwqnkef6nth9mr799sf2240u",
+    "bc1py4y4svqd7yjuhtsx6ckgx5rfqljkvqfl0f5v2sz60uesklmlzsnsaynusl",
+    "bc1p026k67k88fvsuajawmve356pqtgluhq4ynvdl3cww3mdm9w0uxrqpdm6xl",
+    "bc1p7y339wcedd6tftkkdlxmd6f3trlpraczxddvazgwxk7s5g9n00jss7pkaw",
+    "bc1prtc9drjlkejprqq0s2qx2wn83vk57564t8atdf4tcs5ktgqz07tqhvfcr9",
+    "bc1p87hkuwxpkq2eg0g7y6hwr2lg89swyq7fuqhy9zw38spz2gqpruusvdsgul",
+    "bc1panxw7duxk4r9hz48ezxalfrm64u6weeznj32t29fv6vz57gzfygs5tvfet",
+    "bc1pwq6lw9amggaj8w9n6u7d209tg7ns9w4mzqdj9harpj6xlc63h58s3mq8tp",
+    "bc1pxgv6am6att3xexgqutlzpysnslez3scyw9vkh7xy7cyaayme75lsek5md9",
+    "bc1pnxygpuevf9mvhhu73vele80wr4qgmeyq7mxj8h3c4vsstfrfyjzs6drv6t",
+    "bc1p6x8cprranjzghy8fnpmzkqjkxvutzlxj763x09xf4hrynej79prs2zww53",
+    "bc1pfcygu7vt9rxetwmg2qp8zadhxhmklqe93wyzdcr0rnlx0gwu5v8qnz6ag3",
+    "bc1pzvunne86l4xsrue9e98njhzw9vhknd0wyczeqlh8ydc6lesqf3cq9mjrur",
+    "bc1p6q6cqcexsxmy3m8p7ghawprnx4jgzgkxh46gy2c2v7udwg8esd4q9puzt3",
+    "bc1p8np6xap5w9r26gplt2c4zxuf39mggntxruven9u4fzcf0jpluztqg5wh6x",
+    "bc1ph07eadwddu9dzhe7j2a4zguzr73z4k6kvcexzagqekcpzz24l3mqtzcdwe",
+    "bc1psrchjwsrhfz3cxrxfftywrvv6n2uqaqdjtywtr734s52wkx3ldcqyf6d6s",
+    "bc1pxkrwcqhsgt0zsguxl0sxzwhkdkrcrjnn7ntjvfkxq7mytu0c4wlquqcela",
+    "bc1pautr7jgg3sfvvfsqwr80mnv5utuqyj0a5w2ytgvtgwt0znvcmjtspntxr9",
+    "bc1przk83hp6kmyjplzwz69q3rphhltlf6735m2pcc0lmtxwz82gf9lslmhxt3",
+    "bc1pqwk55xxgjcq3r40wjmq57fslhwfftajenjxzwcwwzupjujt7kq8ssfgux7",
+    "bc1pvmz7t4tej0z8j9hgdtxf37z34x0selynrs7qqjjxmly3kvr0jqhshj26v0",
+    "bc1p745czjfw9m05tdver345nud3dlll675rqvjvdr8p5l0j9sg9x40spkf7wm",
+    "bc1py7svq78k4xpt4995pepws96rt5zcl045cgvkmjy09ljca7nl4p2qx429wl",
+    "bc1pt9r40pgxlqjresjtzxra5t99pd2laplfg8aztm6u504hgwntv5dswrjxc6",
+    "bc1pve0dy6gsn6mkt7pv67x3tmhd2dsu0v3lt26sy6aa6v7gsk33lx0qjs708u",
+    "bc1pcgeq8kx8e9c2cgfyrxg5axg5wj3e8ttxzt7amrjnt0l6jxw3lcpqyy4q02",
+    "bc1pz8t7hyyvt5gauyayfev3uvhu80vxmt9qg7c4u78cf3453qxjlslsj2quah",
+    "bc1pdh5lzh042rrvlrraly07fq3kv99czldnl5vcf0pzrpl2a53z77ysum9k35",
+    "bc1p60dlge2wxp8aj4f38wmxp0v8xkm679m20886ffsvyvrhmp0vgjpqjg9s0d",
+    "bc1p5w2l3qn0g3aet4u8xxvvhlr0g2tay0g59vylgmwv4029rl7gnykqa9wpzt",
+    "bc1p00ct0whw0ec7lu3gnwmv7nax96u2qc3k0ce9aehx0nr504kd5n5q5azge5",
+    "bc1prhl7ykkre86t9t9j473hmpxse3elyqpst2anwap75gkfvmnmwydq8x2vyr",
+    "bc1psu9dftgj8walyuj82gxpqedf2r9yevungnutw8z85ywywqfwcpls8ahpmq",
+    "bc1pywtv55zavf7tzl7cm7uwjf307te0v6pxaucz5yhw6jncdx442ggqjt4y29",
+    "bc1p98raye3xnk7e8azef95dsxa7mdul0hkx0kz0ffc29yltjrre5y5sguaf0z",
+    "bc1pcurg34d903c3nttyqyptgtlt4de7ekcne4hzkcyuraft48fe9q5ss3cgqr",
+    "bc1pzyhxl6v9m07czsvdn9hfqk6slltmrhrpk2x63ee02ausquhn8fusgzccd4",
+    "bc1pvgn9qdn9ljdvwfhpt4hufzdqr3eku0aytv32v4ekpuv2l4pj0gmsswzjmy",
+    "bc1pmlyk6pnahk6jcnmsxzv93ux9d63c4mrefnya2npq5dlfdm87hgesfm0ffl",
+    "bc1pt6lx9xx4ndhnp645q4yy3exqys6kvcpl9mchl3nu79vss7eymdwsxgyww3",
+    "bc1pv5xs4r3np8y9k5nu6kpc98p3f3faf6lcxqr2jfasdkd8wehkv4zsshqxrh",
+    "bc1ptwtpu8yq48rkdsh7t32j7q637yu2c069hldqplayvf2uk9kmk2fqa9x0yg",
+    "bc1ptcfaeslamnqqgpmze39x8tqez8v8vd7twl8eq8z2972p4dg2w2tq92xfwg",
+    "bc1pg886vyvun40lrj7ucgalyd99c8m0lyjrk4sym4vrdhkvm2tmtenswztvsq",
+    "bc1p6tku5pshk38t43vef5z45z6g5r2636v34thts44j3msp28mz448s7ucf9p",
+    "bc1pue3x8krad25dymf6tg72tx82rlah28anaren6kg7slaj8fjdzypsqt923u",
+    "bc1ps48stsyd2kkha5c988hj3wl3ffykzyvleemuhwcq6943aq4mprasrqrnh0",
+    "bc1ph6nhskhj677mjza0vu78kmsypj9yr4420mp698yqmhazln48kkcsrlfrfq",
+    "bc1pmqlaxnn7h07hx525e7jnvfegkp298p3sr8jgr7qnxtjpzya5gl5qasfv7g",
+    "bc1pkyej6ag0mu7wg9ztwr0snpsw0pjl20vlypsmu0amszdqzedaueuswnlmx2",
+    "bc1pv2f7w9emd8y6lwrvvnpvdfuvvtlajd2x2zkdu62j0q4u47l8xmzq0w79ww",
+    "bc1p0l0xg9wghlw6z4m5vpuaeszfsdv5kncepjdz2n7zqala8ys2hdwqm8vs8e",
+    "bc1pmp4f0a92sfwqdzk85gnme6fcw65qjd4w72fkmgray0hlay6j52dqprvh8d",
+    "bc1pzv7c9ucu7fa8e7u9nqnsf7afh7ccmspmhzmqw2ph6qk23gzuxrzsuqzh5d",
+    "bc1pkd6acjs5w02jxr5rvfsgqlnqyk74sf95wmmu03nsugl4uhvrj9asuhr69w",
+    "bc1pn5eyra88f0m4fq648ctafmnj3f4mvuhhhy7ragenlst2ncs7kfsq228k5q",
+    "bc1puuwf0xhtm5epsnlsmgen4lus626xn90pynk6ghylwehz6n8kkzeqf6k520",
+    "bc1plf5ufaqfjaktg6yzv05t608qdek9fe3uehh2kh7h3nm6laydd3lslaqm9s",
+    "bc1p5g0kdw37u647k3rwqyav96v47e25mdycjq7glcl2dcfaaqccnk7sy0g4ru",
+    "bc1p2f8as383nkje27stmkssa5f06u55xell7qnmy3sulka2wm8xslwselluyv",
+    "bc1pf968hjj6c4q5tl57q06x92f65vq9ykjknyv98rlskkvsv9ln504svrdx0n",
+    "bc1pda3g44tvctlf5cxplydapnm3vrg9um8lcywfuypncm5h6err2m5sgxlqen",
+    "bc1pfrspwknpmr0yf06jfrg8dznvklqyf9yhsj4wd4sn4fml7g57dkkq5h5v8q",
+    "bc1pv9m7lp0uf42phn2cy0rsucznwlvwryt4sfqu80rz2n82ferln5hqr88yr3",
+    "bc1pssju5j4hr3t96f5pdxyjyh0qlzr09rqsgl4gae5028ypahkc6xqqcezkcd",
+    "bc1p72zxdmgegt3477s52derxah44np4vhzxz8jcj70fngjfcarfhx7qs8m40z",
+    "bc1py8srqly58sl6xwpfyvsh73wnpgzr8xklsjc6talfvh2eqthc77lq2rcvuh",
+    "bc1p0fur67kcjtyqpuzlngrga9trt8w5zrcmynhzdkqgcssjnd4l2wkqwrkhn5",
+    "bc1pr78hzesjdrh7anccsl555zvwar0pfeddxux25qarzqa8ekrcqt8sz025tt",
+    "bc1p74ekml0z98mej4cav5rlrndvf6negtq3kp4kquewputkzhu9mssswxd3z9",
+    "bc1p824y985klupgupxcakrjgzts646zyk7n2q3c280vj94vh9e0gs4qx5d8ll",
+    "bc1p6t92pdzwd54x6p385tn0uwyn0yfskv77rjqj5035xlt9vvj3s8uqdvt68t",
+    "bc1prv9ne07pcnanmxwv89ckazs5hx573e00jh72tsgdcpjcpphj939qtsev6z",
+    "bc1pnzrstphh0prt255wax9tm9f323p6lffczqlw6delts3ypltgtf7slhwhag",
+    "bc1prmu99yfjgj8z8ujx4wrkflf8djhzu4h2hsftla94szr4plt3ffxs6628j9",
+    "bc1p0hxeqluts09whmxwhh08f74jd5amx777uq6ec5l8ek5yun82cfdq5ln3pd",
+    "bc1pkls9u60jzwug2vqelx8frk5c4wyznauvtw0mpcs4zrw8x90x222qjhzp5v",
+    "bc1pv7mhru4q3nm6p6atjl37yhzhdf5ws6cn07q76m47nshf7x0nmgnqnxmylz",
+    "bc1pa6nmsg6n7dywru4rdhcyrsxtr25qfv4a6ew8j9lmyd4m72kt4nesds4km6",
+    "bc1pf5ucxc3gs3vhhvj9r4zjzn7r6vswvl745rg0r777ldyezmr7w03qvj65y2",
+    "bc1pd9c8fmmf2frtvsghjdavg3hzmfyjqsf3jnvh50j3enmpfr64tulqx86e3g",
+    "bc1pzdukceu8fl7tswz7g9vkm2282jw0j7m5w2qgmsd0z9pgsmr2pzlq9l80fd",
+    "bc1pyq3ckp8k9vvnluhz23pvxczvrqmzmpd5633luxg2lh3v6sz3sqlse2zd5h",
+    "bc1p78splndp6myv96nmn600ktgn7u5cw5687vcvjjkhr56fd77gck8q230mpx",
+    "bc1pqwz70fnhcyr8j6lrdzyycx4fmfepkdgmjcz9pu0ntpej4t02qgwqeykkrj",
+    "bc1p5ecl5fqd0dnh6v6w44y2facagc2qm6ne0q78krjjm40n432xpucs5pqk2c",
+    "bc1pcv88tvgue8wvv607q0hu6rfp29e062gjj3mwsr3r7933cfy4x2ys7mmt77",
+    "bc1pr4jpea3wmgjmy520c9qej5wydgk7ar0jjv023x7mu0lknlav8d8qwun8p6",
+    "bc1ppk5c2zvm45cuzk2q95xuctvc4pdj3wq3lvz9gyd2whxej7uhz45sjwytmu",
+    "bc1psxmftuxlelyhwl5nnj232l4cqrp40ks9d6frmd0kzpnygh7zzpqsd2c3l3",
+    "bc1p60x8nsf0rhgy0ndrd6tpsas57ynkcpcaq0r9an6t7h3dpucaxgsstkpy4f",
+    "bc1p00z6cndvc2g3vame0mqzpa8xzxggyslvyzphfwmpuqm6wkaffhkq2gwld8",
+    "bc1p0ccfavkkqjlye9s0ahd62cergfttysm4fcdkp7n2n3wt23d59mysn0as5z",
+    "bc1pylv2h6se270kc4hsux59tlq9zwch6s5qx8clmvnvdx340jp0eakq68my8a",
+    "bc1p9sqdzdxeq9n6c68vr0v8y992k84twhg0mc73lyh3qq2vr8tfmsdqdgz08e",
+    "bc1pj6zzw3wwm57mpp3x2nk3cv20cpjgkzw23c6lqkcn9qtjtn6qcqqqu66dze",
+    "bc1ppp42ehzczuwgl72jmwhqr3pqszud8gajc9zw4apmqvl2v4c3cj0qr9g3g5",
+    "bc1pt05tjdrgz2l4vzv885y0q6lgk8hqc69wfsjk02xxuxjz97hftweqm8936h",
+    "bc1p7pqrccaz69j0e08pnqqpwrcmw8e520jhrd84ckytqvxuahkkm44s2cxkau",
+    "bc1pqqz8mja8huzfrnnffu438ymqh5927luns74espj4jvc0u7m5ahlqa8vypx",
+    "bc1pcw4me600kwa8u5gvwxup3934ewsuqde0hgch87xum7w9ktt2uyys2q6kk4",
+    "bc1pf0f6q623pa3yuvqyh8mds3r3te7t3ecsk6fznea9sj3vvpvzygrscwtlk5",
+    "bc1pw2lp2rmdkltspxnpscdmnjujazcs4pyl3akpedl84m9ghmk3h8xsyuljcu",
+    "bc1px83k8ud2grsd2d72wd6lx04u788qa8tuas56hjszmkqmvq3rva6szuy3k7",
+    "bc1pv6vlz55enqfp74a7s468zcpe9uj2jz5jw8yukg069dymn8traj7qukgkv6",
+    "bc1pw96lyrjlgvsgr4lxqgfzr3rjwkjf6f0e25xxn4mxzn7hdlstaaxqn8eu8r",
+    "bc1ptvvnvz7vfcetdyeh0j424826gvk2fk2g380l5hn6pfu42ruklzusgxrrff",
+    "bc1pvwjw5uzewt96qh0le3n76dp3ndkcna6kntrk5f25hrluhygkykpqtsxzp5",
+    "bc1pd9hjzdqgyqpdd0twc84wln7yd5ate0huzt4nyqhvpw32zs4rpejqf5f2qh",
+    "bc1pc4whdyhc8cd7q258xlt8jrnpgtdgcpgkgtqfst04sccdexevcjzsvsq5x8",
+    "bc1pdg7xkr8v5zkrlpch6z892zentdrlayey93w6s9wl5k5sw8268ngqh06zl0",
+    "bc1ph4c8httcu322l2cntexpn6pulee4yyd06lc05w6ju6ltx8krl28qfclusj",
+    "bc1p7wm3wvqvul6e6mz8528pgx0lyw5jck2va6d4vtduudsqtn9sh4gshxgt6v",
+    "bc1pwx6qyf8dp4gl7gqd7t6zl2l770tpe4xnd9pc94cwgxf98sa3dtus06c8vx",
+    "bc1p2xh32h2kjmu2v2ueegl9nsd9lq0yrk6mw6kz07hwgtwpshpd5l4sgyxhv8",
+    "bc1pkr6d82dmv7jj0kcg00r3tyv8sq6r3y0jzmh267q4pxqsm0tpa8yqkc7xqg",
+    "bc1pnh5zgxl7qa5emjhetnvvhyprpjgw44tnahqqld936986htqtp3lsgpfacz",
+    "bc1py4cyqwpmn89qa3tt6mg0t8qh2ekpus676zdnfld7sqmefs0hshdsa88wz2",
+    "bc1pl97qm866d5z0v5geldh3qtlcjqzepdc74eamupprafkseful7y3q78wj7y",
+    "bc1pra99xa073k8tpwacs3aa83a6jlqr4pg522pq79vse6m54eyz46usw4qz5h"
+  ],
+  "creatorProfile": {
+    "_id": {
+      "$oid": "63eb03d2fe2b3899d9728954"
+    },
+    "uuid": "63eb03d2fe2b3899d9728954",
+    "deleted_at": null,
+    "updated_at": {
+      "$date": "2023-04-10T03:45:02.294Z"
+    },
+    "is_verified": true,
+    "verified_at": {
+      "$date": "2023-04-10T03:43:06.752Z"
+    },
+    "message": "3b36b3ce-24c2-2994-fdd2-2961dbaaf4d5",
+    "wallet_address": "0x668ea0470396138acd0b9ccf6fbdb8a845b717b0",
+    "wallet_address_payment": "0x668ea0470396138acd0b9ccf6fbdb8a845b717b0",
+    "wallet_address_btc": "bc1qhqy53y6kp9vs35ueh8fsqnjhnn9q9awtnmdw9g",
+    "wallet_address_btc_taproot": "bc1pvm0y9arhfq882ykyjwhx6r9af4cwqmy9kjtc3367zzdq4sjmvp6set2cvq",
+    "display_name": "Generative",
+    "bio": "",
+    "avatar": "https://cdn.generative.xyz/upload/1678089240015953741-gda0cjoj400x400.jpg",
+    "is_updated_avatar": null,
+    "created_at": {
+      "$date": "2023-02-14T03:45:22.218Z"
+    },
+    "profile_social": {
+      "web": "https://generative.xyz",
+      "twitter": "https://twitter.com/generative_xyz",
+      "discord": "",
+      "medium": "",
+      "instagram": "",
+      "etherScan": "",
+      "twitter_verified": true
+    },
+    "stats": {
+      "collection_created": 3,
+      "total_mint": 10768,
+      "total_minted": 173,
+      "nft_minted": 0,
+      "output_minted": 24,
+      "volume_minted": 1399000000
+    },
+    "isAdmin": false,
+    "enable_notification": true,
+    "wallet_type": ""
+  },
+  "block_number_minted": null,
+  "minted_time": {
+    "$date": "2023-04-07T05:13:55.760Z"
+  },
+  "stats": {
+    "lastTimeSynced": null,
+    "uniqueOwnerCount": 0,
+    "totalTradingVolumn": "",
+    "floorPrice": "",
+    "bestMakeOfferPrice": "",
+    "listedPercent": 0,
+    "minted_count": 0,
+    "trending_score": {
+      "$numberLong": "9223372036854775807"
+    }
+  },
+  "traitsStat": [
+    {
+      "traitName": "Activation Function",
+      "traitValuesStat": [
+        {
+          "value": "Tanh",
+          "rarity": 18
+        },
+        {
+          "value": "LeakyReLU",
+          "rarity": 17
+        },
+        {
+          "value": "Sigmoid",
+          "rarity": 11
+        },
+        {
+          "value": "ReLU",
+          "rarity": 51
+        }
+      ]
+    },
+    {
+      "traitName": "Deep Learning Framework",
+      "traitValuesStat": [
+        {
+          "value": "Torch",
+          "rarity": 30
+        },
+        {
+          "value": "TensorFlow",
+          "rarity": 9
+        },
+        {
+          "value": "Theano",
+          "rarity": 59
+        }
+      ]
+    },
+    {
+      "traitName": "Life Cycle",
+      "traitValuesStat": [
+        {
+          "value": "60 Weeks",
+          "rarity": 38
+        },
+        {
+          "value": "60 Days",
+          "rarity": 20
+        },
+        {
+          "value": "60 Years",
+          "rarity": 2
+        },
+        {
+          "value": "60 Months",
+          "rarity": 39
+        }
+      ]
+    },
+    {
+      "traitName": "Hidden Layers",
+      "traitValuesStat": [
+        {
+          "value": "3",
+          "rarity": 15
+        },
+        {
+          "value": "7",
+          "rarity": 7
+        },
+        {
+          "value": "5",
+          "rarity": 10
+        },
+        {
+          "value": "9",
+          "rarity": 8
+        },
+        {
+          "value": "2",
+          "rarity": 10
+        },
+        {
+          "value": "6",
+          "rarity": 10
+        },
+        {
+          "value": "4",
+          "rarity": 11
+        },
+        {
+          "value": "1",
+          "rarity": 1
+        },
+        {
+          "value": "10",
+          "rarity": 11
+        },
+        {
+          "value": "8",
+          "rarity": 11
+        }
+      ]
+    },
+    {
+      "traitName": "Training Epochs",
+      "traitValuesStat": [
+        {
+          "value": "8",
+          "rarity": 2
+        },
+        {
+          "value": "4",
+          "rarity": 30
+        },
+        {
+          "value": "6",
+          "rarity": 27
+        },
+        {
+          "value": "11",
+          "rarity": 3
+        },
+        {
+          "value": "10",
+          "rarity": 1
+        },
+        {
+          "value": "9",
+          "rarity": 2
+        },
+        {
+          "value": "12",
+          "rarity": 2
+        },
+        {
+          "value": "5",
+          "rarity": 29
+        }
+      ]
+    },
+    {
+      "traitName": "Hardware Acceleration",
+      "traitValuesStat": [
+        {
+          "value": "Standard",
+          "rarity": 59
+        },
+        {
+          "value": "Advanced",
+          "rarity": 10
+        },
+        {
+          "value": "Basic",
+          "rarity": 30
+        }
+      ]
+    },
+    {
+      "traitName": "Paper Pattern",
+      "traitValuesStat": [
+        {
+          "value": "Squared",
+          "rarity": 39
+        },
+        {
+          "value": "Dotted",
+          "rarity": 40
+        },
+        {
+          "value": "Plain",
+          "rarity": 20
+        }
+      ]
+    },
+    {
+      "traitName": "Color Palette",
+      "traitValuesStat": [
+        {
+          "value": "Human",
+          "rarity": 5
+        },
+        {
+          "value": "Love",
+          "rarity": 5
+        },
+        {
+          "value": "Jims",
+          "rarity": 5
+        },
+        {
+          "value": "Adventure",
+          "rarity": 4
+        },
+        {
+          "value": "Blackboard",
+          "rarity": 1
+        },
+        {
+          "value": "Info",
+          "rarity": 5
+        },
+        {
+          "value": "Parallel",
+          "rarity": 0
+        },
+        {
+          "value": "III",
+          "rarity": 5
+        },
+        {
+          "value": "Sunset",
+          "rarity": 3
+        },
+        {
+          "value": "Aurora",
+          "rarity": 2
+        },
+        {
+          "value": "Lucid Dream",
+          "rarity": 3
+        },
+        {
+          "value": "Liminal Space",
+          "rarity": 2
+        },
+        {
+          "value": "Level 10",
+          "rarity": 5
+        },
+        {
+          "value": "Nak",
+          "rarity": 5
+        },
+        {
+          "value": "XMB",
+          "rarity": 5
+        },
+        {
+          "value": "Cachet",
+          "rarity": 5
+        },
+        {
+          "value": "Phoenix",
+          "rarity": 5
+        },
+        {
+          "value": "Marigold",
+          "rarity": 5
+        },
+        {
+          "value": "Twilight",
+          "rarity": 2
+        },
+        {
+          "value": "Level 14",
+          "rarity": 5
+        },
+        {
+          "value": "Blueprint",
+          "rarity": 1
+        },
+        {
+          "value": "Whitepaper",
+          "rarity": 1
+        },
+        {
+          "value": "Flips",
+          "rarity": 5
+        },
+        {
+          "value": "Déjà Vu",
+          "rarity": 3
+        },
+        {
+          "value": "Multiverse",
+          "rarity": 1
+        }
+      ]
+    },
+    {
+      "traitName": "Birth Year",
+      "traitValuesStat": [
+        {
+          "value": "2023",
+          "rarity": 15
+        },
+        {
+          "value": "1943",
+          "rarity": 0
+        },
+        {
+          "value": "1988",
+          "rarity": 5
+        },
+        {
+          "value": "2015",
+          "rarity": 8
+        },
+        {
+          "value": "1969",
+          "rarity": 2
+        },
+        {
+          "value": "1980",
+          "rarity": 3
+        },
+        {
+          "value": "1998",
+          "rarity": 6
+        },
+        {
+          "value": "1970",
+          "rarity": 2
+        },
+        {
+          "value": "1982",
+          "rarity": 3
+        },
+        {
+          "value": "2009",
+          "rarity": 6
+        },
+        {
+          "value": "2014",
+          "rarity": 7
+        },
+        {
+          "value": "2016",
+          "rarity": 9
+        },
+        {
+          "value": "2012",
+          "rarity": 7
+        },
+        {
+          "value": "1957",
+          "rarity": 1
+        },
+        {
+          "value": "1997",
+          "rarity": 5
+        },
+        {
+          "value": "1986",
+          "rarity": 4
+        },
+        {
+          "value": "1951",
+          "rarity": 1
+        },
+        {
+          "value": "2002",
+          "rarity": 6
+        }
+      ]
+    },
+    {
+      "traitName": "Network Architecture",
+      "traitValuesStat": [
+        {
+          "value": "Triangle",
+          "rarity": 48
+        },
+        {
+          "value": "Zigzag",
+          "rarity": 9
+        },
+        {
+          "value": "Regular Triangle",
+          "rarity": 5
+        },
+        {
+          "value": "Random",
+          "rarity": 21
+        },
+        {
+          "value": "Rectangle",
+          "rarity": 5
+        },
+        {
+          "value": "Symmetric",
+          "rarity": 10
+        }
+      ]
+    },
+    {
+      "traitName": "Max Neurons Per Hidden Layer",
+      "traitValuesStat": [
+        {
+          "value": "12",
+          "rarity": 6
+        },
+        {
+          "value": "16",
+          "rarity": 3
+        },
+        {
+          "value": "14",
+          "rarity": 6
+        },
+        {
+          "value": "17",
+          "rarity": 6
+        },
+        {
+          "value": "5",
+          "rarity": 6
+        },
+        {
+          "value": "7",
+          "rarity": 6
+        },
+        {
+          "value": "11",
+          "rarity": 7
+        },
+        {
+          "value": "18",
+          "rarity": 5
+        },
+        {
+          "value": "9",
+          "rarity": 7
+        },
+        {
+          "value": "15",
+          "rarity": 6
+        },
+        {
+          "value": "19",
+          "rarity": 5
+        },
+        {
+          "value": "13",
+          "rarity": 6
+        },
+        {
+          "value": "6",
+          "rarity": 6
+        },
+        {
+          "value": "10",
+          "rarity": 7
+        },
+        {
+          "value": "8",
+          "rarity": 4
+        },
+        {
+          "value": "20",
+          "rarity": 7
+        }
+      ]
+    },
+    {
+      "traitName": "Dataset",
+      "traitValuesStat": [
+        {
+          "value": "MNIST",
+          "rarity": 70
+        },
+        {
+          "value": "CIFAR",
+          "rarity": 24
+        },
+        {
+          "value": "IMAGENET",
+          "rarity": 5
+        }
+      ]
+    }
+  ],
+  "priority": 999,
+  "isHidden": false,
+  "images": [
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0101.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0227.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0100.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0409.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0130.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0236.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0124.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0465.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0032.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0311.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0530.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0080.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0346.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0577.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0438.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0161.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0454.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0249.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0272.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0373.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0040.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0194.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0126.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0420.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0563.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0176.html"
+  ],
+  "whiteListEthContracts": null,
+  "processingImages": [
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0225.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0385.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0339.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0057.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0266.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0267.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0533.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0106.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0295.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0308.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0156.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0269.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0352.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0390.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0235.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0157.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0431.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0185.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0538.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0436.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0007.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0149.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0334.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0110.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0030.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0488.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0458.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0002.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0232.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0460.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0083.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0146.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0090.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0568.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0483.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0482.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0372.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0172.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0527.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0119.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0084.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0212.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0195.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0103.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0004.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0432.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0356.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0302.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0368.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0456.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0045.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0174.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0042.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0181.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0327.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0127.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0247.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0532.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0188.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0141.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0487.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0462.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0011.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0430.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0097.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0046.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0233.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0379.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0395.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0204.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0534.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0324.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0426.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0064.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0492.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0025.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0091.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0206.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0008.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0442.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0224.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0160.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0000.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0548.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0479.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0048.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0238.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0200.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0037.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0089.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0159.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0559.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0349.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0264.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0574.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0219.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0300.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0187.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0251.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0218.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0463.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0509.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0449.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0102.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0226.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0005.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0329.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0507.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0288.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0107.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0117.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0562.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0038.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0560.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0234.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0566.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0170.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0466.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0323.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0556.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0096.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0375.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0041.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0362.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0446.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0027.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0189.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0414.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0422.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0508.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0494.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0098.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0333.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0338.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0317.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0049.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0029.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0026.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0344.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0558.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0554.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0403.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0275.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0033.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0296.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0211.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0118.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0306.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0192.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0214.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0517.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0387.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0526.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0044.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0128.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0433.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0215.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0276.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0104.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0293.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0515.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0401.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0139.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0292.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0549.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0360.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0274.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0440.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0325.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0557.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0416.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0523.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0476.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0396.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0213.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0418.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0497.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0282.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0058.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0240.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0578.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0243.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0405.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0486.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0353.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0165.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0231.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0351.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0543.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0166.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0337.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0386.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0145.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0262.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0510.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0537.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0078.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0464.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0028.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0544.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0417.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0364.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0183.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0473.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0411.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0350.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0297.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0155.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0062.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0434.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0448.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0202.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0412.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0244.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0512.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0367.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0131.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0447.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0115.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0163.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0365.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0036.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0179.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0547.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0093.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0423.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0073.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0313.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0402.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0391.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0455.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0378.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0435.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0524.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0374.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0310.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0498.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0051.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0034.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0354.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0389.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0151.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0197.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0055.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0551.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0256.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0281.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0550.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0522.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0014.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0239.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0322.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0072.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0355.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0039.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0271.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0496.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0545.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0208.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0147.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0520.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0475.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0252.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0314.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0359.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0576.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0116.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0150.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0140.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0217.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0294.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0263.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0220.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0043.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0087.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0536.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0178.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0485.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0175.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0363.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0031.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0380.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0490.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0410.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0303.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0383.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0469.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0335.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0493.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0529.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0525.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0253.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0278.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0094.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0341.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0518.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0326.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0286.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0203.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0153.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0260.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0121.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0221.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0575.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0531.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0421.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0506.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0571.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0441.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0210.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0001.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0229.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0255.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0287.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0377.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0209.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0114.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0198.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0521.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0478.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0489.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0207.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0570.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0366.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0427.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0199.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0429.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0285.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0242.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0459.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0382.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0371.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0180.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0071.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0505.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0261.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0254.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0565.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0328.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0444.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0190.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0500.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0318.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0259.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0205.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0357.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0108.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0024.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0439.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0564.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0076.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0017.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0555.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0013.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0361.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0143.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0059.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0381.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0394.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0340.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0392.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0047.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0022.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0304.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0082.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0404.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0273.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0481.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0132.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0513.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0470.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0265.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0065.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0142.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0069.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0077.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0279.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0053.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0280.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0331.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0035.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0056.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0134.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0177.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0079.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0016.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0061.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0477.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0424.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0154.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0553.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0546.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0012.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0015.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0315.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0569.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0018.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0167.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0020.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0309.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0540.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0075.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0480.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0171.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0561.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0092.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0516.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0320.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0050.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0152.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0268.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0345.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0129.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0023.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0388.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0241.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0158.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0086.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0452.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0319.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0400.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0113.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0290.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0230.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0112.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0060.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0542.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0068.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0471.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0006.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0298.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0437.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0289.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0393.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0135.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0009.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0191.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0495.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0472.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0376.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0491.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0407.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0162.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0408.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0443.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0445.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0399.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0535.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0504.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0336.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0499.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0358.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0067.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0503.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0291.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0307.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0136.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0528.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0085.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0125.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0342.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0088.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0054.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0312.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0451.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0552.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0248.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0474.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0461.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0169.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0237.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0182.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0223.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0168.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0021.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0406.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0348.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0257.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0453.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0284.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0398.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0301.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0245.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0330.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0066.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0111.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0428.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0052.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0095.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0228.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0283.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0173.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0305.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0184.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0343.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0063.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0397.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0070.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0484.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0579.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0413.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0120.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0246.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0201.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0123.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0370.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0511.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0321.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0384.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0572.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0541.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0109.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0122.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0277.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0514.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0010.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0196.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0216.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0457.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0567.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0316.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0299.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0332.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0467.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0270.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0186.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0138.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0573.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0369.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0415.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0074.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0419.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0222.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0193.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0019.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0133.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0105.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0081.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0148.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0450.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0539.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0519.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0099.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0258.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0501.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0468.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0144.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0347.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0003.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0502.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0164.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0137.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0425.html",
+    "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/0250.html"
+  ],
+  "mintedImages": null,
+  "isFullChain": true,
+  "traceID": "",
+  "reportUsers": null,
+  "inscription_icon": "",
+  "created_by_collection_meta": false,
+  "source": "",
+  "animation_html": null,
+  "cature_thumbnail_delay_time": 120,
+  "reserveMintPrice": "0",
+  "reserveMintLimit": 1,
+  "fromAuthentic": false,
+  "tokenAddress": "",
+  "tokenId": "",
+  "ownerOf": "",
+  "ordinalsTx": "",
+  "inscribedBy": "",
+  "htmlFile": "https://storage.googleapis.com/generative-static-prod/btc-projects/aiseries%3Aperceptrons-52561678/Perceptrons/0505.html",
+  "limitMintPerProcess": 0,
+  "commitTxHash": "",
+  "revealTxHash": "",
+  "txHex": "",
+  "txhash": ""
+}]
