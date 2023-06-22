@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/utils"
 	"rederinghub.io/utils/helpers"
@@ -44,7 +45,12 @@ func (r Repository) InsertCategory(data *entity.Categories) error {
 func (r Repository) ListCategories(filter entity.FilterCategories) (*entity.Pagination, error) {
 	confs := []entity.Categories{}
 	resp := &entity.Pagination{}
-	f := bson.M{}
+	f := bson.D{
+		{"$or", bson.A{
+			bson.M{"isHidden": false},
+			bson.M{"isHidden": bson.M{"$eq": primitive.Null{}}},
+		}},
+	}
 
 	p, err := r.Paginate(entity.Categories{}.TableName(), filter.Page, filter.Limit, f, bson.D{}, []Sort{{SortBy: filter.SortBy, Sort: filter.Sort}}, &confs)
 	if err != nil {
