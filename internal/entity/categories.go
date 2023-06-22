@@ -7,22 +7,22 @@ import (
 )
 
 type Categories struct {
-	BaseEntity`bson:",inline"`
-	Name string `bson:"name"`
-	Priority               *int               `bson:"priority" json:"priority"`
-	
+	BaseEntity `bson:",inline"`
+	Name       string `bson:"name"`
+	Priority   *int   `bson:"priority" json:"priority"`
+	IsHidden   bool   `bson:"isHidden" json:"isHidden"`
 }
 
 type FilterCategories struct {
 	BaseFilters
 	Name *string
-	ID *string
+	ID   *string
 }
 
-func (u Categories) TableName() string { 
+func (u Categories) TableName() string {
 	return utils.COLLECTION_CATEGORIES
 }
 
-func (u Categories) ToBson()  (*bson.D, error) { 
+func (u Categories) ToBson() (*bson.D, error) {
 	return helpers.ToDoc(u)
 }
