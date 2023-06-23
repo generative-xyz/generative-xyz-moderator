@@ -5,9 +5,9 @@ import (
 	"strings"
 )
 
-func (u *Usecase) LikeProject(contractAddress string, projectID string) (*entity.Actions, error) {
+func (u *Usecase) LikeProject(projectID string, walletAddress string) (*entity.Actions, error) {
 	obj := &entity.Actions{
-		Parent:     strings.ToLower(contractAddress),
+		CreatedBy:  strings.ToLower(walletAddress),
 		ObjectID:   strings.ToLower(projectID),
 		ObjectType: entity.Project,
 		Action:     entity.LIKE,
@@ -21,9 +21,9 @@ func (u *Usecase) LikeProject(contractAddress string, projectID string) (*entity
 	return obj, nil
 }
 
-func (u *Usecase) DisLikeProject(contractAddress string, projectID string) (*entity.Actions, error) {
+func (u *Usecase) DisLikeProject(projectID string, walletAddress string) (*entity.Actions, error) {
 	obj := &entity.Actions{
-		Parent:     strings.ToLower(contractAddress),
+		CreatedBy:  strings.ToLower(walletAddress),
 		ObjectID:   strings.ToLower(projectID),
 		ObjectType: entity.Project,
 		Action:     entity.DISLIKE,
@@ -37,9 +37,9 @@ func (u *Usecase) DisLikeProject(contractAddress string, projectID string) (*ent
 	return obj, nil
 }
 
-func (u *Usecase) LikeToken(projectID string, tokenID string) (*entity.Actions, error) {
+func (u *Usecase) LikeToken(tokenID string, walletAddress string) (*entity.Actions, error) {
 	obj := &entity.Actions{
-		Parent:     strings.ToLower(projectID),
+		CreatedBy:  strings.ToLower(walletAddress),
 		ObjectID:   strings.ToLower(tokenID),
 		ObjectType: entity.TokenURI,
 		Action:     entity.LIKE,
@@ -53,9 +53,9 @@ func (u *Usecase) LikeToken(projectID string, tokenID string) (*entity.Actions, 
 	return obj, nil
 }
 
-func (u *Usecase) DisLikeToken(projectID string, tokenID string) (*entity.Actions, error) {
+func (u *Usecase) DisLikeToken(tokenID string, walletAddress string) (*entity.Actions, error) {
 	obj := &entity.Actions{
-		Parent:     strings.ToLower(projectID),
+		CreatedBy:  strings.ToLower(walletAddress),
 		ObjectID:   strings.ToLower(tokenID),
 		ObjectType: entity.TokenURI,
 		Action:     entity.DISLIKE,

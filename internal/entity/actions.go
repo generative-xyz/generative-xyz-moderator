@@ -21,10 +21,10 @@ const (
 
 type Actions struct {
 	BaseEntity `bson:",inline"`
-	Parent     string     `bson:"parent"`
-	ObjectID   string     `bson:"object_id"`
+	ObjectID   string     `bson:"object_id" json:"object_id"`
 	ObjectType ObjectType `bson:"object_type" json:"object_type"`
 	Action     ActionType `bson:"action" json:"action"`
+	CreatedBy  string     `bson:"created_by" json:"created_by"`
 }
 
 type FilterActions struct {
