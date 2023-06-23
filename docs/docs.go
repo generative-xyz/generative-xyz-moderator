@@ -16,6 +16,154 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/action/project/{projectID}/dislike": {
+            "post": {
+                "security": [
+                    {
+                        "Authorization": []
+                    }
+                ],
+                "description": "dislike project",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Like \u0026 dislike"
+                ],
+                "summary": "dislike project",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "projectID",
+                        "name": "projectID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.JsonResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/action/project/{projectID}/like": {
+            "post": {
+                "security": [
+                    {
+                        "Authorization": []
+                    }
+                ],
+                "description": "like project",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Like \u0026 dislike"
+                ],
+                "summary": "like project",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "projectID",
+                        "name": "projectID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.JsonResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/action/tokens/{tokenID}/dislike": {
+            "post": {
+                "security": [
+                    {
+                        "Authorization": []
+                    }
+                ],
+                "description": "dislike token",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Like \u0026 dislike"
+                ],
+                "summary": "dislike token",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "token ID",
+                        "name": "tokenID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.JsonResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/action/tokens/{tokenID}/like": {
+            "post": {
+                "security": [
+                    {
+                        "Authorization": []
+                    }
+                ],
+                "description": "like token",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Like \u0026 dislike"
+                ],
+                "summary": "like token",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "token ID",
+                        "name": "tokenID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.JsonResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/admin-test": {
             "get": {
                 "description": "Get Redis",
@@ -7129,6 +7277,9 @@ const docTemplate = `{
                 "profile_social": {
                     "$ref": "#/definitions/entity.ProfileSocial"
                 },
+                "slug": {
+                    "type": "string"
+                },
                 "stats": {
                     "$ref": "#/definitions/entity.UserStats"
                 },
@@ -8451,6 +8602,9 @@ const docTemplate = `{
                 },
                 "tokenID": {
                     "type": "string"
+                },
+                "tokenIDData": {
+                    "type": "string"
                 }
             }
         },
@@ -8539,6 +8693,9 @@ const docTemplate = `{
                 },
                 "proposal": {
                     "$ref": "#/definitions/response.DaoArtist"
+                },
+                "slug": {
+                    "type": "string"
                 },
                 "walletAddress": {
                     "type": "string"

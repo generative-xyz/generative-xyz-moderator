@@ -2,26 +2,33 @@ package http
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"rederinghub.io/internal/delivery/http/response"
+	"rederinghub.io/utils"
 )
 
 // UserCredits godoc
 // @Summary like project
 // @Description like project
-// @Tags Project
+// @Tags Like & dislike
 // @Accept  json
 // @Produce  json
-// @Param contractAddress path string true "contract address"
-// @Param projectID path string true "token ID"
+// @Security Authorization
+// @Param projectID path string true "projectID"
 // @Success 200 {object} response.JsonResponse{}
-// @Router /project/{contractAddress}/tokens/{projectID}/like [GET]
+// @Router /action/project/{projectID}/like [POST]
 func (h *httpDelivery) LikeProject(w http.ResponseWriter, r *http.Request) {
 	response.NewRESTHandlerTemplate(
 		func(ctx context.Context, r *http.Request, vars map[string]string) (interface{}, error) {
-			contractAddress := vars["contractAddress"]
+			iWalletAddress := ctx.Value(utils.SIGNED_WALLET_ADDRESS)
+			walletAddress, ok := iWalletAddress.(string)
+			if !ok {
+				return nil, errors.New("Cannot get wallet address")
+			}
+
 			projectID := vars["projectID"]
-			return h.Usecase.LikeProject(contractAddress, projectID)
+			return h.Usecase.LikeProject(projectID, walletAddress)
 		},
 	).ServeHTTP(w, r)
 }
@@ -32,16 +39,22 @@ func (h *httpDelivery) LikeProject(w http.ResponseWriter, r *http.Request) {
 // @Tags Like & dislike
 // @Accept  json
 // @Produce  json
-// @Param contractAddress path string true "contract address"
-// @Param projectID path string true "token ID"
+// @Security Authorization
+// @Param projectID path string true "projectID"
 // @Success 200 {object} response.JsonResponse{}
-// @Router /project/{contractAddress}/tokens/{projectID}/dislike [GET]
+// @Router /action/project/{projectID}/dislike [POST]
 func (h *httpDelivery) DisLikeProject(w http.ResponseWriter, r *http.Request) {
 	response.NewRESTHandlerTemplate(
 		func(ctx context.Context, r *http.Request, vars map[string]string) (interface{}, error) {
-			contractAddress := vars["contractAddress"]
+
+			iWalletAddress := ctx.Value(utils.SIGNED_WALLET_ADDRESS)
+			walletAddress, ok := iWalletAddress.(string)
+			if !ok {
+				return nil, errors.New("Cannot get wallet address")
+			}
+
 			projectID := vars["projectID"]
-			return h.Usecase.DisLikeProject(contractAddress, projectID)
+			return h.Usecase.DisLikeProject(projectID, walletAddress)
 		},
 	).ServeHTTP(w, r)
 }
@@ -49,19 +62,25 @@ func (h *httpDelivery) DisLikeProject(w http.ResponseWriter, r *http.Request) {
 // UserCredits godoc
 // @Summary like token
 // @Description like token
-// @Tags Project
+// @Tags Like & dislike
 // @Accept  json
 // @Produce  json
-// @Param contractAddress path string true "contract address"
-// @Param projectID path string true "token ID"
+// @Security Authorization
+// @Param tokenID path string true "token ID"
 // @Success 200 {object} response.JsonResponse{}
-// @Router /tokens/{contractAddress}/{tokenID}/like [POST]
+// @Router /action/tokens/{tokenID}/like [POST]
 func (h *httpDelivery) LikeTokenURI(w http.ResponseWriter, r *http.Request) {
 	response.NewRESTHandlerTemplate(
 		func(ctx context.Context, r *http.Request, vars map[string]string) (interface{}, error) {
-			contractAddress := vars["contractAddress"]
-			projectID := vars["projectID"]
-			return h.Usecase.LikeToken(contractAddress, projectID)
+
+			iWalletAddress := ctx.Value(utils.SIGNED_WALLET_ADDRESS)
+			walletAddress, ok := iWalletAddress.(string)
+			if !ok {
+				return nil, errors.New("Cannot get wallet address")
+			}
+
+			tokenID := vars["tokenID"]
+			return h.Usecase.LikeToken(tokenID, walletAddress)
 		},
 	).ServeHTTP(w, r)
 }
@@ -72,16 +91,21 @@ func (h *httpDelivery) LikeTokenURI(w http.ResponseWriter, r *http.Request) {
 // @Tags Like & dislike
 // @Accept  json
 // @Produce  json
-// @Param contractAddress path string true "contract address"
-// @Param projectID path string true "token ID"
+// @Security Authorization
+// @Param tokenID path string true "token ID"
 // @Success 200 {object} response.JsonResponse{}
-// @Router /tokens/{contractAddress}/{tokenID}/dislike [POST]
+// @Router  /action/tokens/{tokenID}/dislike [POST]
 func (h *httpDelivery) DisLikeTokenURI(w http.ResponseWriter, r *http.Request) {
 	response.NewRESTHandlerTemplate(
 		func(ctx context.Context, r *http.Request, vars map[string]string) (interface{}, error) {
-			contractAddress := vars["contractAddress"]
-			projectID := vars["projectID"]
-			return h.Usecase.DisLikeToken(contractAddress, projectID)
+			iWalletAddress := ctx.Value(utils.SIGNED_WALLET_ADDRESS)
+			walletAddress, ok := iWalletAddress.(string)
+			if !ok {
+				return nil, errors.New("Cannot get wallet address")
+			}
+
+			tokenID := vars["tokenID"]
+			return h.Usecase.DisLikeToken(tokenID, walletAddress)
 		},
 	).ServeHTTP(w, r)
 }

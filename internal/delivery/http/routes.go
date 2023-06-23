@@ -35,8 +35,6 @@ func (h *httpDelivery) RegisterV1Routes() {
 	tokens.HandleFunc("/{tokenID}/thumbnail", h.updateTokenThumbnail).Methods("POST")
 	tokens.HandleFunc("/{tokenID}/minting-info", h.tokenMintingInfo).Methods("GET")
 	tokens.HandleFunc("/{contractAddress}/{tokenID}", h.tokenURIWithResp).Methods("GET")
-	tokens.HandleFunc("/{contractAddress}/{tokenID}/like", h.LikeTokenURI).Methods("POST")
-	tokens.HandleFunc("/{contractAddress}/{tokenID}/dislike", h.DisLikeTokenURI).Methods("POST")
 	tokens.HandleFunc("/{contractAddress}/{tokenID}", h.tokenURIWithResp).Methods("PUT")
 	tokens.HandleFunc("/traits/{contractAddress}/{tokenID}", h.tokenTraitWithResp).Methods("GET")
 
@@ -89,8 +87,6 @@ func (h *httpDelivery) RegisterV1Routes() {
 	project.HandleFunc("/minted-out", h.getMintedOutProjects).Methods("GET")
 	project.HandleFunc("/recent-works", h.getRecentWorksProjects).Methods("GET")
 	project.HandleFunc("/{contractAddress}/tokens/{projectID}", h.projectDetail).Methods("GET")
-	project.HandleFunc("/{contractAddress}/tokens/{projectID}/like", h.LikeProject).Methods("POST")
-	project.HandleFunc("/{contractAddress}/tokens/{projectID}/dislike", h.DisLikeProject).Methods("POST")
 	project.HandleFunc("/{contractAddress}/tokens/{projectID}/marketplace-data", h.projectMarketplaceData).Methods("GET")
 	project.HandleFunc("/{contractAddress}/tokens/{projectID}/volumn", h.projectVolumn).Methods("GET")
 	project.HandleFunc("/{contractAddress}/tokens/{projectID}/random-images", h.projectRandomImages).Methods("GET")
@@ -408,6 +404,13 @@ func (h *httpDelivery) RegisterV1Routes() {
 
 	soralis.HandleFunc("/tokens/{tokenAddress}/balance/{walletAddress}/time-travel", h.soralisGetSnapShotUserTokenBalance).Methods("GET")
 	soralis.HandleFunc("/tokens/{tokenAddress}/time-travel", h.soralisTimeTravel).Methods("GET")
+
+	action := api.PathPrefix("/action").Subrouter()
+	action.Use(h.MiddleWare.AccessTokenPassThrough)
+	action.HandleFunc("/project/{projectID}/like", h.LikeProject).Methods("POST")
+	action.HandleFunc("/project/{projectID}/dislike", h.DisLikeProject).Methods("POST")
+	action.HandleFunc("/tokens/{tokenID}/like", h.LikeTokenURI).Methods("POST")
+	action.HandleFunc("/tokens/{tokenID}/dislike", h.DisLikeTokenURI).Methods("POST")
 
 }
 
