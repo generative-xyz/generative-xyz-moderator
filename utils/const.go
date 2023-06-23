@@ -144,6 +144,7 @@ const (
 	COLLECTION_PROJECT_ALLOW_LIST              string = "project_allow_list"
 	COLLECTION_PROJECT_ZIPLINKS                string = "project_zip_links"
 	COLLECTION_CONFIGS                         string = "configs"
+	COLLECTION_ACTIONS                         string = "actions"
 	COLLECTION_CATEGORIES                      string = "categories"
 	COLLECTION_ACTIVITIES                      string = "activities"
 	COLLECTION_REFERRALS                       string = "referrals"
