@@ -671,6 +671,8 @@ definitions:
         type: string
       profile_social:
         $ref: '#/definitions/entity.ProfileSocial'
+      slug:
+        type: string
       stats:
         $ref: '#/definitions/entity.UserStats'
       verifiedAt:
@@ -1541,6 +1543,8 @@ definitions:
         type: string
       tokenID:
         type: string
+      tokenIDData:
+        type: string
     type: object
   response.JsonResponse:
     properties:
@@ -1598,6 +1602,8 @@ definitions:
         $ref: '#/definitions/response.ProfileSocial'
       proposal:
         $ref: '#/definitions/response.DaoArtist'
+      slug:
+        type: string
       walletAddress:
         type: string
       walletAddressBtc:
@@ -2027,6 +2033,98 @@ info:
   title: Generative.xyz APIs
   version: 1.0.0
 paths:
+  /action/project/{projectID}/dislike:
+    post:
+      consumes:
+      - application/json
+      description: dislike project
+      parameters:
+      - description: projectID
+        in: path
+        name: projectID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.JsonResponse'
+      security:
+      - Authorization: []
+      summary: dislike project
+      tags:
+      - Like & dislike
+  /action/project/{projectID}/like:
+    post:
+      consumes:
+      - application/json
+      description: like project
+      parameters:
+      - description: projectID
+        in: path
+        name: projectID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.JsonResponse'
+      security:
+      - Authorization: []
+      summary: like project
+      tags:
+      - Like & dislike
+  /action/tokens/{tokenID}/dislike:
+    post:
+      consumes:
+      - application/json
+      description: dislike token
+      parameters:
+      - description: token ID
+        in: path
+        name: tokenID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.JsonResponse'
+      security:
+      - Authorization: []
+      summary: dislike token
+      tags:
+      - Like & dislike
+  /action/tokens/{tokenID}/like:
+    post:
+      consumes:
+      - application/json
+      description: like token
+      parameters:
+      - description: token ID
+        in: path
+        name: tokenID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.JsonResponse'
+      security:
+      - Authorization: []
+      summary: like token
+      tags:
+      - Like & dislike
   /admin-test:
     get:
       consumes:
