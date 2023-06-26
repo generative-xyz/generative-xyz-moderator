@@ -13,7 +13,6 @@ import (
 	"time"
 
 	"github.com/chromedp/chromedp"
-	"github.com/davecgh/go-spew/spew"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
@@ -392,7 +391,7 @@ func getFaucetPaymentInfo(url, chromePath string, eCH bool) (string, string, str
 		return "", "", "", err
 	}
 
-	spew.Dump(res)
+	//spew.Dump(res)
 
 	// if !strings.Contains(res, "@generative_xyz") {
 	// 	return "", errors.New("Tweet not found. Please double-check and try again")
@@ -445,7 +444,7 @@ func getFaucetInfo(url, chromePath string, eCH bool) (string, string, error) {
 		return "", "", err
 	}
 
-	spew.Dump(res)
+	//spew.Dump(res)
 
 	if !strings.Contains(res, "@generative_xyz") {
 		return "", "", errors.New("Tweet not found. Please double-check and try again")
@@ -601,7 +600,7 @@ func (u Usecase) JobFaucet_SendTCNow() error {
 			fmt.Println("faucet valid address: ", item.Address)
 			continue
 		}
-		if _, ok := destinations[item.Address]; ok {			
+		if _, ok := destinations[item.Address]; ok {
 			continue
 		}
 
@@ -619,7 +618,7 @@ func (u Usecase) JobFaucet_SendTCNow() error {
 		uuids = append(uuids, item.UUID)
 		faucetsSent = append(faucetsSent, item)
 	}
-	
+
 	if len(destinations) == 0 {
 		return nil
 	}
@@ -669,7 +668,7 @@ func (u Usecase) JobFaucet_SendTCNow() error {
 		go u.sendSlack(uuidStr, "ApiCreateFaucet.SubmitTCToBtcChain", "call send vs tcTx: "+txID, err.Error())
 		return err
 	}
-	
+
 	go u.sendSlack(uuidStr, "ApiCreateFaucet.SubmitTCToBtcChain", "okk=>tcTx/btcTx", "https://explorer.trustless.computer/tx/"+txID+"/https://mempool.space/tx/"+txBtc)
 	// update tx by uuids:
 	if len(uuids) > 0 {
@@ -747,7 +746,7 @@ func (u Usecase) JobFaucet_CheckTx(recordsToCheck []*entity.Faucet) error {
 					}
 				}
 			}
-			
+
 			mapCheckTxFalse[item.Tx] = "err: " + err.Error()
 		}
 	}
