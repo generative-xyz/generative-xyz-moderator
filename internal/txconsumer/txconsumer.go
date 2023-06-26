@@ -95,13 +95,8 @@ func (c *HttpTxConsumer) resolveTransaction() error {
 		return err
 	}
 
-	ProcessingBlock = 4844
-	ProcessingBlock = 4844
-
 	for ProcessingBlock <= lastBlockOnChain.Int64() {
 		ProcessingBlockTo := ProcessingBlock + int64(c.BatchLogSize)
-
-		ProcessingBlockTo = 4844
 		logs, err := c.Blockchain.GetEventLogs(*big.NewInt(ProcessingBlock), *big.NewInt(ProcessingBlockTo), c.Addresses)
 		if err != nil {
 			logger.AtLog.Logger.Error("err.GetEventLogs", zap.String("err", err.Error()))
