@@ -15,7 +15,6 @@ import (
 
 	secretmanager "cloud.google.com/go/secretmanager/apiv1"
 	"cloud.google.com/go/secretmanager/apiv1/secretmanagerpb"
-	"github.com/davecgh/go-spew/spew"
 	"github.com/ethereum/go-ethereum/common"
 	"go.uber.org/zap"
 	"rederinghub.io/external/nfts"
@@ -267,9 +266,9 @@ func (u Usecase) IsWhitelistedAddressERC20(ctx context.Context, userAddr string,
 		//bigInt64 := big.
 		tmp := blance.Cmp(confValue)
 
-		spew.Dump(whitelistedThres.Value, whitelistedThres.Decimal)
-		spew.Dump(confValue.String())
-		spew.Dump(blance.String())
+		//spew.Dump(whitelistedThres.Value, whitelistedThres.Decimal)
+		//spew.Dump(confValue.String())
+		//spew.Dump(blance.String())
 		if tmp >= 0 {
 			return true, nil
 		}
