@@ -477,25 +477,18 @@ type CollectionFilter struct {
 }
 
 func (u Usecase) JobCrawlToUpdateNftInfo() error {
+	key := "JobCrawlToUpdateNftInfo"
 	// create data for listing data:
 	// get nft list + update collection:
 	listingOrder, _ := u.Repo.RetrieveBTCNFTListingsUnsold(99999, 0)
-
-	fmt.Println("len(listingOrder): ", len(listingOrder))
-
 	for _, v := range listingOrder {
 		// get nft collection info:
 		nftCollectionInfo, _ := u.Repo.FindTokenByTokenID(v.InscriptionID)
 		if nftCollectionInfo != nil {
-			fmt.Println("can not get nftCollectionInfo with v.InscriptionID: ", v.InscriptionID)
 			_, err := u.Repo.UpdateListingCollectionInfo(v.UUID, nftCollectionInfo)
 			if err != nil {
-				fmt.Println("can not UpdateListingCollectionInfo err: ", err)
-			} else {
-				fmt.Println("update done: ", nftCollectionInfo.TokenID)
+				logger.AtLog.Logger.Error(key, zap.String("v.InscriptionID", v.InscriptionID), zap.Error(err))
 			}
-		} else {
-			fmt.Println("can not found id", v.InscriptionID)
 		}
 	}
 	return nil

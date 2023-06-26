@@ -93,7 +93,7 @@ func (h ScronOrdinalCollectionHandler) syncCollection(collectionFoldersPath stri
 		}
 	}
 
-	fmt.Printf("Done for collection %s \n", meta.Name)
+	logger.AtLog.Logger.Info("syncCollection", zap.String(" meta.Name", meta.Name))
 
 	return nil
 }
