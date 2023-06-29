@@ -92,6 +92,29 @@ func (u *Usecase) PubSubProjectUnzip(tracingInjection map[string]string, channel
 
 }
 
+func (u *Usecase) PubSubEthProjectUnzip(tracingInjection map[string]string, channelName string, payload interface{}) {
+
+	bytes, err := json.Marshal(payload)
+	if err != nil {
+		logger.AtLog.Error("PubSubProjectUnzip", zap.Any("payload", payload), zap.Error(err))
+		return
+	}
+	
+	pz := &structure.ProjectUnzipPayload{}
+	err = json.Unmarshal(bytes, pz)
+	if err != nil {
+		logger.AtLog.Error("PubSubProjectUnzip", zap.Any("payload", payload), zap.Error(err))
+		return
+	}
+
+	_, err = u.UnzipETHProjectFile(pz)
+	if err != nil {
+		logger.AtLog.Error("PubSubProjectUnzip", zap.Any("payload", payload), zap.Error(err))
+		return
+	}
+
+}
+
 func (u *Usecase) PubSubCaptureThumbnail(tracingInjection map[string]string, channelName string, payload interface{}) {
 
 	bytes, err := json.Marshal(payload)
