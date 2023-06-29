@@ -2565,6 +2565,9 @@ func (u Usecase) UnzipETHProjectFile(zipPayload *structure.ProjectUnzipPayload) 
 	updated["images"] = imageLinks
 	updated["maxFileSize"] = int64(maxSize)
 	updated["networkFee"] = networkFee.String()
+
+	//if project is fully onchain, is synced is updated by unzip
+	updated["isSynced"] = true
 	_, err = u.Repo.UpdateProjectFields(pe.UUID, updated)
 	if err != nil {
 		logger.AtLog.Logger.Error(fmt.Sprintf("CreateProject.ProcessEthZip.%s", zipPayload.ProjectID), zap.String("zipLink", zipPayload.ZipLink),
