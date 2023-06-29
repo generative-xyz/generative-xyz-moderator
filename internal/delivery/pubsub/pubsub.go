@@ -101,6 +101,8 @@ func (h Handler) handlerMessage(msg *redis2.Message) error {
 		h.useCase.PubSubCreateTokenThumbnail(tracingInjection, chanName, payload)
 	case h.pubsub.GetChannelName(utils.PUBSUB_PROJECT_UNZIP):
 		h.useCase.PubSubProjectUnzip(tracingInjection, chanName, payload)
+	case h.pubsub.GetChannelName(utils.PUBSUB_ETH_PROJECT_UNZIP):
+		h.useCase.PubSubEthProjectUnzip(tracingInjection, chanName, payload)
 	case h.pubsub.GetChannelName(utils.PUBSUB_CAPTURE_THUMBNAIL):
 		h.useCase.PubSubCaptureThumbnail(tracingInjection, chanName, payload)
 	}

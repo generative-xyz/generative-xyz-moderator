@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"rederinghub.io/utils/redis"
 	"strconv"
 	"strings"
 	"time"
@@ -16,7 +17,6 @@ import (
 	"rederinghub.io/utils"
 	"rederinghub.io/utils/helpers"
 	"rederinghub.io/utils/logger"
-	"rederinghub.io/utils/redis"
 )
 
 func (u Usecase) JobAggregateVolumns() {
@@ -716,18 +716,36 @@ func (u Usecase) JobRetryUnzip() {
 	}
 
 	logger.AtLog.Logger.Info("JobRetryUnzip", zap.Int("projects", len(projectZipLinks)))
-	for _, zipLink := range projectZipLinks {
-		logger.AtLog.Logger.Info("JobRetryUnzip", zap.Any("zipLink", zipLink))
-		err = u.PubSub.Producer(utils.PUBSUB_PROJECT_UNZIP, redis.PubSubPayload{
-			Data: structure.ProjectUnzipPayload{
-				ProjectID: zipLink.ProjectID,
-				ZipLink:   zipLink.ZipLink,
-			},
-		})
 
-		if err != nil {
-			logger.AtLog.Logger.Error("JobRetryUnzip", zap.Error(err))
-			continue
+	for _, zipLink := range projectZipLinks {
+		logger.AtLog.Logger.Info(fmt.Sprintf("JobRetryUnzip - %s", zipLink.ProjectID), zap.Any("zipLink", zipLink))
+
+		//because eth has a difference flow.
+		if zipLink.ProjectType == entity.ETH {
+			err = u.PubSub.Producer(utils.PUBSUB_ETH_PROJECT_UNZIP, redis.PubSubPayload{
+				Data: structure.ProjectUnzipPayload{
+					ProjectID: zipLink.ProjectID,
+					ZipLink:   zipLink.ZipLink,
+				},
+			})
+
+			if err != nil {
+				logger.AtLog.Logger.Error("JobRetryUnzip", zap.Error(err))
+				continue
+			}
+		} else {
+			err = u.PubSub.Producer(utils.PUBSUB_PROJECT_UNZIP, redis.PubSubPayload{
+				Data: structure.ProjectUnzipPayload{
+					ProjectID: zipLink.ProjectID,
+					ZipLink:   zipLink.ZipLink,
+				},
+			})
+
+			if err != nil {
+				logger.AtLog.Logger.Error("JobRetryUnzip", zap.Error(err))
+				continue
+			}
 		}
+
 	}
 }
