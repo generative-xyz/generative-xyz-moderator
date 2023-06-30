@@ -31,6 +31,7 @@ func (h Handler) StartServer() {
 		utils.PUBSUB_TOKEN_THUMBNAIL,
 		utils.PUBSUB_PROJECT_UNZIP,
 		utils.PUBSUB_CAPTURE_THUMBNAIL,
+		utils.PUBSUB_ETH_PROJECT_UNZIP,
 	}
 
 	h.pubsub.GetChannelNames(names...)

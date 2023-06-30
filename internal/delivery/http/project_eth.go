@@ -2,7 +2,6 @@ package http
 
 import (
 	"encoding/json"
-	"errors"
 	"net/http"
 	"strconv"
 	"strings"
@@ -14,7 +13,6 @@ import (
 	"rederinghub.io/internal/delivery/http/response"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
-	"rederinghub.io/utils"
 	"rederinghub.io/utils/logger"
 )
 
@@ -37,16 +35,16 @@ func (h *httpDelivery) createEthProjects(w http.ResponseWriter, r *http.Request)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
-
-	ctx := r.Context()
-	iWalletAddress := ctx.Value(utils.SIGNED_WALLET_ADDRESS)
-	walletAddress, ok := iWalletAddress.(string)
-	if !ok {
-		err := errors.New("Wallet address is incorect")
-		logger.AtLog.Logger.Error("ctx.Value.Token", zap.Error(err))
-		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
-		return
-	}
+	walletAddress := "0x226D75CF2D74E26F2ae67AF714c936Dd40c03A6A"
+	//ctx := r.Context()
+	//iWalletAddress := ctx.Value(utils.SIGNED_WALLET_ADDRESS)
+	//walletAddress, ok := iWalletAddress.(string)
+	//if !ok {
+	//	err := errors.New("Wallet address is incorect")
+	//	logger.AtLog.Logger.Error("ctx.Value.Token", zap.Error(err))
+	//	h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+	//	return
+	//}
 
 	reqUsecase := &structure.CreateProjectReq{}
 	err = copier.Copy(reqUsecase, reqBody)
@@ -180,7 +178,7 @@ func (h *httpDelivery) getAllProjects(w http.ResponseWriter, r *http.Request) {
 			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 			return
 		}
-	
+
 		pResp = append(pResp, *p)
 	}
 
