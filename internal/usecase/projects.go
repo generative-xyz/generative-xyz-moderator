@@ -2475,11 +2475,25 @@ func (u Usecase) UpdateProjectHash(req structure.UpdateProjectHash) (*entity.Pro
 
 func (u Usecase) UnzipETHProjectFile(zipPayload *structure.ProjectUnzipPayload) (*entity.Projects, error) {
 	var err error
-
+	key := fmt.Sprintf("CreateProject.ProcessEthZip.%s", zipPayload.ProjectID)
 	defer func() {
 		uzStatus := entity.UzipStatusSuccess
 		if err != nil {
+			logger.AtLog.Logger.Error(
+				key,
+				zap.String("zipLink", zipPayload.ZipLink),
+				zap.String("projectID", zipPayload.ProjectID),
+				zap.Any("uzStatus", uzStatus),
+				zap.Error(err),
+			)
 			uzStatus = entity.UzipStatusFail
+		} else {
+			logger.AtLog.Logger.Info(
+				key,
+				zap.String("zipLink", zipPayload.ZipLink),
+				zap.String("projectID", zipPayload.ProjectID),
+				zap.Any("uzStatus", uzStatus),
+			)
 		}
 		now := time.Now().UTC()
 
@@ -2529,15 +2543,11 @@ func (u Usecase) UnzipETHProjectFile(zipPayload *structure.ProjectUnzipPayload) 
 	isBigFile := false
 	pe, err := u.Repo.FindProjectByTxHash(zipPayload.ProjectID)
 	if err != nil {
-		logger.AtLog.Logger.Error(fmt.Sprintf("CreateProject.ProcessEthZip.%s", zipPayload.ProjectID), zap.String("zipLink", zipPayload.ZipLink),
-			zap.Error(err))
 		return nil, err
 	}
 
 	imageLinks, maxSize, err := u.ProcessEthZip(zipPayload.ZipLink)
 	if err != nil {
-		logger.AtLog.Logger.Error(fmt.Sprintf("CreateProject.ProcessEthZip.%s", zipPayload.ProjectID), zap.String("zipLink", zipPayload.ZipLink),
-			zap.Error(err))
 		return nil, err
 	}
 
@@ -2546,7 +2556,8 @@ func (u Usecase) UnzipETHProjectFile(zipPayload *structure.ProjectUnzipPayload) 
 	//Only TC projects are allowed
 	//check project has big file ($gt: 350kb):
 	// project only has 1 uploaded file, its size is greater than 350kb
-	if len(imageLinks) == 1 { //350kb = 350000 bytes
+	if len(imageLinks) == 1 {
+		//350kb = 350000 bytes
 		// size of the json file
 		if maxSize > uint64(350000) {
 			isBigFile = true
@@ -2570,8 +2581,6 @@ func (u Usecase) UnzipETHProjectFile(zipPayload *structure.ProjectUnzipPayload) 
 	updated["isSynced"] = true
 	_, err = u.Repo.UpdateProjectFields(pe.UUID, updated)
 	if err != nil {
-		logger.AtLog.Logger.Error(fmt.Sprintf("CreateProject.ProcessEthZip.%s", zipPayload.ProjectID), zap.String("zipLink", zipPayload.ZipLink),
-			zap.Error(err))
 		return nil, err
 	}
 
