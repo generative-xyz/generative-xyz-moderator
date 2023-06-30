@@ -190,6 +190,7 @@ const (
 	PUBSUB_TOKEN_THUMBNAIL                    string = "token_thumbnail"
 	PUBSUB_CAPTURE_THUMBNAIL                  string = "capture_thumbnail"
 	PUBSUB_PROJECT_UNZIP                      string = "project_unzip"
+	PUBSUB_ETH_PROJECT_UNZIP                  string = "eth_project_unzip"
 
 	BTCConfirmationThreshold = 1
 	FirstScannedBTCBlkHeight = 697200

@@ -2472,3 +2472,108 @@ func (u Usecase) UpdateProjectHash(req structure.UpdateProjectHash) (*entity.Pro
 	logger.AtLog.Logger.Info("UpdateProject", zap.Any("project", p), zap.Any("updated", updated))
 	return p, nil
 }
+
+func (u Usecase) UnzipETHProjectFile(zipPayload *structure.ProjectUnzipPayload) (*entity.Projects, error) {
+	var err error
+
+	defer func() {
+		uzStatus := entity.UzipStatusSuccess
+		if err != nil {
+			uzStatus = entity.UzipStatusFail
+		}
+		now := time.Now().UTC()
+
+		zipLinks, err1 := u.Repo.GetProjectUnzip(zipPayload.ProjectID)
+		if err1 != nil {
+			if errors.Is(err1, mongo.ErrNoDocuments) {
+				projectZip := &entity.ProjectZipLinks{
+					ProjectID:   zipPayload.ProjectID,
+					ZipLink:     zipPayload.ZipLink,
+					ProjectType: entity.ETH,
+					ReTries:     0,
+					Status:      uzStatus,
+				}
+
+				logs := []entity.ProjectZipLinkLog{
+					entity.ProjectZipLinkLog{
+						Message:     "Create eth project",
+						Status:      uzStatus,
+						CreatedTime: &now,
+					},
+				}
+				projectZip.Logs = logs
+				err1 = u.Repo.InsertOne(projectZip.TableName(), projectZip)
+				if err1 != nil {
+					logger.AtLog.Logger.Error(fmt.Sprintf("CreateProject.ProcessEthZip.%s", zipPayload.ProjectID), zap.String("zipLink", zipPayload.ZipLink),
+						zap.Error(err1))
+				}
+			}
+		} else {
+			zipLinks.Logs = append(zipLinks.Logs, entity.ProjectZipLinkLog{
+				Message:     "",
+				Status:      uzStatus,
+				CreatedTime: &now,
+			})
+			zipLinks.Status = uzStatus
+			zipLinks.ReTries = zipLinks.ReTries + 1
+
+			_, err1 = u.Repo.UpdateProjectUnzip(zipPayload.ProjectID, zipLinks)
+			if err1 != nil {
+				logger.AtLog.Logger.Error(fmt.Sprintf("CreateProject.ProcessEthZip.%s", zipPayload.ProjectID), zap.String("zipLink", zipPayload.ZipLink),
+					zap.Error(err1))
+			}
+		}
+
+	}()
+
+	isBigFile := false
+	pe, err := u.Repo.FindProjectByTxHash(zipPayload.ProjectID)
+	if err != nil {
+		logger.AtLog.Logger.Error(fmt.Sprintf("CreateProject.ProcessEthZip.%s", zipPayload.ProjectID), zap.String("zipLink", zipPayload.ZipLink),
+			zap.Error(err))
+		return nil, err
+	}
+
+	imageLinks, maxSize, err := u.ProcessEthZip(zipPayload.ZipLink)
+	if err != nil {
+		logger.AtLog.Logger.Error(fmt.Sprintf("CreateProject.ProcessEthZip.%s", zipPayload.ProjectID), zap.String("zipLink", zipPayload.ZipLink),
+			zap.Error(err))
+		return nil, err
+	}
+
+	networkFee := big.NewInt(u.networkFeeBySize(int64(maxSize / 4))) // will update after unzip and check data
+
+	//Only TC projects are allowed
+	//check project has big file ($gt: 350kb):
+	// project only has 1 uploaded file, its size is greater than 350kb
+	if len(imageLinks) == 1 { //350kb = 350000 bytes
+		// size of the json file
+		if maxSize > uint64(350000) {
+			isBigFile = true
+		}
+	}
+
+	///Update these fields
+	//pe.IsBigFile = isBigFile
+	//pe.Images = imageLinks
+	//pe.MaxFileSize = int64(maxSize)
+	//pe.NetworkFee = networkFee.String()
+
+	///Update these fields
+	updated := make(map[string]interface{})
+	updated["isBigFile"] = isBigFile
+	updated["images"] = imageLinks
+	updated["maxFileSize"] = int64(maxSize)
+	updated["networkFee"] = networkFee.String()
+
+	//if project is fully onchain, is synced is updated by unzip
+	updated["isSynced"] = true
+	_, err = u.Repo.UpdateProjectFields(pe.UUID, updated)
+	if err != nil {
+		logger.AtLog.Logger.Error(fmt.Sprintf("CreateProject.ProcessEthZip.%s", zipPayload.ProjectID), zap.String("zipLink", zipPayload.ZipLink),
+			zap.Error(err))
+		return nil, err
+	}
+
+	return pe, nil
+}
