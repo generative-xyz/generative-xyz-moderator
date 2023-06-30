@@ -242,7 +242,7 @@ func (u Usecase) UpdateProjectFromChain(contractAddr string, tokenIDStr string, 
 	now := time.Now().UTC()
 
 	blockNumberString := fmt.Sprintf("%d", blockNumber)
-	project.IsSynced = true
+
 	project.Name = projectDetail.ProjectDetail.Name
 	project.ContractAddress = contractAddr
 	project.CreatorName = projectDetail.ProjectDetail.Creator
@@ -335,6 +335,12 @@ func (u Usecase) UpdateProjectFromChain(contractAddr string, tokenIDStr string, 
 	}
 	project.CreatorProfile = *user
 	project.CreatorAddrrBTC = user.WalletAddressBTC
+
+	//IsFullChain means project is using zipLinks, IsSynced will be updated by unzip
+	if !project.IsFullChain {
+		project.IsSynced = true
+	}
+
 	_, err = u.Repo.UpdateProject(project.UUID, project)
 	if err != nil {
 		return nil, err

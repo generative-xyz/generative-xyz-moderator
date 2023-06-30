@@ -16,13 +16,14 @@ const (
 )
 
 type ProjectZipLinks struct {
-	BaseEntity             `bson:",inline" json:"-"`
-	ProjectID              string              `bson:"projectID" json:"projectID"`
-	ZipLink                string              `bson:"zipLink" json:"zipLink"`
-	Status                 ProjectZipStatus    `bson:"status" json:"status"`
-	Message                string              `bson:"message" json:"message"`
-	Logs                   []ProjectZipLinkLog `bson:"logs" json:"logs"`
-	ReTries                int                 `bson:"retries" json:"retries"`
+	BaseEntity  `bson:",inline" json:"-"`
+	ProjectID   string              `bson:"projectID" json:"projectID"`
+	ProjectType TokenPaidType       `bson:"projectType" json:"projectType"`
+	ZipLink     string              `bson:"zipLink" json:"zipLink"`
+	Status      ProjectZipStatus    `bson:"status" json:"status"`
+	Message     string              `bson:"message" json:"message"`
+	Logs        []ProjectZipLinkLog `bson:"logs" json:"logs"`
+	ReTries     int                 `bson:"retries" json:"retries"`
 }
 
 type ProjectZipLinkLog struct {
