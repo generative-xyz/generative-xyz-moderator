@@ -27,23 +27,6 @@ func (u Usecase) CreateProject(req structure.CreateProjectReq) (*entity.Projects
 		return nil, err
 	}
 
-	//process ziplink
-	if req.ZipLink != nil && *req.ZipLink != "" {
-		//move them to pubsub to prevent 502 error
-		err := u.PubSub.Producer(utils.PUBSUB_ETH_PROJECT_UNZIP,
-			redis.PubSubPayload{
-				Data: structure.ProjectUnzipPayload{
-					ProjectID: pe.TxHash,
-					ZipLink:   *req.ZipLink}},
-		)
-		if err != nil {
-			logger.AtLog.Logger.Error(fmt.Sprintf("CreateProject.%s", pe.TokenId), zap.Error(err))
-			return nil, err
-		}
-		pe.IsFullChain = true
-
-	}
-
 	if req.CaptureImageTime == nil {
 		cap := entity.DEFAULT_CAPTURE_TIME
 		pe.CatureThumbnailDelayTime = &cap
@@ -68,6 +51,30 @@ func (u Usecase) CreateProject(req structure.CreateProjectReq) (*entity.Projects
 		return nil, err
 	}
 	logger.AtLog.Logger.Info(fmt.Sprintf("CreateProject.%s", pe.TokenId), zap.Any("project", pe))
+
+	//process ziplink
+	if req.ZipLink != nil && *req.ZipLink != "" {
+		//move them to pubsub to prevent 502 error
+		err := u.PubSub.Producer(utils.PUBSUB_ETH_PROJECT_UNZIP,
+			redis.PubSubPayload{
+				Data: structure.ProjectUnzipPayload{
+					ProjectID: pe.TxHash,
+					ZipLink:   *req.ZipLink}},
+		)
+		if err != nil {
+			logger.AtLog.Logger.Error(fmt.Sprintf("CreateProject.%s", pe.TokenId), zap.Error(err))
+			return nil, err
+		}
+		pe.IsFullChain = true
+
+		updatedField := make(map[string]interface{})
+		updatedField["isFullChain"] = true
+		_, err = u.Repo.UpdateProjectFields(pe.UUID, updatedField)
+		if err != nil {
+			logger.AtLog.Logger.Error(fmt.Sprintf("CreateProject.%s", pe.TokenId), zap.Error(err))
+		}
+	}
+
 	return pe, nil
 }
 
