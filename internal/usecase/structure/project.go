@@ -85,6 +85,10 @@ type CreateBtcProjectReq struct {
 	LimitMintPerProcess    int      `json:"limitMintPerProcess"`
 	Index                  int64    `json:"-"`
 	IsHidden               *bool    `json:"-"`
+
+	// GM whitelist holder
+	IsSupportGMHolder bool   `json:"isSupportGMHolder"`
+	MinimumGMSupport  string `json:"minimumGMSupport"`
 }
 
 type UpdateBTCProjectReq struct {
@@ -104,6 +108,10 @@ type UpdateBTCProjectReq struct {
 	ReserveMintPrice    *string  `json:"reserveMintPrice"`
 	ReserveMintLimit    *int     `json:"reserveMintLimit"`
 	Index               *int64   `json:"index"`
+
+	// GM whitelist holder
+	IsSupportGMHolder *bool   `json:"isSupportGMHolder"`
+	MinimumGMSupport  *string `json:"minimumGMSupport"`
 }
 
 type UpdateBTCProjectCategoriesReq struct {
@@ -120,8 +128,12 @@ type CreateProposaltReq struct {
 }
 
 type UpdateProjectReq struct {
-	TokenID        string `json:"tokenID"`
-	Priority       *int   `json:"priority"`
+	TokenID  string `json:"tokenID"`
+	Priority *int   `json:"priority"`
+	// GM whitelist holder
+	IsSupportGMHolder *bool   `json:"isSupportGMHolder"`
+	MinimumGMSupport  *string `json:"minimumGMSupport"`
+
 	ContracAddress string `json:"contractAddress"`
 }
 
