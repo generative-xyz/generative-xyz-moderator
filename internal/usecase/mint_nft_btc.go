@@ -231,15 +231,17 @@ func (u Usecase) CreateMintReceiveAddress(input structure.MintNftBtcData) (*enti
 	}
 
 	if p.IsSupportGMHolder && p.MinimumGMSupport != "" && p.MinimumGMSupport != "0" {
-		minimumGMSupport, ok := big.NewInt(0).SetString(p.MinimumGMSupport, 10)
-		if ok {
-			// check GM balance of wallet address
-			if erc20Contract, err := erc20.NewErc20(common.HexToAddress(os.Getenv("GM_CONTRACT_ADDRESS")), u.Blockchain.GetClient()); err == nil {
-				if balance, err := erc20Contract.BalanceOf(&bind.CallOpts{
-					Context: context.Background(),
-				}, common.HexToAddress(input.WalletAddress)); err == nil {
-					if balance.Cmp(minimumGMSupport) >= 0 { // user's balance >= minimumGMSupport
-						mintPrice = big.NewInt(0)
+		if user, err := u.Repo.FindUserByID(input.UserID); err == nil && user != nil {
+			minimumGMSupport, ok := big.NewInt(0).SetString(p.MinimumGMSupport, 10)
+			if ok {
+				// check GM balance of wallet address
+				if erc20Contract, err := erc20.NewErc20(common.HexToAddress(os.Getenv("GM_CONTRACT_ADDRESS")), u.Blockchain.GetClient()); err == nil {
+					if balance, err := erc20Contract.BalanceOf(&bind.CallOpts{
+						Context: context.Background(),
+					}, common.HexToAddress(user.WalletAddress)); err == nil {
+						if balance.Cmp(minimumGMSupport) >= 0 { // user's balance >= minimumGMSupport
+							mintPrice = big.NewInt(0)
+						}
 					}
 				}
 			}
