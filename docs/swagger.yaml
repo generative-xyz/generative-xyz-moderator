@@ -294,6 +294,9 @@ definitions:
         type: boolean
       isHidden:
         type: boolean
+      isSupportGMHolder:
+        description: GM whitelist holder
+        type: boolean
       isSynced:
         type: boolean
       license:
@@ -306,6 +309,8 @@ definitions:
         type: integer
       maxSupply:
         type: integer
+      minimumGMSupport:
+        type: string
       mintFee:
         type: integer
       mintPrice:
@@ -791,6 +796,9 @@ definitions:
         type: string
       isFullChain:
         type: boolean
+      isSupportGMHolder:
+        description: GM whitelist holder
+        type: boolean
       license:
         type: string
       limitMintPerProcess:
@@ -799,6 +807,8 @@ definitions:
         type: integer
       maxSupply:
         type: integer
+      minimumGMSupport:
+        type: string
       mintPrice:
         type: string
       name:
@@ -910,6 +920,9 @@ definitions:
         type: string
       isFullChain:
         type: boolean
+      isSupportGMHolder:
+        description: GM whitelist holder
+        type: boolean
       license:
         type: string
       limitMintPerProcess:
@@ -918,6 +931,8 @@ definitions:
         type: integer
       maxSupply:
         type: integer
+      minimumGMSupport:
+        type: string
       mintPrice:
         type: string
       name:
@@ -1157,10 +1172,15 @@ definitions:
         type: string
       isHidden:
         type: boolean
+      isSupportGMHolder:
+        description: GM whitelist holder
+        type: boolean
       limitMintPerProcess:
         type: integer
       maxSupply:
         type: integer
+      minimumGMSupport:
+        type: string
       mintPrice:
         type: string
       name:
@@ -1199,6 +1219,11 @@ definitions:
     type: object
   request.UpdateProjectReq:
     properties:
+      isSupportGMHolder:
+        description: GM whitelist holder
+        type: boolean
+      minimumGMSupport:
+        type: string
       priority:
         type: integer
     type: object
@@ -4982,8 +5007,7 @@ paths:
         in: query
         name: tokenID
         type: string
-      - collectionFormat: csv
-        description: attributes
+      - description: attributes
         in: query
         items:
           type: string

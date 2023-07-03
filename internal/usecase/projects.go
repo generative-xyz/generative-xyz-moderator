@@ -820,6 +820,13 @@ func (u Usecase) UpdateBTCProject(req structure.UpdateBTCProjectReq) (*entity.Pr
 	if req.Index != nil {
 		p.MintingInfo.Index = *req.Index
 	}
+	if req.IsSupportGMHolder != nil {
+		p.IsSupportGMHolder = *req.IsSupportGMHolder
+	}
+
+	if req.MinimumGMSupport != nil {
+		p.MinimumGMSupport = *req.MinimumGMSupport
+	}
 
 	updated, err := u.Repo.UpdateProject(p.UUID, p)
 	if err != nil {
@@ -911,13 +918,22 @@ func (u Usecase) UpdateProject(req structure.UpdateProjectReq) (*entity.Projects
 		p.Priority = &priority
 	}
 
+	if req.IsSupportGMHolder != nil {
+		p.IsSupportGMHolder = *req.IsSupportGMHolder
+	}
+	if req.MinimumGMSupport != nil {
+		p.MinimumGMSupport = *req.MinimumGMSupport
+	}
+
 	if len(p.ReportUsers) >= u.Config.MaxReportCount {
 		p.IsHidden = true
 	}
 	//updated, err := u.Repo.UpdateProject(p.UUID, p)
 	updated, err := u.Repo.UpdateProjectFields(p.UUID, map[string]interface{}{
-		"priority": p.Priority,
-		"isHidden": p.IsHidden,
+		"priority":          p.Priority,
+		"isHidden":          p.IsHidden,
+		"isSupportGMHolder": p.IsSupportGMHolder,
+		"minimumGMSupport":  p.MinimumGMSupport,
 	})
 	if err != nil {
 		logger.AtLog.Error("UpdateProject", zap.Any("err.UpdateProject", err))
