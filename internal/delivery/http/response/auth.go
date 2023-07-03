@@ -26,6 +26,7 @@ type ProfileResponse struct {
 	DisplayName             string        `json:"displayName"`
 	Bio                     string        `json:"bio"`
 	Avatar                  string        `json:"avatar"`
+	Banner                  string        `json:"banner"`
 	CreatedAt               *time.Time    `json:"createdAt"`
 	ProfileSocial           ProfileSocial `json:"profileSocial"`
 	CanCreateProposal       bool          `json:"canCreateProposal"`
