@@ -17,6 +17,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"go.mongodb.org/mongo-driver/bson"
@@ -26,6 +27,7 @@ import (
 	"rederinghub.io/internal/usecase/structure"
 	"rederinghub.io/utils"
 	"rederinghub.io/utils/btc"
+	"rederinghub.io/utils/contracts/erc20"
 	"rederinghub.io/utils/encrypt"
 	"rederinghub.io/utils/eth"
 	"rederinghub.io/utils/helpers"
@@ -224,6 +226,24 @@ func (u Usecase) CreateMintReceiveAddress(input structure.MintNftBtcData) (*enti
 		} else {
 			if discountFlagBidWinner {
 				return nil, errors.New(fmt.Sprintf("You can mint up to %d items at the price of %.6f BTC.", maxSlot, float64(discountMintPrice.Int64())/1e8))
+			}
+		}
+	}
+
+	if p.IsSupportGMHolder && p.MinimumGMSupport != "" && p.MinimumGMSupport != "0" {
+		if user, err := u.Repo.FindUserByID(input.UserID); err == nil && user != nil {
+			minimumGMSupport, ok := big.NewInt(0).SetString(p.MinimumGMSupport, 10)
+			if ok {
+				// check GM balance of wallet address
+				if erc20Contract, err := erc20.NewErc20(common.HexToAddress(os.Getenv("GM_CONTRACT_ADDRESS")), u.Blockchain.GetClient()); err == nil {
+					if balance, err := erc20Contract.BalanceOf(&bind.CallOpts{
+						Context: context.Background(),
+					}, common.HexToAddress(user.WalletAddress)); err == nil {
+						if balance.Cmp(minimumGMSupport) >= 0 { // user's balance >= minimumGMSupport
+							mintPrice = big.NewInt(0)
+						}
+					}
+				}
 			}
 		}
 	}
