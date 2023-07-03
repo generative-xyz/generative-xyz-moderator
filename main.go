@@ -6,6 +6,12 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"rederinghub.io/external/coin_market_cap"
+	"rederinghub.io/external/etherscan"
+	"rederinghub.io/external/mempool_space"
+	"rederinghub.io/external/token_explorer"
+	gm_crontab_sever "rederinghub.io/internal/delivery/gm_crontab_server"
+	"strconv"
 	"time"
 
 	"go.uber.org/zap"
@@ -97,11 +103,11 @@ func init() {
 // @BasePath /rederinghub.io/v1
 func main() {
 
-	defer func() {
-		if r := recover(); r != nil {
-			fmt.Println("Recovered. Error:\n", r)
-		}
-	}()
+	//defer func() {
+	//	if r := recover(); r != nil {
+	//		fmt.Println("Recovered. Error:\n", r)
+	//	}
+	//}()
 
 	// log.Println("init sentry ...")
 	// sentry.InitSentry(conf)
@@ -172,6 +178,10 @@ func startServer() {
 		return
 	}
 	ethClientDex := eth.NewClient(ethDexClientWrap)
+	eScan := etherscan.NewEtherscanService(conf, cache)
+	mpService := mempool_space.NewMempoolService(conf, cache)
+	coinMKC := coin_market_cap.NewCoinMarketCap(conf, cache)
+	te := token_explorer.NewTokenExplorer(cache)
 
 	// init blockcypher service:
 	bsClient := btc.NewBlockcypherService(conf.BlockcypherAPI, "", conf.BlockcypherToken, &chaincfg.MainNetParams)
@@ -204,7 +214,10 @@ func startServer() {
 		TcClient:           tcClients,      // for tc chain
 		TcClientPublicNode: tcClientPublic, // for tc chain
 		BsClient:           bsClient,       // for btc/blockcypher service
-
+		EtherscanService:   eScan,
+		MempoolService:     mpService,
+		CoinMarketCap:      coinMKC,
+		TokenExplorer:      te,
 	}
 
 	repo, err := repository.NewRepository(&g)
@@ -257,6 +270,21 @@ func startServer() {
 	servers["txconsumer"] = delivery.AddedServer{
 		Server:  txConsumer,
 		Enabled: conf.TxConsumerConfig.Enabled,
+	}
+
+	isGmEnabled := false
+	gmEnabled := os.Getenv("START_GM_CRONTAB")
+	if gmEnabled != "" {
+		isGmEnabled, err = strconv.ParseBool(gmEnabled)
+		if err != nil {
+			isGmEnabled = false
+		}
+	}
+
+	gmCrontab, _ := gm_crontab_sever.NewGmCrontabServer(uc)
+	servers["gm_crontab"] = delivery.AddedServer{
+		Server:  gmCrontab,
+		Enabled: isGmEnabled,
 	}
 
 	//var wait time.Duration

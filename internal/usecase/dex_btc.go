@@ -228,7 +228,7 @@ func extractAllOutputFromPSBT(psbtData *psbt.Packet) (map[string][]*wire.TxOut, 
 	}
 	return result, nil
 }
-func (u Usecase) JobWatchPendingDexBTCListing() {
+func (u Usecase) JobWatchPendingDexBTCListing() error {
 	var wg sync.WaitGroup
 
 	wg.Add(1)
@@ -242,9 +242,10 @@ func (u Usecase) JobWatchPendingDexBTCListing() {
 	}(&wg)
 
 	wg.Wait()
+	return nil
 }
 
-func (u Usecase) JobWatchPendingDexBTCBuyETH() {
+func (u Usecase) JobWatchPendingDexBTCBuyETH() error {
 	var wg sync.WaitGroup
 
 	wg.Add(1)
@@ -258,6 +259,7 @@ func (u Usecase) JobWatchPendingDexBTCBuyETH() {
 	}(&wg)
 
 	wg.Wait()
+	return nil
 }
 
 func (u Usecase) InsertDexVolumnInscription(o entity.DexBTCListing) {
@@ -314,6 +316,9 @@ func (u Usecase) watchPendingDexBTCListing() error {
 		log.Println("JobWatchPendingDexBTCListing preCheckPendingDexBTCListingTx err", err.Error())
 	}
 	for _, order := range pendingOrders {
+		if len(order.Inputs) == 0 {
+			continue
+		}
 		inscriptionTx := strings.Split(order.Inputs[0], ":")
 		idx, err := strconv.Atoi(inscriptionTx[1])
 		if err != nil {
@@ -372,6 +377,21 @@ func (u Usecase) watchPendingDexBTCListing() error {
 						}
 						if !found {
 							spentTx = curInscTx
+						}
+					}
+					if spentTx == "" {
+						for _, vIn := range order.Inputs {
+							vinParts := strings.Split(vIn, ":")
+							vinIdx, _ := strconv.Atoi(vinParts[1])
+							spentTx, err = btc.CheckOutcoinSpentBlockStream(vinParts[0], uint(vinIdx))
+							if err != nil {
+								log.Printf("JobWatchPendingDexBTCListing btc.CheckOutcoinSpentBlockStream %v\n", order.Inputs)
+								continue
+							}
+
+							if spentTx != "" {
+								log.Printf("JobWatchPendingDexBTCListing btc.CheckOutcoinSpentBlockStream success2\n")
+							}
 						}
 					}
 				}

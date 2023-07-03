@@ -11,6 +11,9 @@ import (
 )
 
 func (u Usecase) ApiGetEns() error {
+	if true {
+		return nil
+	}
 	listAuctionBid, _ := u.Repo.ListAuctionCollectionBidder()
 	if listAuctionBid != nil {
 		for _, v := range listAuctionBid {
@@ -28,6 +31,10 @@ func (u Usecase) ApiGetEns() error {
 }
 
 func (u Usecase) JobAuction_GetListAuction() error {
+
+	if true {
+		return nil
+	}
 
 	contractV1, contractV2 := u.GetBidContractV1V2()
 

@@ -3,12 +3,11 @@ package usecase
 import (
 	"encoding/json"
 	"fmt"
-	"os"
-
 	"go.uber.org/zap"
+	"os"
 	"rederinghub.io/internal/delivery/http/request"
+	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
-	"rederinghub.io/utils/helpers"
 	"rederinghub.io/utils/logger"
 	_req "rederinghub.io/utils/request"
 )
@@ -19,45 +18,54 @@ import (
 func (u *Usecase) PubSubCreateTokenThumbnail(tracingInjection map[string]string, channelName string, payload interface{}) {
 	bytes, err := json.Marshal(payload)
 	if err != nil {
-		logger.AtLog.Error("PubSubCreateTokenThumbnai", zap.Any("json.Marshal", zap.Error(err)))
+		logger.AtLog.Error("PubSubCreateTokenThumbnail", zap.Any("json.Marshal", zap.Error(err)))
 		return
 	}
 
 	tokenURI := &structure.TokenImagePayload{}
 	err = json.Unmarshal(bytes, tokenURI)
 	if err != nil {
-		logger.AtLog.Error("PubSubCreateTokenThumbnai", zap.Any("json.Unmarshal", zap.Error(err)))
+		logger.AtLog.Error(fmt.Sprintf("PubSubCreateTokenThumbnail - %s - %s", tokenURI.ContractAddress, tokenURI.TokenID), zap.Any("json.Unmarshal", zap.Error(err)))
 		return
 	}
 
-	logger.AtLog.Logger.Info("PubSubCreateTokenThumbnai", zap.Any("tokenURI", zap.Any("tokenURI)", tokenURI)))
-	token, err := u.Repo.FindTokenByWithoutCache(tokenURI.ContractAddress, tokenURI.TokenID)
-	if err != nil {
-		logger.AtLog.Error("PubSubCreateTokenThumbnai", zap.Any("FindTokenByWithoutCache", zap.Error(err)))
-		return
-	}
+	//Save to DB
 
-	resp, err := u.RunAndCap(token)
-	if err != nil {
-		logger.AtLog.Error("PubSubCreateTokenThumbnai", zap.Any("RunAndCap", zap.Error(err)))
-		return
-	}
+	//move this to another Job
+	u.Capture(tokenURI)
+}
 
-	logger.AtLog.Logger.Info("PubSubCreateTokenThumbnai", zap.Any("RunAndCap.resp", zap.Any("resp)", resp)))
-	if resp.IsUpdated {
-		token.ParsedImage = &resp.ParsedImage
-		token.Thumbnail = resp.Thumbnail
-		token.ParsedAttributes = resp.Traits
-		token.ParsedAttributesStr = resp.TraitsStr
-		token.ThumbnailCapturedAt = resp.CapturedAt
+func (u *Usecase) Capture(tokenURI *structure.TokenImagePayload) {
+	var err error
+	token := new(entity.TokenUri)
+	resp := new(structure.TokenAnimationURI)
 
-		updated, err := u.Repo.UpdateOrInsertTokenUri(tokenURI.ContractAddress, tokenURI.TokenID, token)
-		if err != nil {
-			logger.AtLog.Error("PubSubCreateTokenThumbnai", zap.Any("UpdateOrInsertTokenUri", err))
+	defer func() {
+		if err == nil {
+			logger.AtLog.Logger.Info(fmt.Sprintf("PubSubCreateTokenThumbnail - %s", tokenURI.TokenID), zap.Any("request", tokenURI), zap.String("tokenURI", tokenURI.TokenID), zap.String("contract_address", tokenURI.ContractAddress), zap.String("gen_nft_addrress", token.GenNFTAddr), zap.String("Thumbnail", resp.Thumbnail), zap.Bool("Thumbnail.IsUpdated", resp.IsUpdated))
+
+		} else {
+			logger.AtLog.Logger.Error(fmt.Sprintf("PubSubCreateTokenThumbnail - %s", tokenURI.TokenID), zap.Any("request", tokenURI), zap.String("tokenURI", tokenURI.TokenID), zap.String("contract_address", tokenURI.ContractAddress), zap.Error(err))
 		}
-		logger.AtLog.Logger.Info("PubSubCreateTokenThumbnai", zap.Any("updatedp", updated), zap.String("tokenID", token.TokenID))
-		u.NotifyWithChannel(os.Getenv("SLACK_PROJECT_CHANNEL_ID"), fmt.Sprintf("[Token's thumnail is captured][token %s]", helpers.CreateTokenLink(token.ProjectID, token.TokenID, token.Name)), "", fmt.Sprintf("%s", helpers.CreateTokenImageLink(token.Thumbnail)))
+	}()
 
+	token, err = u.Repo.FindTokenForCaptureThumbnail(tokenURI.ContractAddress, tokenURI.TokenID)
+	if err != nil {
+		logger.AtLog.Error(fmt.Sprintf("PubSubCreateTokenThumbnail - %s - %s", tokenURI.ContractAddress, tokenURI.TokenID), zap.Error(err), zap.String("tokenURI", tokenURI.TokenID), zap.String("contract_address", tokenURI.ContractAddress))
+		return
+	}
+
+	resp, err = u.RunAndCap(token)
+	if err != nil {
+		logger.AtLog.Error(fmt.Sprintf("PubSubCreateTokenThumbnail - %s - %s", tokenURI.ContractAddress, tokenURI.TokenID), zap.Error(err), zap.String("tokenURI", tokenURI.TokenID), zap.String("contract_address", tokenURI.ContractAddress))
+		return
+	}
+
+	if resp.IsUpdated {
+		err = u.Repo.UpdateTokenThumbnail(tokenURI.ContractAddress, tokenURI.TokenID, resp.Thumbnail, resp.ParsedImage, resp.Traits, resp.TraitsStr, resp.CapturedAt)
+		if err != nil {
+			logger.AtLog.Error(fmt.Sprintf("PubSubCreateTokenThumbnail - %s - %s", tokenURI.ContractAddress, tokenURI.TokenID), zap.Error(err), zap.String("tokenURI", tokenURI.TokenID), zap.String("contract_address", tokenURI.ContractAddress))
+		}
 	}
 }
 
@@ -77,6 +85,29 @@ func (u *Usecase) PubSubProjectUnzip(tracingInjection map[string]string, channel
 	}
 
 	_, err = u.UnzipProjectFile(pz)
+	if err != nil {
+		logger.AtLog.Error("PubSubProjectUnzip", zap.Any("payload", payload), zap.Error(err))
+		return
+	}
+
+}
+
+func (u *Usecase) PubSubEthProjectUnzip(tracingInjection map[string]string, channelName string, payload interface{}) {
+
+	bytes, err := json.Marshal(payload)
+	if err != nil {
+		logger.AtLog.Error("PubSubProjectUnzip", zap.Any("payload", payload), zap.Error(err))
+		return
+	}
+	
+	pz := &structure.ProjectUnzipPayload{}
+	err = json.Unmarshal(bytes, pz)
+	if err != nil {
+		logger.AtLog.Error("PubSubProjectUnzip", zap.Any("payload", payload), zap.Error(err))
+		return
+	}
+
+	_, err = u.UnzipETHProjectFile(pz)
 	if err != nil {
 		logger.AtLog.Error("PubSubProjectUnzip", zap.Any("payload", payload), zap.Error(err))
 		return
@@ -118,4 +149,9 @@ func (u *Usecase) PubSubCaptureThumbnail(tracingInjection map[string]string, cha
 	}
 	//logger.AtLog.Info("call to renderer-set-image ", zap.Error(err), zap.String("renderURL", renderURL), zap.String("device_id", req.ID), zap.Int("code", code), zap.String("response", string(result)))
 	fmt.Printf(`[POST] %s request {"display_url": "%s"}  - resp {"code": "%d", "result":"%v", "error": "%v" } \n`, renderURL, req.Url, code, string(result), err)
+}
+
+func (u *Usecase) PubsubTestChannel(tracingInjection map[string]string, channelName string, payload interface{}) {
+
+	logger.AtLog.Logger.Info("PubsubTestChannel", zap.String("channelName", channelName), zap.Any("tracingInjection", tracingInjection))
 }

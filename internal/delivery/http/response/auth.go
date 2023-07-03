@@ -30,6 +30,7 @@ type ProfileResponse struct {
 	ProfileSocial           ProfileSocial `json:"profileSocial"`
 	CanCreateProposal       bool          `json:"canCreateProposal"`
 	Proposal                *DaoArtist    `json:"proposal,omitempty"`
+	Slug                    string        `json:"slug,omitempty"`
 }
 
 type ArtistResponse struct {

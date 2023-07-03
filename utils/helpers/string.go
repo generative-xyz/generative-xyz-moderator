@@ -5,6 +5,7 @@ import (
 	b64 "encoding/base64"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
 	"math"
@@ -17,6 +18,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gosimple/slug"
 	"go.mongodb.org/mongo-driver/bson"
 	"rederinghub.io/utils"
 	"rederinghub.io/utils/identicon"
@@ -366,4 +368,32 @@ func FileType(fileType string) string {
 		return str[1]
 	}
 	return str[0]
+}
+
+// return bytes
+func Base64ImageSizeFromJSONURL(url string) uint64 {
+	resp, e := http.Get(url)
+	if e != nil {
+		return uint64(0)
+	}
+
+	defer resp.Body.Close()
+	respondFile, err1 := io.ReadAll(resp.Body)
+	if err1 == nil {
+		data := make(map[string]interface{})
+
+		err1 := json.Unmarshal(respondFile, &data)
+		if err1 == nil {
+			image, ok := data["image"]
+			if ok {
+				size := CalcOrigBinaryLength(image.(string))
+				return uint64(size)
+			}
+		}
+	}
+	return uint64(0)
+}
+
+func ConvertSlug(text string) string {
+	return slug.Make(text)
 }

@@ -4,11 +4,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"rederinghub.io/utils/redis"
 	"strconv"
 	"strings"
 	"time"
 
-	"github.com/davecgh/go-spew/spew"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.uber.org/zap"
@@ -17,7 +17,6 @@ import (
 	"rederinghub.io/utils"
 	"rederinghub.io/utils/helpers"
 	"rederinghub.io/utils/logger"
-	"rederinghub.io/utils/redis"
 )
 
 func (u Usecase) JobAggregateVolumns() {
@@ -145,7 +144,7 @@ func (u Usecase) JobAggregateReferral() {
 	}
 
 	for i, referral := range referrals {
-	   	go func(i int, referral entity.Referral, paytypes []string) {
+		go func(i int, referral entity.Referral, paytypes []string) {
 			logger.AtLog.Logger.Info(fmt.Sprintf("JobAggregateReferral.Proccessing %d/%d", i+1, len(referrals)), zap.String("ReferrerID", referral.ReferrerID), zap.String("ReferreeID", referral.ReferreeID), zap.Any("ReferreeVolumn", referral.ReferreeVolumn))
 			vol := make(map[string]entity.ReferreeVolumn)
 			for _, paytype := range paytypes {
@@ -177,10 +176,6 @@ func (u Usecase) JobAggregateReferral() {
 			}
 			referral.ReferreeVolumn = vol
 
-			if referral.ReferrerID == "63ed059beb293700db300282" {
-				spew.Dump(referral)
-			}
-
 			_, err = u.Repo.UpdateReferral(referral.UUID, &referral)
 			if err != nil {
 				logger.AtLog.Logger.Error("JobAggregateReferral", zap.Error(err))
@@ -189,7 +184,7 @@ func (u Usecase) JobAggregateReferral() {
 
 		}(i, referral, paytypes)
 
-		if i > 0 && i % 50 == 0 {
+		if i > 0 && i%50 == 0 {
 			time.Sleep(500 * time.Millisecond)
 		}
 	}
@@ -349,7 +344,7 @@ func (u Usecase) MigrateFromCSV() {
 		u.Repo.CreateWithDraw(wd)
 
 	}
-	spew.Dump(len(wdsETH))
+	//spew.Dump(len(wdsETH))
 
 	wdsBTC := []*entity.Withdraw{}
 	for _, csv := range processCsvData {
@@ -365,7 +360,7 @@ func (u Usecase) MigrateFromCSV() {
 		// 	wds = append(wds, wd1)
 		// }
 	}
-	spew.Dump(len(wdsBTC))
+	//spew.Dump(len(wdsBTC))
 
 	// print the array
 	//fmt.Printf("%+v\n", shoppingList)
@@ -607,43 +602,43 @@ func (u Usecase) FindOldData() {
 
 	newData, err := u.Repo.GetMintedTokenByProjectID(projectID)
 	if err != nil {
-		return 
+		return
 	}
-	
+
 	oldBtcData, err := u.Repo.GetOldMintedTokenByProjectID(projectID)
 	if err != nil {
-		return 
+		return
 	}
-	
+
 	oldETHData, err := u.Repo.GetOldMintedETHTokenByProjectID(projectID)
 	if err != nil {
-		return 
+		return
 	}
 
 	mintedIDs := []string{}
 	for _, item := range newData {
 		mintedIDs = append(mintedIDs, item.InscriptionID)
 	}
-	
+
 	for _, item := range oldBtcData {
-		
-		mintedIDs = append(mintedIDs,item.MintResponse.Inscription)
-	}
-	
-	for _, item := range oldETHData {
-		mintedIDs = append(mintedIDs,item.MintResponse.Inscription)
+
+		mintedIDs = append(mintedIDs, item.MintResponse.Inscription)
 	}
 
-	helpers.CreateFile("mintedIDs.json",mintedIDs)
+	for _, item := range oldETHData {
+		mintedIDs = append(mintedIDs, item.MintResponse.Inscription)
+	}
+
+	helpers.CreateFile("mintedIDs.json", mintedIDs)
 
 	// count := 0
 	// nonInsertedArrays := []string{}
 	insertedButNotmintedArray := []string{}
-	insertedButNotminted, err  := u.Repo.GetTokenNotIN(projectID, mintedIDs)
+	insertedButNotminted, err := u.Repo.GetTokenNotIN(projectID, mintedIDs)
 	for _, tokenID := range insertedButNotminted {
 		insertedButNotmintedArray = append(insertedButNotmintedArray, tokenID.TokenID)
 	}
-	helpers.CreateFile("insertedButNotmintedArray.json",insertedButNotmintedArray)
+	helpers.CreateFile("insertedButNotmintedArray.json", insertedButNotmintedArray)
 	// detect := []string{}
 	// for _, insc := range  mintedIDs {
 	// 	if helpers.SliceStringContains(nonInsertedArrays, insc) {
@@ -666,14 +661,13 @@ func (u Usecase) FindOldData() {
 	// //tokenIDs, err  := u.Repo.GetTokenNotIN(projectID, []string{},)
 	// spew.Dump(willBeprocessing, detect)
 	// helpers.CreateFile("log-1.json",detect)
-	
-	
+
 	// doneChan := make(chan bool, len(insertedButNotmintedArray))
 
 	// for i, item := range insertedButNotmintedArray {
 	// 	go func(item string, helpers chan bool) {
 	// 		defer func  ()  {
-	// 			helpers <- true	
+	// 			helpers <- true
 	// 		}()
 
 	// 		btcWalletAddress := &entity.BTCWalletAddress{
@@ -708,7 +702,7 @@ func (u Usecase) FindOldData() {
 
 	// }
 
-	// for i,_ := range insertedButNotmintedArray { 
+	// for i,_ := range insertedButNotmintedArray {
 	// 	done := <- doneChan
 	// 	logger.AtLog.Logger.Info("insertedButNotmintedArray", zap.Int("i", i), zap.Bool("done", zap.Any("done)", done)))
 	// }
@@ -722,18 +716,36 @@ func (u Usecase) JobRetryUnzip() {
 	}
 
 	logger.AtLog.Logger.Info("JobRetryUnzip", zap.Int("projects", len(projectZipLinks)))
-	for _, zipLink := range  projectZipLinks {
-		logger.AtLog.Logger.Info("JobRetryUnzip", zap.Any("zipLink", zipLink))
-		err = u.PubSub.Producer(utils.PUBSUB_PROJECT_UNZIP, redis.PubSubPayload{
-			Data: structure.ProjectUnzipPayload{
-				ProjectID: zipLink.ProjectID, 
-				ZipLink: zipLink.ZipLink,
-			},
-		})
 
-		if err != nil {
-			logger.AtLog.Logger.Error("JobRetryUnzip",  zap.Error(err))
-			continue
+	for _, zipLink := range projectZipLinks {
+		logger.AtLog.Logger.Info(fmt.Sprintf("JobRetryUnzip - %s", zipLink.ProjectID), zap.Any("zipLink", zipLink))
+
+		//because eth has a difference flow.
+		if zipLink.ProjectType == entity.ETH {
+			err = u.PubSub.Producer(utils.PUBSUB_ETH_PROJECT_UNZIP, redis.PubSubPayload{
+				Data: structure.ProjectUnzipPayload{
+					ProjectID: zipLink.ProjectID,
+					ZipLink:   zipLink.ZipLink,
+				},
+			})
+
+			if err != nil {
+				logger.AtLog.Logger.Error("JobRetryUnzip", zap.Error(err))
+				continue
+			}
+		} else {
+			err = u.PubSub.Producer(utils.PUBSUB_PROJECT_UNZIP, redis.PubSubPayload{
+				Data: structure.ProjectUnzipPayload{
+					ProjectID: zipLink.ProjectID,
+					ZipLink:   zipLink.ZipLink,
+				},
+			})
+
+			if err != nil {
+				logger.AtLog.Logger.Error("JobRetryUnzip", zap.Error(err))
+				continue
+			}
 		}
+
 	}
 }

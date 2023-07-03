@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
+	"rederinghub.io/utils"
 	"strings"
 	"sync"
 	"time"
@@ -251,6 +252,13 @@ func (u Usecase) ListToken(event *generative_marketplace_lib.GenerativeMarketpla
 		DurationTime:       event.Data.DurationTime.String(),
 	}
 
+	// override listing.TokenId
+	if projectId, ok := utils.ExceptionProjectContract[strings.ToLower(listing.CollectionContract)]; ok {
+		projectIdInt, _ := new(big.Int).SetString(projectId, 10)
+		projectIdInt = new(big.Int).Mul(projectIdInt, big.NewInt(1000000))
+		listing.TokenId = projectIdInt.Add(projectIdInt, event.Data.TokenId).String()
+	}
+
 	sendMessage := func(listing entity.MarketplaceListings) {
 
 		profile, err := u.Repo.FindUserByWalletAddress(listing.Seller)
@@ -341,6 +349,11 @@ func (u Usecase) PurchaseToken(event *generative_marketplace_lib.GenerativeMarke
 }
 
 func (u Usecase) MakeOffer(event *generative_marketplace_lib.GenerativeMarketplaceLibMakeOffer, blocknumber uint64) error {
+	tok, err := u.Repo.FindTokenByTokenID(event.Data.TokenId.String())
+	if err != nil {
+		logger.AtLog.Logger.Error("MakeOffer.FindTokenByTokenID", zap.Error(err))
+		return err
+	}
 
 	offer := entity.MarketplaceOffers{
 		OfferingId:         strings.ToLower(fmt.Sprintf("%x", event.OfferingId)),
@@ -353,6 +366,14 @@ func (u Usecase) MakeOffer(event *generative_marketplace_lib.GenerativeMarketpla
 		Finished:           false,
 		DurationTime:       event.Data.DurationTime.String(),
 		BlockNumber:        blocknumber,
+		OwnerAddress:       &tok.OwnerAddr,
+	}
+
+	// override offer.TokenId
+	if projectId, ok := utils.ExceptionProjectContract[strings.ToLower(offer.CollectionContract)]; ok {
+		projectIdInt, _ := new(big.Int).SetString(projectId, 10)
+		projectIdInt = new(big.Int).Mul(projectIdInt, big.NewInt(1000000))
+		offer.TokenId = projectIdInt.Add(projectIdInt, event.Data.TokenId).String()
 	}
 
 	sendMessage := func(offer entity.MarketplaceOffers) {
@@ -379,7 +400,7 @@ func (u Usecase) MakeOffer(event *generative_marketplace_lib.GenerativeMarketpla
 	}
 
 	// check if listing is created or not
-	_, err := u.Repo.FindOfferByOfferingID(offer.OfferingId)
+	_, err = u.Repo.FindOfferByOfferingID(offer.OfferingId)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			// if error is no document -> create
@@ -728,12 +749,14 @@ func (u Usecase) UpdateTokenOnwer(event string, offeringID string, fn func(offer
 	logger.AtLog.Logger.Info("updated", zap.Any("updated", updated))
 
 	//slack
-	preText := fmt.Sprintf("[TokenID %s] has been transfered to %s", token.TokenID, token.OwnerAddr)
-	content := fmt.Sprintf("To user: %s. Token: %s", helpers.CreateProfileLink(owner, profile.DisplayName), helpers.CreateTokenLink(token.ProjectID, token.TokenID, token.Name))
-	title := fmt.Sprintf("OfferingID:  %s is %s", offeringID, event)
+	if profile != nil {
+		preText := fmt.Sprintf("[TokenID %s] has been transfered to %s", token.TokenID, token.OwnerAddr)
+		content := fmt.Sprintf("To user: %s. Token: %s", helpers.CreateProfileLink(owner, profile.DisplayName), helpers.CreateTokenLink(token.ProjectID, token.TokenID, token.Name))
+		title := fmt.Sprintf("OfferingID:  %s is %s", offeringID, event)
 
-	if _, _, err := u.Slack.SendMessageToSlack(preText, title, content); err != nil {
-		logger.AtLog.Logger.Error("s.Slack.SendMessageToSlack err", zap.Error(err))
+		if _, _, err := u.Slack.SendMessageToSlack(preText, title, content); err != nil {
+			logger.AtLog.Logger.Error("s.Slack.SendMessageToSlack err", zap.Error(err))
+		}
 	}
 
 	// TODO: @dac add update collection stats here

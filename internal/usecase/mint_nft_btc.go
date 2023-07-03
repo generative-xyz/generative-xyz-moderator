@@ -764,6 +764,13 @@ func (u Usecase) JobMint_MintNftBtc() error {
 		// check if it is a child item but its parent does not have mint yet, then continue:
 		if len(item.BatchParentId) > 0 {
 			parentItem, _ := u.Repo.FindMintNftBtc(item.BatchParentId)
+
+			if parentItem.Status == entity.StatusMint_NeedToRefund {
+				// update mint out for child item:
+				u.updateProjectMintedOut(&item, "JobMint_MintNftBtc")
+				continue
+			}
+
 			if !(parentItem.Status == entity.StatusMint_Minting || parentItem.IsMinted) {
 				continue
 			}
@@ -1074,19 +1081,24 @@ func (u Usecase) MintNftViaTrustlessComputer_CallContract(item *entity.MintNftBt
 		urlToMint = baseUrl.String()
 	}
 
-	// create byte data:
+	// create byte data
 	var byteData [][]byte
-	if len(urlToMint) > 0 {
-		byteData, err = u.ConvertImageToByteArrayToMintTC(urlToMint)
-		if err != nil {
-			go u.trackMintNftBtcHistory(item.UUID, "JobMint_MintNftBtc.MintTC", item.TableName(), item.Status, "ConvertImageToByteArrayToMintTC", err.Error(), true)
-			return nil
+
+	//if project doesn't have bigfile (file > 350000 bytes 350kb)
+	if !p.IsBigFile {
+		if len(urlToMint) > 0 {
+			byteData, err = u.ConvertImageToByteArrayToMintTC(urlToMint)
+			if err != nil {
+				go u.trackMintNftBtcHistory(item.UUID, "JobMint_MintNftBtc.MintTC", item.TableName(), item.Status, "ConvertImageToByteArrayToMintTC", err.Error(), true)
+				return nil
+			}
 		}
 	}
+
 	// fmt.Println("byteData", byteData)
 
 	// get free temp wallet:
-	tempWallet := u.GetMintFreeTemAddress()
+	tempWallet, _ := u.Repo.GetMintFreeTempAddress1()
 	if tempWallet == nil {
 		go u.trackMintNftBtcHistory(item.UUID, "JobMint_MintNftBtc.MintTC", item.TableName(), item.Status, "GetMintFreeTemAddress", "can not get temp free wallet", true)
 		return nil
@@ -1143,6 +1155,17 @@ func (u Usecase) MintNftViaTrustlessComputer_CallContract(item *entity.MintNftBt
 		go u.trackMintNftBtcHistory(item.UUID, "JobMint_MintNftBtc.MintTC", item.TableName(), item.Status, tx, err.Error(), true)
 		return nil
 	}
+
+	if p.IsBigFile {
+		preText := fmt.Sprintf("[Mint Big File] - Project is minted by %s", item.OriginUserAddress)
+		content := fmt.Sprintf("ProjectID: %s", helpers.CreateTokenLink(p.TokenId, p.TokenId, p.Name))
+		title := fmt.Sprintf("TxHash: %s", item.TxMintNft)
+
+		if _, _, err := u.Slack.SendMessageToSlackWithChannel(os.Getenv("SLACK_MINT_BIG_FILE"), preText, title, content); err != nil {
+			logger.AtLog.Logger.Error("s.Slack.SendMessageToSlack err", zap.Error(err))
+		}
+	}
+
 	return nil
 }
 
@@ -1398,11 +1421,12 @@ func (u Usecase) checkTxMintSend_ForTc() error {
 				confirm = 1
 
 			} else {
-				return nil
+				continue
 			}
 		} else {
 			// if error maybe tx is pending or rejected
 			// TODO check timeout to detect tx is rejected or not.
+			go u.trackMintNftBtcHistory(item.UUID, "JobMint_CheckTxMintSend", item.TableName(), item.Status, "tc.CheckTx.txInfo: "+txToCheck, err.Error(), true)
 		}
 
 		// check confirm >= 1
@@ -1426,6 +1450,7 @@ func (u Usecase) checkTxMintSend_ForTc() error {
 			_, err = u.Repo.UpdateMintNftBtc(&item)
 			if err != nil {
 				fmt.Printf("Could not UpdateMintNftBtc id %s - with err: %v", item.ID, err)
+				go u.trackMintNftBtcHistory(item.UUID, "JobMint_CheckTxMintSend", item.TableName(), item.Status, "can not UpdateMintNftBtc", err.Error(), true)
 				continue
 			}
 
@@ -1436,7 +1461,7 @@ func (u Usecase) checkTxMintSend_ForTc() error {
 			p, err := u.Repo.FindProjectByTokenID(item.ProjectID)
 			if err != nil {
 				go u.trackMintNftBtcHistory(item.UUID, "JobMint_CheckTxMintSend", item.TableName(), item.Status, "project not found", "", true)
-				return err
+				continue
 			}
 
 			projectIndex, err := u.TcClient.GetProjectIndex(p.GenNFTAddr)
@@ -2234,10 +2259,10 @@ func (u Usecase) SendMasterAndRefund(uuid string, bs *btc.BlockcypherService, et
 				go u.trackMintNftBtcHistory(mintItem.UUID, "SendMasterAndRefund", mintItem.TableName(), mintItem.Status, "destinations eth final to send", destinations, true)
 
 				// check test first:
-				testCronTab, _ := u.Repo.FindCronJobManagerByUUID("64071ce60ae9297684ebc528_1")
-				if testCronTab == nil || testCronTab.Enabled {
-					return errors.New("pause for test -> SendMasterAndRefund: " + mintItem.UUID)
-				}
+				// testCronTab, _ := u.Repo.FindCronJobManagerByUUID("64071ce60ae9297684ebc528_1")
+				// if testCronTab == nil || testCronTab.Enabled {
+				// 	return errors.New("pause for test -> SendMasterAndRefund: " + mintItem.UUID)
+				// }
 
 				privateKeyDeCrypt, err := encrypt.DecryptToString(mintItem.PrivateKey, os.Getenv("SECRET_KEY"))
 				if err != nil {
@@ -2257,6 +2282,13 @@ func (u Usecase) SendMasterAndRefund(uuid string, bs *btc.BlockcypherService, et
 					go u.trackMintNftBtcHistory(mintItem.UUID, "SendMasterAndRefund", mintItem.TableName(), mintItem.Status, "SendMulti err", err.Error(), true)
 					return err
 				}
+
+				if len(txID) == 0 {
+					err = errors.New("tx send multi is empty")
+					go u.trackMintNftBtcHistory(mintItem.UUID, "SendMasterAndRefund", mintItem.TableName(), mintItem.Status, "SendMulti err pls check <@phuong> tx empty!!!", err.Error(), true)
+					return err
+				}
+
 				// update now:
 				// update parent item:
 				mintItem.Status = entity.StatusMint_SendingFundToMaster
@@ -2314,8 +2346,11 @@ func (u *Usecase) trackMintNftBtcHistory(id, name, table string, status interfac
 		responseMsgStr := fmt.Sprintf("%v", responseMsg)
 
 		preText := fmt.Sprintf("[App: %s][recordID %s] - %s", os.Getenv("JAEGER_SERVICE_NAME"), id, requestMsgStr)
-
-		if _, _, err := u.Slack.SendMessageToSlackWithChannel(os.Getenv("SLACK_MINT_NFT_CHANNEL_ID"), preText, name, responseMsgStr); err != nil {
+		slackChannel := os.Getenv("SLACK_MINT_BIG_FILE")
+		if slackChannel == "" {
+			slackChannel = os.Getenv("SLACK_MINT_NFT_CHANNEL_ID")
+		}
+		if _, _, err := u.Slack.SendMessageToSlackWithChannel(slackChannel, preText, name, responseMsgStr); err != nil {
 			fmt.Println("s.Slack.SendMessageToSlack err", err)
 		}
 	}

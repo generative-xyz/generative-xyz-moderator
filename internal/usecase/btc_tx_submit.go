@@ -46,6 +46,7 @@ func (u Usecase) SubmitBTCTransaction(list map[string]string) error {
 				Raw:                 raw,
 				RelatedInscriptions: relatedInscriptionArray,
 				Status:              0,
+				Error1:              err.Error(),
 			})
 			continue
 		}
@@ -142,7 +143,7 @@ func (u Usecase) watchPendingBTCTxSubmit() error {
 	return nil
 }
 
-func (u Usecase) JobWatchPendingBTCTxSubmit() {
+func (u Usecase) JobWatchPendingBTCTxSubmit() error {
 	var wg sync.WaitGroup
 
 	wg.Add(1)
@@ -156,4 +157,5 @@ func (u Usecase) JobWatchPendingBTCTxSubmit() {
 	}(&wg)
 
 	wg.Wait()
+	return nil
 }

@@ -88,6 +88,7 @@ func (u Usecase) GenerateMessage(data structure.GenerateMessage) (*string, error
 
 func (u Usecase) VerifyMessage(data structure.VerifyMessage) (*structure.VerifyResponse, error) {
 	logger.AtLog.Info("VerifyMessage", zap.Any("data", data))
+	logger.AtLog.Logger.Error("user try trace log data", zap.Any("data", data))
 
 	// validate data
 	if data.ETHSignature == "" || data.Signature == "" ||
@@ -104,7 +105,7 @@ func (u Usecase) VerifyMessage(data structure.VerifyMessage) (*structure.VerifyR
 		logger.AtLog.Error(err)
 		return nil, err
 	}
-	logger.AtLog.Info("user", user)
+	logger.AtLog.Logger.Error("user try trace log user", zap.Any("user", user))
 
 	isVeried, err := u.verifyBTCSegwit(user.Message, data)
 	if err != nil {
@@ -295,6 +296,18 @@ func (u Usecase) GetUserProfileByBtcAddressTaproot(userAddr string) (*entity.Use
 	return user, nil
 }
 
+func (u Usecase) GetUserProfileBySlug(slug string) (*entity.Users, error) {
+
+	logger.AtLog.Info("GetUserProfileBySlug", zap.String("slug", slug))
+	user, err := u.Repo.FindUserBySlug(slug)
+	if err != nil {
+		logger.AtLog.Error(err)
+		return nil, err
+	}
+
+	return user, nil
+}
+
 func (u Usecase) GetUserProfileByBtcAddress(userAddr string) (*entity.Users, error) {
 
 	logger.AtLog.Info("GetUserProfileByBtcAddress", zap.String("userAddr", userAddr))
@@ -321,6 +334,7 @@ func (u Usecase) UpdateUserProfile(userID string, data structure.UpdateProfile) 
 
 	if data.DisplayName != nil {
 		user.DisplayName = *data.DisplayName
+		user.Slug = helpers.ConvertSlug(user.DisplayName)
 	}
 
 	if data.Avatar != nil && *data.Avatar != "" {

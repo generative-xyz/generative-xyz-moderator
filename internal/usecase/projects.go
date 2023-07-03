@@ -22,7 +22,6 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"rederinghub.io/external/ord_service"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/jinzhu/copier"
@@ -732,7 +731,7 @@ func (u Usecase) UpdateBTCProject(req structure.UpdateBTCProjectReq) (*entity.Pr
 			bytes, err := json.Marshal(nftTokenURI)
 			if err == nil {
 				nftToken := helpers.Base64Encode(bytes)
-				spew.Dump(fmt.Sprintf("data:application/json;base64,%s", nftToken))
+				//spew.Dump(fmt.Sprintf("data:application/json;base64,%s", nftToken))
 				p.NftTokenUri = fmt.Sprintf("data:application/json;base64,%s", nftToken)
 			}
 		}
@@ -1713,6 +1712,7 @@ func (u Usecase) UnzipProjectFile(zipPayload *structure.ProjectUnzipPayload) (*e
 	var err error
 	pe := &entity.Projects{}
 	zipLink := zipPayload.ZipLink
+	isBigFile := false
 
 	defer func() {
 		now := time.Now().UTC()
@@ -1780,7 +1780,6 @@ func (u Usecase) UnzipProjectFile(zipPayload *structure.ProjectUnzipPayload) (*e
 	nftTokenURI["image"] = pe.Thumbnail
 	nftTokenURI["animation_url"] = ""
 	nftTokenURI["attributes"] = []string{}
-	logger.AtLog.Logger.Info(fmt.Sprintf("UnzipProjectFile.%s", pe.TokenID), zap.Any("zipPayload", zipPayload), zap.String("projectID", pe.TokenID))
 
 	images := []string{}
 
@@ -1802,7 +1801,6 @@ func (u Usecase) UnzipProjectFile(zipPayload *structure.ProjectUnzipPayload) (*e
 		return nil, err
 	}
 
-	logger.AtLog.Logger.Info(fmt.Sprintf("UnzipProjectFile.%s", pe.TokenID), zap.Any("ReadFolder", unzipFoler), zap.String("projectID", pe.TokenID), zap.Error(err))
 	maxSize := uint64(0)
 	rand.Seed(time.Now().UnixNano())
 	rand.Shuffle(len(files), func(i, j int) { files[i], files[j] = files[j], files[i] })
@@ -1823,7 +1821,6 @@ func (u Usecase) UnzipProjectFile(zipPayload *structure.ProjectUnzipPayload) (*e
 	}
 	//
 
-	logger.AtLog.Logger.Info(fmt.Sprintf("UnzipProjectFile.%s", pe.TokenID), zap.Any("zipPayload", zipPayload), zap.Any("projecID", pe.TokenID), zap.Int("images", len(pe.Images)))
 	pe.Images = images
 	if len(images) > 0 {
 		pe.IsFullChain = true
@@ -1844,9 +1841,11 @@ func (u Usecase) UnzipProjectFile(zipPayload *structure.ProjectUnzipPayload) (*e
 		}
 
 	}
+
 	pe.IsHidden = true
 	pe.Status = true
 	pe.IsSynced = true
+	pe.IsBigFile = isBigFile
 
 	networkFee := big.NewInt(u.networkFeeBySize(int64(maxSize / 4))) // will update after unzip and check data
 	pe.MaxFileSize = int64(maxSize)
@@ -2472,4 +2471,118 @@ func (u Usecase) UpdateProjectHash(req structure.UpdateProjectHash) (*entity.Pro
 
 	logger.AtLog.Logger.Info("UpdateProject", zap.Any("project", p), zap.Any("updated", updated))
 	return p, nil
+}
+
+func (u Usecase) UnzipETHProjectFile(zipPayload *structure.ProjectUnzipPayload) (*entity.Projects, error) {
+	var err error
+	key := fmt.Sprintf("CreateProject.ProcessEthZip.%s", zipPayload.ProjectID)
+	defer func() {
+		uzStatus := entity.UzipStatusSuccess
+		if err != nil {
+			logger.AtLog.Logger.Error(
+				key,
+				zap.String("zipLink", zipPayload.ZipLink),
+				zap.String("projectID", zipPayload.ProjectID),
+				zap.Any("uzStatus", uzStatus),
+				zap.Error(err),
+			)
+			uzStatus = entity.UzipStatusFail
+		} else {
+			logger.AtLog.Logger.Info(
+				key,
+				zap.String("zipLink", zipPayload.ZipLink),
+				zap.String("projectID", zipPayload.ProjectID),
+				zap.Any("uzStatus", uzStatus),
+			)
+		}
+		now := time.Now().UTC()
+
+		zipLinks, err1 := u.Repo.GetProjectUnzip(zipPayload.ProjectID)
+		if err1 != nil {
+			if errors.Is(err1, mongo.ErrNoDocuments) {
+				projectZip := &entity.ProjectZipLinks{
+					ProjectID:   zipPayload.ProjectID,
+					ZipLink:     zipPayload.ZipLink,
+					ProjectType: entity.ETH,
+					ReTries:     0,
+					Status:      uzStatus,
+				}
+
+				logs := []entity.ProjectZipLinkLog{
+					entity.ProjectZipLinkLog{
+						Message:     "Create eth project",
+						Status:      uzStatus,
+						CreatedTime: &now,
+					},
+				}
+				projectZip.Logs = logs
+				err1 = u.Repo.InsertOne(projectZip.TableName(), projectZip)
+				if err1 != nil {
+					logger.AtLog.Logger.Error(fmt.Sprintf("CreateProject.ProcessEthZip.%s", zipPayload.ProjectID), zap.String("zipLink", zipPayload.ZipLink),
+						zap.Error(err1))
+				}
+			}
+		} else {
+			zipLinks.Logs = append(zipLinks.Logs, entity.ProjectZipLinkLog{
+				Message:     "",
+				Status:      uzStatus,
+				CreatedTime: &now,
+			})
+			zipLinks.Status = uzStatus
+			zipLinks.ReTries = zipLinks.ReTries + 1
+
+			_, err1 = u.Repo.UpdateProjectUnzip(zipPayload.ProjectID, zipLinks)
+			if err1 != nil {
+				logger.AtLog.Logger.Error(fmt.Sprintf("CreateProject.ProcessEthZip.%s", zipPayload.ProjectID), zap.String("zipLink", zipPayload.ZipLink),
+					zap.Error(err1))
+			}
+		}
+
+	}()
+
+	isBigFile := false
+	pe, err := u.Repo.FindProjectByTxHash(zipPayload.ProjectID)
+	if err != nil {
+		return nil, err
+	}
+
+	imageLinks, maxSize, err := u.ProcessEthZip(zipPayload.ZipLink)
+	if err != nil {
+		return nil, err
+	}
+
+	networkFee := big.NewInt(u.networkFeeBySize(int64(maxSize / 4))) // will update after unzip and check data
+
+	//Only TC projects are allowed
+	//check project has big file ($gt: 350kb):
+	// project only has 1 uploaded file, its size is greater than 350kb
+	if len(imageLinks) == 1 {
+		//350kb = 350000 bytes
+		// size of the json file
+		if maxSize > uint64(350000) {
+			isBigFile = true
+		}
+	}
+
+	///Update these fields
+	//pe.IsBigFile = isBigFile
+	//pe.Images = imageLinks
+	//pe.MaxFileSize = int64(maxSize)
+	//pe.NetworkFee = networkFee.String()
+
+	///Update these fields
+	updated := make(map[string]interface{})
+	updated["isBigFile"] = isBigFile
+	updated["images"] = imageLinks
+	updated["maxFileSize"] = int64(maxSize)
+	updated["networkFee"] = networkFee.String()
+
+	//if project is fully onchain, is synced is updated by unzip
+	updated["isSynced"] = true
+	_, err = u.Repo.UpdateProjectFields(pe.UUID, updated)
+	if err != nil {
+		return nil, err
+	}
+
+	return pe, nil
 }

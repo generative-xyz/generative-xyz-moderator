@@ -188,3 +188,8 @@ type UTXOType struct {
 	TxHash     string `json:"tx_hash"`
 	TxOutIndex int    `json:"tx_output_n"`
 }
+type QuickNodeBlockCount struct {
+	Result uint64 `json:"result"`
+	Error  any    `json:"error"`
+	ID     any    `json:"id"`
+}

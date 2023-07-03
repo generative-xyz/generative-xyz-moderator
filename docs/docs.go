@@ -16,6 +16,154 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/action/project/{projectID}/dislike": {
+            "post": {
+                "security": [
+                    {
+                        "Authorization": []
+                    }
+                ],
+                "description": "dislike project",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Like \u0026 dislike"
+                ],
+                "summary": "dislike project",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "projectID",
+                        "name": "projectID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.JsonResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/action/project/{projectID}/like": {
+            "post": {
+                "security": [
+                    {
+                        "Authorization": []
+                    }
+                ],
+                "description": "like project",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Like \u0026 dislike"
+                ],
+                "summary": "like project",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "projectID",
+                        "name": "projectID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.JsonResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/action/tokens/{tokenID}/dislike": {
+            "post": {
+                "security": [
+                    {
+                        "Authorization": []
+                    }
+                ],
+                "description": "dislike token",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Like \u0026 dislike"
+                ],
+                "summary": "dislike token",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "token ID",
+                        "name": "tokenID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.JsonResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/action/tokens/{tokenID}/like": {
+            "post": {
+                "security": [
+                    {
+                        "Authorization": []
+                    }
+                ],
+                "description": "like token",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Like \u0026 dislike"
+                ],
+                "summary": "like token",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "token ID",
+                        "name": "tokenID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.JsonResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/admin-test": {
             "get": {
                 "description": "Get Redis",
@@ -679,7 +827,7 @@ const docTemplate = `{
         },
         "/charts/collections/{projectID}/charts": {
             "get": {
-                "description": "get list CollectionListing",
+                "description": "GM deposit analytics",
                 "consumes": [
                     "application/json"
                 ],
@@ -688,6 +836,29 @@ const docTemplate = `{
                 ],
                 "tags": [
                     "CollectionListing"
+                ],
+                "summary": "GM deposit analytics",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.JsonResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/charts/gm-collections/deposit": {
+            "get": {
+                "description": "get list CollectionListing",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Charts"
                 ],
                 "summary": "CollectionListing",
                 "parameters": [
@@ -702,6 +873,37 @@ const docTemplate = `{
                         "description": "dateRange",
                         "name": "dateRange",
                         "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.JsonResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/charts/gm-collections/extra/{address}/deposit": {
+            "get": {
+                "description": "get list CollectionListing",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Charts"
+                ],
+                "summary": "CollectionListing",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "address",
+                        "name": "address",
+                        "in": "path"
                     }
                 ],
                 "responses": {
@@ -2910,6 +3112,18 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
+                        "type": "boolean",
+                        "description": "Is closed, default all",
+                        "name": "closed",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Is finished, default all",
+                        "name": "finished",
+                        "in": "query"
+                    },
+                    {
                         "type": "string",
                         "description": "sort by field",
                         "name": "sort_by",
@@ -4890,6 +5104,57 @@ const docTemplate = `{
                 }
             }
         },
+        "/project/{contractAddress}/{projectID}/{walletAddress}/allow-list-gm": {
+            "post": {
+                "security": [
+                    {
+                        "Authorization": []
+                    }
+                ],
+                "description": "Create project's allow list",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Project"
+                ],
+                "summary": "Create project's allow list",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "contractAddress request",
+                        "name": "contractAddress",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "projectID request",
+                        "name": "projectID",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "walletAddress request",
+                        "name": "walletAddress",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.JsonResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/project/{genNFTAddr}/tokens": {
             "get": {
                 "description": "get tokens by project address",
@@ -5192,6 +5457,229 @@ const docTemplate = `{
                         "in": "query"
                     }
                 ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.JsonResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/soralis/tokens": {
+            "get": {
+                "security": [
+                    {
+                        "Authorization": []
+                    }
+                ],
+                "description": "Get all tokens",
+                "tags": [
+                    "Soralis"
+                ],
+                "summary": "Get all tokens",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.JsonResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/soralis/tokens/{tokenAddress}/balance/{walletAddress}": {
+            "get": {
+                "security": [
+                    {
+                        "Authorization": []
+                    }
+                ],
+                "description": "Get token's detail",
+                "tags": [
+                    "Soralis"
+                ],
+                "summary": "Get token's detail",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "token address",
+                        "name": "tokenAddress",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "wallet address",
+                        "name": "walletAddress",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.JsonResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "Authorization": []
+                    }
+                ],
+                "description": "Get token's detail",
+                "tags": [
+                    "Soralis"
+                ],
+                "summary": "Get token's detail",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "token address",
+                        "name": "tokenAddress",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "wallet address",
+                        "name": "walletAddress",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.JsonResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/soralis/tokens/{tokenAddress}/balance/{walletAddress}/time-travel": {
+            "get": {
+                "security": [
+                    {
+                        "Authorization": []
+                    }
+                ],
+                "description": "Get token's detail",
+                "tags": [
+                    "Soralis"
+                ],
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "token address",
+                        "name": "tokenAddress",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "wallet address",
+                        "name": "walletAddress",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.JsonResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/soralis/tokens/{tokenAddress}/price/current": {
+            "get": {
+                "security": [
+                    {
+                        "Authorization": []
+                    }
+                ],
+                "description": "Get token's current price",
+                "tags": [
+                    "Soralis"
+                ],
+                "summary": "Get token's current price",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "token address",
+                        "name": "tokenAddress",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.JsonResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/soralis/tokens/{tokenAddress}/price/min-max": {
+            "get": {
+                "security": [
+                    {
+                        "Authorization": []
+                    }
+                ],
+                "description": "Get token's min-max price",
+                "tags": [
+                    "Soralis"
+                ],
+                "summary": "Get token's min-max price",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "token address",
+                        "name": "tokenAddress",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "default: hour",
+                        "name": "chartType",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.JsonResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/soralis/tokens/{tokenAddress}/time-travel": {
+            "get": {
+                "security": [
+                    {
+                        "Authorization": []
+                    }
+                ],
+                "description": "Get token's time-travel",
+                "tags": [
+                    "Soralis"
+                ],
+                "summary": "Get token's time-travel",
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -5687,6 +6175,38 @@ const docTemplate = `{
                                     }
                                 }
                             ]
+                        }
+                    }
+                }
+            }
+        },
+        "/tokens/{tokenID}/minting-info": {
+            "get": {
+                "description": "get token minting info",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "TokenUri"
+                ],
+                "summary": "get token minting info",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "token ID",
+                        "name": "tokenID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.JsonResponse"
                         }
                     }
                 }
@@ -6306,6 +6826,9 @@ const docTemplate = `{
                 "inscriptionIcon": {
                     "type": "string"
                 },
+                "isBigFile": {
+                    "type": "boolean"
+                },
                 "isFullChain": {
                     "type": "boolean"
                 },
@@ -6582,11 +7105,15 @@ const docTemplate = `{
             "type": "string",
             "enum": [
                 "eth",
-                "btc"
+                "btc",
+                "pepe",
+                "turbo"
             ],
             "x-enum-varnames": [
                 "ETH",
-                "BIT"
+                "BIT",
+                "PEPE",
+                "TURBO"
             ]
         },
         "entity.TokenStats": {
@@ -6851,6 +7378,9 @@ const docTemplate = `{
                 },
                 "profile_social": {
                     "$ref": "#/definitions/entity.ProfileSocial"
+                },
+                "slug": {
+                    "type": "string"
                 },
                 "stats": {
                     "$ref": "#/definitions/entity.UserStats"
@@ -8188,6 +8718,9 @@ const docTemplate = `{
                 },
                 "tokenID": {
                     "type": "string"
+                },
+                "tokenIDData": {
+                    "type": "string"
                 }
             }
         },
@@ -8276,6 +8809,9 @@ const docTemplate = `{
                 },
                 "proposal": {
                     "$ref": "#/definitions/response.DaoArtist"
+                },
+                "slug": {
+                    "type": "string"
                 },
                 "walletAddress": {
                     "type": "string"

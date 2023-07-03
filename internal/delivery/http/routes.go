@@ -33,6 +33,7 @@ func (h *httpDelivery) RegisterV1Routes() {
 	tokens := api.PathPrefix("/tokens").Subrouter()
 	tokens.HandleFunc("", h.Tokens).Methods("GET")
 	tokens.HandleFunc("/{tokenID}/thumbnail", h.updateTokenThumbnail).Methods("POST")
+	tokens.HandleFunc("/{tokenID}/minting-info", h.tokenMintingInfo).Methods("GET")
 	tokens.HandleFunc("/{contractAddress}/{tokenID}", h.tokenURIWithResp).Methods("GET")
 	tokens.HandleFunc("/{contractAddress}/{tokenID}", h.tokenURIWithResp).Methods("PUT")
 	tokens.HandleFunc("/traits/{contractAddress}/{tokenID}", h.tokenTraitWithResp).Methods("GET")
@@ -94,6 +95,7 @@ func (h *httpDelivery) RegisterV1Routes() {
 	project.HandleFunc("/{contractAddress}/{projectID}", h.updateProject).Methods("PUT")
 	project.HandleFunc("/{contractAddress}/tx-hash/{txHash}", h.updateProjectHash).Methods("PUT")
 	project.HandleFunc("/{contractAddress}/{projectID}/allow-list", h.createProjectAllowList).Methods("POST")
+	project.HandleFunc("/{contractAddress}/{projectID}/{walletAddress}/allow-list-gm", h.createProjectAllowListGM).Methods("POST")
 	project.HandleFunc("/{contractAddress}/{projectID}/allow-list", h.getProjectAllowList).Methods("GET")
 	project.HandleFunc("/{contractAddress}/{projectID}/counting-allow-list", h.getCountingAllowList).Methods("GET")
 	project.HandleFunc("/{contractAddress}/{projectID}/token", h.searchToken).Methods("GET")
@@ -144,10 +146,13 @@ func (h *httpDelivery) RegisterV1Routes() {
 	admin.HandleFunc("/auto-listing", h.autoListing).Methods("POST")
 	admin.HandleFunc("/check-refund", h.checkRefundMintBtc).Methods("POST")
 	admin.HandleFunc("/gen-temp-address", h.getMintFreeTemAddress).Methods("POST")
+	admin.HandleFunc("/faucet", h.requestFaucetAdmin).Methods("POST")
 
 	admin.HandleFunc("/auction/update-declared-now", h.updateDeclaredNow).Methods("POST")          // auction
 	admin.HandleFunc("/auction/crawl-list-winner-now", h.updateWinnerFromContract).Methods("POST") // auction
 	admin.HandleFunc("/evm/update-enabled-job", h.updateEnabledJob).Methods("POST")                // auction
+
+	admin.HandleFunc("/new-bitcoin-city/crawl-balance", h.withdrawNewCityFunds).Methods("POST") // new-bitcoin-city
 
 	adminTest := api.PathPrefix("/admin-test").Subrouter()
 	adminTest.HandleFunc("", h.adminTest).Methods("GET")
@@ -170,8 +175,19 @@ func (h *httpDelivery) RegisterV1Routes() {
 
 	charts := api.PathPrefix("/charts").Subrouter()
 	charts.HandleFunc("/collections/{projectID}", h.getChartDataForCollection).Methods("GET")
+	charts.HandleFunc("/gm-collections/deposit", h.getChartDataForGMCollection).Methods("GET")
+	//charts.HandleFunc("/gm-collections/deposit/chart", h.getChartDepositDashboard).Methods("GET")
+	charts.HandleFunc("/gm-collections/coinbase/price", h.GetPriceCoinBase).Methods("GET")
+	charts.HandleFunc("/gm-collections/quicknode/balance", h.GetBitcoinBalance).Methods("GET")
+	charts.HandleFunc("/gm-collections/extra/{address}/deposit", h.getChartDataExtraForGMCollection).Methods("GET")
 	charts.HandleFunc("/tokens/{tokenID}", h.getChartDataFoTokenURI).Methods("GET")
-
+	charts.HandleFunc("/gm-collections/wallet", h.getListWallet).Methods("GET")
+	charts.HandleFunc("/gm-collections/data-old", h.GetDataOld).Methods("GET")
+	authCharts := api.PathPrefix("/charts").Subrouter()
+	authCharts.Use(h.MiddleWare.AccessTokenPassThrough)
+	authCharts.HandleFunc("/gm-collections/deposit/restore", h.restoreGMDashboard).Methods("POST")
+	authCharts.HandleFunc("/gm-collections/deposit/reallocate", h.tryReallocate).Methods("POST")
+	authCharts.HandleFunc("/gm-collections/deposit/reallocate", h.getReallocate).Methods("GET")
 	//dao
 	dao := api.PathPrefix("/dao").Subrouter()
 	dao.HandleFunc("/proposals", h.proposals).Methods("GET")
@@ -231,6 +247,10 @@ func (h *httpDelivery) RegisterV1Routes() {
 	faucet.HandleFunc("/status", h.getCurrentFaucetStep).Methods("GET")
 	faucet.HandleFunc("/config", h.getFaucetConfig).Methods("GET")
 	faucet.HandleFunc("/nonces", h.getNonces).Methods("GET")
+
+	newbitcoin := api.PathPrefix("/new-bitcoin-city").Subrouter()
+	newbitcoin.HandleFunc("/request-gm", h.requestGM).Methods("POST")
+	newbitcoin.HandleFunc("/log-withdraw", h.getLogWithdraw).Methods("GET")
 
 	marketplaceBTC := api.PathPrefix("/marketplace-btc").Subrouter()
 	// marketplaceBTC.HandleFunc("/listing", h.btcMarketplaceListing).Methods("POST")
@@ -375,6 +395,24 @@ func (h *httpDelivery) RegisterV1Routes() {
 	aiSchool.HandleFunc("/delete-dataset", h.schoolDeleteDataset).Methods("GET")
 	aiSchool.HandleFunc("/list-dataset", h.schoolListDataset).Methods("GET")
 	// aiSchool.HandleFunc("/download", h.schoolDownload).Methods("GET")
+
+	soralis := api.PathPrefix("/soralis").Subrouter()
+	soralis.HandleFunc("/tokens", h.soralisTokens).Methods("GET")
+	//soralis.HandleFunc("/tokens/{tokenAddress}", h.soralisTokenDetail).Methods("GET")
+	soralis.HandleFunc("/tokens/{tokenAddress}/price/min-max", h.soralisTokenMinMax).Methods("GET")
+	soralis.HandleFunc("/tokens/{tokenAddress}/price/current", h.soralisTokenCurrentPrice).Methods("GET")
+	soralis.HandleFunc("/tokens/{tokenAddress}/balance/{walletAddress}", h.soralisUserTokenBalance).Methods("GET")
+	soralis.HandleFunc("/tokens/{tokenAddress}/balance/{walletAddress}", h.soralisSnapShotUserTokenBalance).Methods("POST")
+
+	soralis.HandleFunc("/tokens/{tokenAddress}/balance/{walletAddress}/time-travel", h.soralisGetSnapShotUserTokenBalance).Methods("GET")
+	soralis.HandleFunc("/tokens/{tokenAddress}/time-travel", h.soralisTimeTravel).Methods("GET")
+
+	action := api.PathPrefix("/action").Subrouter()
+	action.Use(h.MiddleWare.AccessTokenPassThrough)
+	action.HandleFunc("/project/{projectID}/like", h.LikeProject).Methods("POST")
+	action.HandleFunc("/project/{projectID}/dislike", h.DisLikeProject).Methods("POST")
+	action.HandleFunc("/tokens/{tokenID}/like", h.LikeTokenURI).Methods("POST")
+	action.HandleFunc("/tokens/{tokenID}/dislike", h.DisLikeTokenURI).Methods("POST")
 
 }
 

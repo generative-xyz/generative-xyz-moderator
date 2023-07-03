@@ -42,6 +42,33 @@ func (r Repository) FindUserByWalletAddress(walletAddress string) (*entity.Users
 	return resp, nil
 }
 
+func (r Repository) FindUserByWalletAddressEQ(walletAddress string) (*entity.Users, error) {
+	resp := &entity.Users{}
+
+	cached, err := r.GetCache(utils.COLLECTION_USERS, walletAddress)
+	if err == nil && cached != nil {
+		err = helpers.Transform(cached, resp)
+		if err != nil {
+			return nil, err
+		}
+
+		return resp, nil
+	}
+
+	usr, err := r.FilterOne(utils.COLLECTION_USERS, bson.D{{utils.KEY_WALLET_ADDRESS, walletAddress}})
+	if err != nil {
+		return nil, err
+	}
+
+	err = helpers.Transform(usr, resp)
+	if err != nil {
+		return nil, err
+	}
+
+	r.CreateCache(utils.COLLECTION_USERS, walletAddress, resp)
+	return resp, nil
+}
+
 func (r Repository) FindUserByBtcAddress(btcAddress string) (*entity.Users, error) {
 	resp := &entity.Users{}
 
@@ -61,6 +88,20 @@ func (r Repository) FindUserByBtcAddress(btcAddress string) (*entity.Users, erro
 func (r Repository) FindUserByBtcAddressTaproot(btcAddress string) (*entity.Users, error) {
 	resp := &entity.Users{}
 	usr, err := r.FilterOne(utils.COLLECTION_USERS, bson.D{{utils.KEY_WALLET_ADDRESS_BTC_TAPROOT, btcAddress}})
+	if err != nil {
+		return nil, err
+	}
+
+	err = helpers.Transform(usr, resp)
+	if err != nil {
+		return nil, err
+	}
+	return resp, nil
+}
+
+func (r Repository) FindUserBySlug(slug string) (*entity.Users, error) {
+	resp := &entity.Users{}
+	usr, err := r.FilterOne(utils.COLLECTION_USERS, bson.D{{utils.KEY_WALLET_SLUG, slug}})
 	if err != nil {
 		return nil, err
 	}

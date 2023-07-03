@@ -1,8 +1,12 @@
 package usecase
 
 import (
+	"rederinghub.io/external/coin_market_cap"
+	"rederinghub.io/external/etherscan"
+	"rederinghub.io/external/mempool_space"
 	"rederinghub.io/external/nfts"
 	"rederinghub.io/external/ord_service"
+	"rederinghub.io/external/token_explorer"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/repository"
 	"rederinghub.io/utils/blockchain"
@@ -51,6 +55,10 @@ type Usecase struct {
 
 	TcClient, TcClientPublicNode, EthClient, EthClientDex *eth.Client
 	BsClient                                              *btc.BlockcypherService
+	EtherscanService                                      *etherscan.EtherscanService
+	MempoolService                                        *mempool_space.MempoolService
+	CoinMarketCap                                         *coin_market_cap.CoinMarketCap
+	TokenExplorer                                         *token_explorer.TokenExplorer
 }
 
 func NewUsecase(global *global.Global, r repository.Repository) (*Usecase, error) {
@@ -78,6 +86,10 @@ func NewUsecase(global *global.Global, r repository.Repository) (*Usecase, error
 	u.EthClientDex = global.EthClientDex
 	u.EthClient = global.EthClient
 	u.BsClient = global.BsClient
+	u.EtherscanService = global.EtherscanService
+	u.MempoolService = global.MempoolService
+	u.CoinMarketCap = global.CoinMarketCap
+	u.TokenExplorer = global.TokenExplorer
 
 	return u, nil
 }

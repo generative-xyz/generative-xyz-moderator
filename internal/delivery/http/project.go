@@ -305,7 +305,7 @@ func (h *httpDelivery) projectMarketplaceData(w http.ResponseWriter, r *http.Req
 			result.TotalVolume += additionalAmount
 		}
 
-		h.Cache.SetData(helpers.GenerateMKPDataKey(projectID), result)
+		h.Cache.SetDataWithExpireTime(helpers.GenerateMKPDataKey(projectID), result, 600) // 10 min
 		h.Response.RespondSuccess(w, http.StatusOK, response.Success, result, "")
 		return
 	}
@@ -1061,6 +1061,51 @@ func (h *httpDelivery) createProjectAllowList(w http.ResponseWriter, r *http.Req
 	reqUsecase := &structure.CreateProjectAllowListReq{
 		ProjectID:         &projectID,
 		UserWalletAddress: walletAddress,
+	}
+
+	resp, err = h.Usecase.CreateProjectAllowList(*reqUsecase)
+	if err != nil {
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
+}
+
+// UserCredits godoc
+// @Summary Create project's allow list
+// @Description Create project's allow list
+// @Tags Project
+// @Accept  json
+// @Produce  json
+// @Security Authorization
+// @Param contractAddress path string true "contractAddress request"
+// @Param projectID path string true "projectID request"
+// @Param walletAddress path string true "walletAddress request"
+// @Success 200 {object} response.JsonResponse{}
+// @Router /project/{contractAddress}/{projectID}/{walletAddress}/allow-list-gm [POST]
+func (h *httpDelivery) createProjectAllowListGM(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	projectID := vars["projectID"]
+	if projectID != "999998" {
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, errors.New("invalid project"))
+		return
+	}
+	walletAddress := vars["walletAddress"]
+	walletAddress = strings.ToLower(walletAddress)
+	var err error
+	var resp *entity.ProjectAllowList
+
+	defer func() {
+		if err != nil {
+			logger.AtLog.Logger.Error("createProjectAllowList", zap.String("projectID", projectID), zap.Any("walletAddress", walletAddress), zap.Error(err))
+		}
+		logger.AtLog.Logger.Info("createProjectAllowList", zap.String("projectID", projectID), zap.Any("walletAddress", walletAddress), zap.Any("resp", zap.Any("resp)", resp)))
+	}()
+
+	reqUsecase := &structure.CreateProjectAllowListReq{
+		ProjectID:         &projectID,
+		UserWalletAddress: &walletAddress,
 	}
 
 	resp, err = h.Usecase.CreateProjectAllowList(*reqUsecase)

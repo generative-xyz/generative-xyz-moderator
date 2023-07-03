@@ -6,9 +6,12 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math/rand"
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
+	"time"
 
 	"rederinghub.io/utils/config"
 	"rederinghub.io/utils/helpers"
@@ -27,6 +30,7 @@ func NewMoralisNfts(conf *config.Config, cache redis.IRedisCache) *MoralisNfts {
 
 	apiKey := conf.Moralis.Key
 	serverURL := conf.Moralis.URL
+	serverURL = "https://deep-index.moralis.io/api/v2"
 	return &MoralisNfts{
 		conf:      conf,
 		serverURL: serverURL,
@@ -120,7 +124,17 @@ func (m MoralisNfts) request(fullUrl string, method string, headers map[string]s
 
 	req.Header.Add("accept", "application/json")
 	req.Header.Add("content-type", "application/json")
-	req.Header.Add("X-API-Key", m.apiKey)
+
+	apiKeys := []string{
+		"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJub25jZSI6Ijk1MjI3ZDJiLWRmNDktNDZiOS1iZGMxLTdkZDMyYjMyZGZhMyIsIm9yZ0lkIjoiMzI3NDI5IiwidXNlcklkIjoiMzM2NjQyIiwidHlwZUlkIjoiNGEyZTNhZTQtZDAxNy00ZTYzLWFlODgtZmE0ZWQyZGJhNDEwIiwidHlwZSI6IlBST0pFQ1QiLCJpYXQiOjE2ODM4OTgwNzIsImV4cCI6NDgzOTY1ODA3Mn0.b2xPRQJJyMd1nJog6mkoUve-S4Mh2C_tlJuw55yxPZc",
+		"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJub25jZSI6Ijk2YzM4OTczLWZkNzUtNDRlZC1hMzg1LTQ2MjZkNjlkZDg1OSIsIm9yZ0lkIjoiMzI3NDI5IiwidXNlcklkIjoiMzM2NjQyIiwidHlwZUlkIjoiNGEyZTNhZTQtZDAxNy00ZTYzLWFlODgtZmE0ZWQyZGJhNDEwIiwidHlwZSI6IlBST0pFQ1QiLCJpYXQiOjE2ODM5NDc5NzMsImV4cCI6NDgzOTcwNzk3M30.cy77GPkYLY6-XpdIUdkv_SlxZe8Whw4ftaHPpP-j-F8",
+		"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJub25jZSI6IjQxZmNhY2M5LTA3ZDctNGE3My1hN2EyLWYzNDg2MWNkNjNmZSIsIm9yZ0lkIjoiMzI3NDI5IiwidXNlcklkIjoiMzM2NjQyIiwidHlwZUlkIjoiNGEyZTNhZTQtZDAxNy00ZTYzLWFlODgtZmE0ZWQyZGJhNDEwIiwidHlwZSI6IlBST0pFQ1QiLCJpYXQiOjE2ODM5NDgwMDgsImV4cCI6NDgzOTcwODAwOH0.7oiCoODECGfvyXlpvJ8_ykryrYrj_DXVmgENhEUHFKI",
+		"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJub25jZSI6IjBlYTY3YmQyLTk3M2QtNDhmYi1iZmQ4LTYyNjU5MDE3NGY3MSIsIm9yZ0lkIjoiMzI3NDI5IiwidXNlcklkIjoiMzM2NjQyIiwidHlwZUlkIjoiNGEyZTNhZTQtZDAxNy00ZTYzLWFlODgtZmE0ZWQyZGJhNDEwIiwidHlwZSI6IlBST0pFQ1QiLCJpYXQiOjE2ODQxOTY0OTAsImV4cCI6NDgzOTk1NjQ5MH0.ZS1Enk_ns8bxUI-10bHABQ8BRRAthyr-O4QRccouyXQ",
+		"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJub25jZSI6IjBmYzRmZTdjLWVkMDktNGYyYy05MjFlLTgwNzg2MTVhZDQyMSIsIm9yZ0lkIjoiMzI3NDI5IiwidXNlcklkIjoiMzM2NjQyIiwidHlwZUlkIjoiNGEyZTNhZTQtZDAxNy00ZTYzLWFlODgtZmE0ZWQyZGJhNDEwIiwidHlwZSI6IlBST0pFQ1QiLCJpYXQiOjE2ODQxOTY1MTksImV4cCI6NDgzOTk1NjUxOX0.YKKXfgDevKS6skTikA5VSzxK5sgfadzwnXj6gFv0RF4",
+	}
+	s := rand.NewSource(time.Now().Unix())
+	r := rand.New(s)
+	req.Header.Add("X-API-Key", apiKeys[r.Intn(len(apiKeys))])
 
 	res, err := http.DefaultClient.Do(req)
 	if err != nil {
@@ -262,4 +276,59 @@ func (m MoralisNfts) GetNftByContractAndTokenIDNoCahe(contractAddr string, token
 
 	nft := nfts[0]
 	return &nft, nil
+}
+
+func (m MoralisNfts) AddressBalance(walletAddress string) (*MoralisBalanceResp, error) {
+	fullUrl := m.generateUrl(fmt.Sprintf("%s/%s", walletAddress, WalletAddressBalance), &MoralisFilter{})
+
+	data, err := m.request(fullUrl, "GET", nil, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	resp := &MoralisBalanceResp{}
+	if string(data) == `{"message":"Invalid key"}` {
+		return nil, errors.New("invalid key")
+	}
+	if strings.Contains(string(data), "limit") {
+		return nil, errors.New("rate limit")
+	}
+	err = json.Unmarshal(data, resp)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp, nil
+}
+
+func (m MoralisNfts) TokenBalanceByWalletAddress(walletAddress string, tAddresses []string) (map[string]MoralisBalanceResp, error) {
+	f := &MoralisFilter{}
+	f.TokenAddresses = new([]string)
+
+	urls := url.Values{}
+	urls.Add("chain", m.conf.Moralis.Chain)
+	for key, tAddress := range tAddresses {
+		urls.Add(fmt.Sprintf("token_addresses[%d]", key), tAddress)
+	}
+
+	path := fmt.Sprintf("%s/%s?%s", walletAddress, WalletAddressTokenBalance, urls.Encode())
+	fullUrl := fmt.Sprintf("%s/%s", m.serverURL, path)
+
+	data, err := m.request(fullUrl, "GET", nil, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	resp := []MoralisBalanceResp{}
+	err = json.Unmarshal(data, &resp)
+	if err != nil {
+		return nil, err
+	}
+
+	result := make(map[string]MoralisBalanceResp)
+	for _, i := range resp {
+		result[strings.ToLower(i.TokenAddress)] = i
+	}
+
+	return result, nil
 }

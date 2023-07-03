@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"rederinghub.io/utils"
 	"strconv"
 	"strings"
 
@@ -14,7 +15,6 @@ import (
 	"rederinghub.io/internal/delivery/http/response"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
-	"rederinghub.io/utils"
 	"rederinghub.io/utils/logger"
 )
 
@@ -180,7 +180,7 @@ func (h *httpDelivery) getAllProjects(w http.ResponseWriter, r *http.Request) {
 			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 			return
 		}
-	
+
 		pResp = append(pResp, *p)
 	}
 

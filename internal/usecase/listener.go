@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
+	"rederinghub.io/utils"
 	"strconv"
 	"strings"
 	"time"
@@ -213,6 +214,11 @@ func (u Usecase) UpdateProjectFromChain(contractAddr string, tokenIDStr string, 
 		return nil, err
 	}
 
+	if project.Status == true && project.IsSynced == true && project.IsHidden == false {
+		err := errors.New("Skip: Project is synced")
+		return nil, err
+	}
+
 	if project.TokenID == project.TxHash {
 		tokenIDInt, err := strconv.Atoi(tokenIDStr)
 		if err != nil {
@@ -236,7 +242,7 @@ func (u Usecase) UpdateProjectFromChain(contractAddr string, tokenIDStr string, 
 	now := time.Now().UTC()
 
 	blockNumberString := fmt.Sprintf("%d", blockNumber)
-	project.IsSynced = true
+
 	project.Name = projectDetail.ProjectDetail.Name
 	project.ContractAddress = contractAddr
 	project.CreatorName = projectDetail.ProjectDetail.Creator
@@ -329,6 +335,12 @@ func (u Usecase) UpdateProjectFromChain(contractAddr string, tokenIDStr string, 
 	}
 	project.CreatorProfile = *user
 	project.CreatorAddrrBTC = user.WalletAddressBTC
+
+	//IsFullChain means project is using zipLinks, IsSynced will be updated by unzip
+	if !project.IsFullChain {
+		project.IsSynced = true
+	}
+
 	_, err = u.Repo.UpdateProject(project.UUID, project)
 	if err != nil {
 		return nil, err
@@ -364,7 +376,15 @@ func (u Usecase) UpdateTokenOwner(chainLog types.Log, blockchain *blockchain.TcN
 		return err
 	}
 
-	token, err := u.Repo.FindTokenByTokenID(event.TokenId.String())
+	tokenIdStr := event.TokenId.String()
+	// override listing.TokenId
+	if projectId, ok := utils.ExceptionProjectContract[strings.ToLower(event.Raw.Address.String())]; ok {
+		projectIdInt, _ := new(big.Int).SetString(projectId, 10)
+		projectIdInt = new(big.Int).Mul(projectIdInt, big.NewInt(1000000))
+		tokenIdStr = projectIdInt.Add(projectIdInt, event.TokenId).String()
+	}
+
+	token, err := u.Repo.FindTokenByTokenID(tokenIdStr)
 	if err != nil {
 		logger.AtLog.Logger.Error("cannot find token", zap.Error(err))
 		return err

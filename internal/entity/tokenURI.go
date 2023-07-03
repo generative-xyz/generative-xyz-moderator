@@ -12,8 +12,10 @@ import (
 type TokenPaidType string
 
 const (
-	ETH TokenPaidType = "eth"
-	BIT TokenPaidType = "btc"
+	ETH   TokenPaidType = "eth"
+	BIT   TokenPaidType = "btc"
+	PEPE  TokenPaidType = "pepe"
+	TURBO TokenPaidType = "turbo"
 )
 
 type InscriptionDetail struct {
@@ -182,6 +184,18 @@ type TokenUriListingFilter struct {
 	ProjectName   string        `bson:"project_name"`
 	CreatorName   string        `bson:"creator_name"`
 	OfferingID    string        `bson:"offering_id"`
+	IsMinting     bool          `bson:"-" json:"is_minting"`
+	MintingInfo   MintingInfo   `bson:"-" json:"minting_info"`
+
+	TokenIDData string `json:"tokenIDData"`
+	IsOnChain   bool   `json:"isOnchain" bson:"isOnchain"`
+}
+
+type MintingInfo struct {
+	TokenID string `bson:"token_id" json:"token_id"`
+	All     int    `bson:"all" json:"all"`
+	Pending int    `bson:"pending" json:"pending"`
+	Done    int    `bson:"done" json:"done"`
 }
 
 type PriceBRC20Obj struct {

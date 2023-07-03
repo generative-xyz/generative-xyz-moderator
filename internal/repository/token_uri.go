@@ -4,6 +4,7 @@ import (
 	"context"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/pkg/errors"
 	"rederinghub.io/internal/entity"
@@ -582,6 +583,7 @@ func (r Repository) FilterTokenUriNew(filter entity.FilterTokenUris) (*entity.Pa
 					{"owner_object.wallet_address_btc_taproot", 1},
 					{"owner_object.avatar", 1},
 					{"owner_object.display_name", 1},
+					{"isOnchain", 1},
 					{"listing_eth_size", bson.D{{"$size", "$listing_eth"}}},
 					{"buying_btc_size", bson.D{{"$size", "$buying_btc"}}},
 				},
@@ -869,6 +871,7 @@ func (r Repository) FilterTokenUriTCNew(filter entity.FilterTokenUris) (*entity.
 					{"owner_addrress", 1},
 					{"owner", 1},
 					{"offering_id", 1},
+					{"isOnchain", 1},
 				},
 			},
 		},
@@ -1786,4 +1789,50 @@ func (r Repository) AnalyticsTokenUriOwner(f entity.FilterTokenUris) ([]*entity.
 	}
 
 	return tokens, err
+}
+
+func (r Repository) UpdateTokenThumbnail(contractAddress string, tokenId string, thumbnail string, parsedImage string, attribute interface{}, attributeStr interface{}, thumbnailCapturedAt *time.Time) error {
+	filter := bson.D{
+		{Key: "token_id", Value: tokenId},
+		{Key: "$or", Value: bson.A{
+			bson.M{"gen_nft_addrress": strings.ToLower(contractAddress)},
+			bson.M{"contract_address": strings.ToLower(contractAddress)},
+		}},
+	}
+
+	update := bson.M{
+		"$set": bson.M{
+			"thumbnail":             thumbnail,
+			"parsed_image":          parsedImage,
+			"parsed_attributes":     attribute,
+			"parsed_attributes_str": attributeStr,
+			"thumbnailCapturedAt":   thumbnailCapturedAt,
+			"updated_at":            time.Now().UTC(),
+		},
+	}
+	_, err := r.DB.Collection(utils.COLLECTION_TOKEN_URI).UpdateOne(context.TODO(), filter, update)
+	if err != nil {
+		return err
+	}
+	return err
+}
+
+func (r Repository) FindTokenForCaptureThumbnail(contractAddress string, tokenID string) (*entity.TokenUri, error) {
+
+	f := bson.D{
+		{Key: "$or", Value: bson.A{
+			bson.M{"gen_nft_addrress": strings.ToLower(contractAddress)},
+			bson.M{"contract_address": strings.ToLower(contractAddress)},
+		}},
+		{"token_id", tokenID},
+	}
+
+	s := r.DB.Collection(entity.TokenUri{}.TableName()).FindOne(context.Background(), f)
+	resp := &entity.TokenUri{}
+	err := s.Decode(resp)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp, nil
 }

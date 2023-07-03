@@ -193,7 +193,12 @@ func (c *HttpTxConsumer) StartServer() {
 	logger.AtLog.Logger.Info("HttpTxConsumer start listening")
 
 	for {
-		err := c.resolveTransaction()
+		err := c.getTcAddress()
+		if err != nil {
+			logger.AtLog.Logger.Error("Error when resolve getTcAddress", zap.String("err", err.Error()))
+		}
+
+		err = c.resolveTransaction()
 		if err != nil {
 			logger.AtLog.Logger.Error("Error when resolve transactions", zap.String("err", err.Error()))
 		}
