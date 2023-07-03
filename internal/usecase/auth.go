@@ -402,6 +402,9 @@ func (u Usecase) UpdateUserProfile(userID string, data structure.UpdateProfile) 
 		}
 		user.EnableNotification = *data.EnableNotification
 	}
+	if data.Banner != nil && *data.Banner != "" {
+		user.Banner = *data.Banner
+	}
 
 	_, err = u.Repo.UpdateUserByID(userID, user)
 	if err != nil {
