@@ -427,7 +427,11 @@ func (r Repository) GetTCProject(excludeIDs []string) ([]entity.Projects, error)
 	}
 
 	var projects []entity.Projects
-	cursor, err := r.DB.Collection(utils.COLLECTION_PROJECTS).Find(context.TODO(), filter)
+	opts := &options.FindOptions{}
+	opts.Projection = bson.D{
+		{"genNFTAddr", 1},
+	}
+	cursor, err := r.DB.Collection(utils.COLLECTION_PROJECTS).Find(context.TODO(), filter, opts)
 	if err != nil {
 		return nil, err
 	}

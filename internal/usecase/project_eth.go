@@ -65,7 +65,7 @@ func (u Usecase) CreateProject(req structure.CreateProjectReq) (*entity.Projects
 			logger.AtLog.Logger.Error(fmt.Sprintf("CreateProject.%s", pe.TokenId), zap.Error(err))
 			return nil, err
 		}
-		pe.IsFullChain = true
+		pe.HasZipFile = true
 
 		updatedField := make(map[string]interface{})
 		updatedField["isFullChain"] = true

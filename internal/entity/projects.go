@@ -116,6 +116,7 @@ type Projects struct {
 	CommitTxHash             string              `bson:"commitTxHash"`
 	RevealTxHash             string              `bson:"revealTxHash"`
 	IsBigFile                bool                `bson:"isBigFile"`
+	HasZipFile               bool                `bson:"hasZipFile"`
 	AuctionWinnerList        []AuctionWinnerList `bson:"-" json:"auctionWinnerList"`
 }
 
