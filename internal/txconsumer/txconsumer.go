@@ -114,6 +114,16 @@ func (c *HttpTxConsumer) resolveTransaction() error {
 			address := strings.ToLower(_log.Address.String())
 			topic := strings.ToLower(_log.Topics[0].String())
 
+			logger.AtLog.Logger.Info("resolveTransaction",
+				zap.Int64("fromFlock", ProcessingBlock),
+				zap.Int64("toBlock", ProcessingBlockTo),
+				zap.Int64("lastBlockOnChain", lastBlockOnChain.Int64()),
+				zap.String("address", address),
+				zap.String("topic", topic),
+				zap.String("GENERATIVE_PROJECT", strings.ToLower(os.Getenv("GENERATIVE_PROJECT"))),
+				zap.String("TransferNFT", strings.ToLower(c.Config.BlockChainEvent.TransferNFT)),
+			)
+
 			switch address {
 			case strings.ToLower(c.Config.MarketplaceEvents.Contract):
 				switch topic {
