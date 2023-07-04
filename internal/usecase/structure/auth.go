@@ -42,6 +42,7 @@ type UpdateProfile struct {
 	Bio                  *string
 	ProfileSocial        ProfileSocial
 	Avatar               *string
+	Banner               *string
 	WalletAddressBTC     *string
 	WalletAddressPayment *string
 	EnableNotification   *bool
