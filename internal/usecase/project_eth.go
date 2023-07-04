@@ -36,6 +36,7 @@ func (u Usecase) CreateProject(req structure.CreateProjectReq) (*entity.Projects
 	pe.IsHidden = true
 	pe.Status = false
 	pe.IsSynced = false
+	pe.IsFullChain = false
 	pe.TxHash = strings.ToLower(pe.TxHash)
 	pe.TxHex = strings.ToLower(pe.TxHex)
 	pe.CommitTxHash = strings.ToLower(pe.CommitTxHash)
