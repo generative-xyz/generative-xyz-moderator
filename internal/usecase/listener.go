@@ -336,8 +336,8 @@ func (u Usecase) UpdateProjectFromChain(contractAddr string, tokenIDStr string, 
 	project.CreatorProfile = *user
 	project.CreatorAddrrBTC = user.WalletAddressBTC
 
-	//IsFullChain means project is using zipLinks, IsSynced will be updated by unzip
-	if !project.IsFullChain {
+	// IsSynced will be updated by unzip, if project has zipfile
+	if !project.HasZipFile {
 		project.IsSynced = true
 	}
 
