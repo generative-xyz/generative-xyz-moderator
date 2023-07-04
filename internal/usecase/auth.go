@@ -402,7 +402,7 @@ func (u Usecase) UpdateUserProfile(userID string, data structure.UpdateProfile) 
 		}
 		user.EnableNotification = *data.EnableNotification
 	}
-	if data.Banner != nil && *data.Banner != "" {
+	if data.Banner != nil {
 		user.Banner = *data.Banner
 	}
 
