@@ -419,14 +419,19 @@ func (r Repository) GetAllProjects(filter entity.FilterProjects) ([]entity.Proje
 }
 
 func (r Repository) GetTCProject(excludeIDs []string) ([]entity.Projects, error) {
-	filter := bson.M{"genNFTAddr": "0xb957f1a4a019decd4b75b2bfce01d4b7df358145"}
+	//filter := bson.M{"genNFTAddr": "0xb957f1a4a019decd4b75b2bfce01d4b7df358145"}
+	filter := bson.M{"tokenIDInt": bson.M{"$lt": 1000000}}
 
 	if len(excludeIDs) > 0 {
 		filter["genNFTAddr"] = bson.M{"$nin": excludeIDs}
 	}
 
 	var projects []entity.Projects
-	cursor, err := r.DB.Collection(utils.COLLECTION_PROJECTS).Find(context.TODO(), filter)
+	opts := &options.FindOptions{}
+	opts.Projection = bson.D{
+		{"genNFTAddr", 1},
+	}
+	cursor, err := r.DB.Collection(utils.COLLECTION_PROJECTS).Find(context.TODO(), filter, opts)
 	if err != nil {
 		return nil, err
 	}

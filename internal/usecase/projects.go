@@ -1508,8 +1508,6 @@ func (u Usecase) getProjectDetailFromChainWithoutCache(req structure.GetProjectD
 
 	contractDataKey := fmt.Sprintf("detail.%s.%s", req.ContractAddress, req.ProjectID)
 
-	logger.AtLog.Info("req", req)
-
 	addr := common.HexToAddress(req.ContractAddress)
 	// call to contract to get emotion
 
@@ -1707,7 +1705,6 @@ func (u Usecase) getNftContractDetailInternal(client *ethclient.Client, contract
 		NftTokenUri:   *tokenFromChain.TokenURI,
 	}
 
-	logger.AtLog.Info("resp", resp)
 	if dataFromNftPChan.Err == nil && dataFromNftPChan.Data != nil {
 		resp.NftProjectDetail = *dataFromNftPChan.Data
 	} else {
@@ -1720,7 +1717,6 @@ func (u Usecase) getNftContractDetailInternal(client *ethclient.Client, contract
 		}
 	}
 
-	logger.AtLog.Info("resp", resp)
 	return resp, nil
 }
 
