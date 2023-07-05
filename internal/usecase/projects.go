@@ -2457,7 +2457,10 @@ func (u Usecase) GetProjectsFloorPrice(projects []string) (map[string]uint64, er
 }
 
 func (u Usecase) UpdateProjectHash(req structure.UpdateProjectHash) (*entity.Projects, error) {
-	p, err := u.Repo.FindProjectByTxHash(*req.TxHash)
+	p, err := u.Repo.FindProjectByTxHash(*req.TxHash, bson.D{
+		{"txHex", 0},
+		{"nftTokenUri", 0},
+	})
 	if err != nil {
 		logger.AtLog.Error("UpdateProjectHash", zap.Any("err.FindProjectBy", err))
 		return nil, err
@@ -2553,7 +2556,10 @@ func (u Usecase) UnzipETHProjectFile(zipPayload *structure.ProjectUnzipPayload) 
 	}()
 
 	isBigFile := false
-	pe, err := u.Repo.FindProjectByTxHash(zipPayload.ProjectID)
+	pe, err := u.Repo.FindProjectByTxHash(zipPayload.ProjectID, bson.D{
+		{"txHex", 0},
+		{"nftTokenUri", 0},
+	})
 	if err != nil {
 		return nil, err
 	}
