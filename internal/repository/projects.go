@@ -135,8 +135,11 @@ func (r Repository) FindProjectByTokenIDs(tokenIds []string) ([]*entity.Projects
 	return resp, nil
 }
 
-func (r Repository) FindProjectByTxHash(txHash string) (*entity.Projects, error) {
+func (r Repository) FindProjectByTxHash(txHash string, projection bson.D) (*entity.Projects, error) {
 	resp := &entity.Projects{}
+
+	opts := options.FindOne()
+	opts.Projection = projection
 	usr, err := r.FilterOne(entity.Projects{}.TableName(), bson.D{{"txhash", txHash}})
 	if err != nil {
 		return nil, err
