@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"go.mongodb.org/mongo-driver/bson"
 	"math/big"
 	"rederinghub.io/utils"
 	"strconv"
@@ -209,7 +210,10 @@ func (u Usecase) UpdateProjectFromChain(contractAddr string, tokenIDStr string, 
 	}()
 
 	txnHash = strings.ToLower(txnHash)
-	project, err = u.Repo.FindProjectByTxHash(txnHash)
+	project, err = u.Repo.FindProjectByTxHash(txnHash, bson.D{
+		{"txHex", 0},
+		{"nftTokenUri", 0},
+	})
 	if err != nil {
 		return nil, err
 	}
