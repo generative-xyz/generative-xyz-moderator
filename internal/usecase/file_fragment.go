@@ -12,6 +12,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.uber.org/zap"
 	"io"
+	"math"
 	"math/big"
 	"net/http"
 	"os"
@@ -77,7 +78,7 @@ func (u Usecase) JobStoreTokenFiles() {
 
 		for _, chunk := range fragments {
 			if chunk.TxStoreNft == "" {
-				storeAddress, err := u.StoreFileInTC(&chunk)
+				storeAddress, gasPrice, newGasPrice, err := u.StoreFileInTC(&chunk)
 				if err != nil {
 					logger.AtLog.Logger.Error("Error storing chunk in blockchain", zap.Error(err), zap.String("TokenId", chunk.TokenId), zap.Int("sequence", chunk.Sequence))
 					break
@@ -89,6 +90,9 @@ func (u Usecase) JobStoreTokenFiles() {
 					u.Repo.UpdateFileFragmentStatus(ctx, chunk.UUID, map[string]interface{}{
 						"tx_store_nft": chunk.TxStoreNft,
 						"uploaded_at":  chunk.UploadedAt,
+						//capture gas_price at this time
+						"gas_price":     gasPrice.String(),
+						"new_gas_price": newGasPrice.String(),
 					})
 				}
 			}
@@ -148,26 +152,26 @@ func (u Usecase) checkUploadDone(file *entity.TokenFileFragment) (bool, error) {
 	return false, err
 }
 
-func (u Usecase) StoreFileInTC(file *entity.TokenFileFragment) (*string, error) {
+func (u Usecase) StoreFileInTC(file *entity.TokenFileFragment) (*string, *big.Int, *big.Int, error) {
 
 	tokenUri, err := u.Repo.FindTokenByTokenID(file.TokenId)
 	if err != nil {
-		return nil, err
+		return nil, nil, nil, err
 	}
 
 	tempWallet, err := u.Repo.GetStoreWallet()
 	if err != nil {
-		return nil, fmt.Errorf("no wallet available")
+		return nil, nil, nil, fmt.Errorf("no wallet available")
 	}
 
 	privateKeyDeCrypt, err := encrypt.DecryptToString(tempWallet.PrivateKey, os.Getenv("SECRET_KEY"))
 	if err != nil {
-		return nil, err
+		return nil, nil, nil, err
 	}
 
 	privateKey, err := crypto.HexToECDSA(privateKeyDeCrypt)
 	if err != nil {
-		return nil, err
+		return nil, nil, nil, err
 	}
 
 	publicKey := privateKey.Public()
@@ -176,24 +180,22 @@ func (u Usecase) StoreFileInTC(file *entity.TokenFileFragment) (*string, error) 
 	nonce, err := u.TcClient.PendingNonceAt(context.Background(), fromAddress)
 
 	if err != nil {
-		return nil, err
+		return nil, nil, nil, err
 	}
 
 	gasPrice, err := u.TcClient.SuggestGasPrice(context.Background())
 	if err != nil {
-		return nil, err
+		return nil, nil, nil, err
 	}
-
-	fmt.Println("gasPrice: ", gasPrice)
 
 	chainID, err := u.TcClient.NetworkID(context.Background())
 	if err != nil {
-		return nil, errors.Wrap(err, "crypto.HexToECDSA")
+		return nil, nil, nil, errors.Wrap(err, "crypto.HexToECDSA")
 	}
 
 	auth, err := bind.NewKeyedTransactorWithChainID(privateKey, chainID)
 	if err != nil {
-		return nil, errors.Wrap(err, "crypto.HexToECDSA")
+		return nil, nil, nil, errors.Wrap(err, "crypto.HexToECDSA")
 	}
 
 	auth.Nonce = big.NewInt(int64(nonce))
@@ -201,23 +203,36 @@ func (u Usecase) StoreFileInTC(file *entity.TokenFileFragment) (*string, error) 
 	// Create a new instance of the contract with the given address and ABI
 	contract, err := generative_nft_contract.NewGenerativeNftContract(common.HexToAddress(tokenUri.GenNFTAddr), u.TcClient.GetClient())
 	if err != nil {
-		return nil, errors.Wrap(err, "NewGenerativeNftContract")
+		return nil, nil, nil, errors.Wrap(err, "NewGenerativeNftContract")
 	}
 
 	tokenIdInt := new(big.Int)
 	tokenIdInt, ok := tokenIdInt.SetString(file.TokenId, 10)
 	if !ok {
-		return nil, fmt.Errorf("error converting token id to big int")
+		return nil, nil, nil, fmt.Errorf("error converting token id to big int")
 	}
+
+	//start - add ten percent to gasPrice
+	pow18 := math.Pow(10, 8)
+	tenPercent, _ := new(big.Float).SetString("0.1")
+	tenPercent = tenPercent.Mul(tenPercent, big.NewFloat(pow18))
+
+	newGasPrice, _ := new(big.Float).SetString(gasPrice.String())
+	newGasPrice = newGasPrice.Add(newGasPrice, tenPercent)
+
+	f, _ := newGasPrice.Int64()
+	newGasPriceInt := big.NewInt(f)
+	auth.GasPrice = newGasPriceInt
+	//end  - add ten percent to gasPrice
 
 	tx, err := contract.Store(auth, tokenIdInt, big.NewInt(int64(file.Sequence)), file.Data)
 
 	if err != nil {
-		return nil, errors.Wrap(err, "contract.Mint")
+		return nil, nil, nil, errors.Wrap(err, "contract.Mint")
 	}
 
 	TxSendNft := tx.Hash().Hex()
-	return &TxSendNft, nil
+	return &TxSendNft, gasPrice, newGasPriceInt, nil
 }
 
 func (u Usecase) getTxSendNft(file *entity.TokenFileFragment) (*string, error) {

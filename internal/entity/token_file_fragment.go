@@ -14,17 +14,19 @@ const (
 )
 
 type TokenFileFragment struct {
-	BaseEntity `bson:",inline" json:"base_entity"`
-	TokenId    string             `json:"token_id" bson:"token_id"`
-	FilePath   string             `json:"file_path" bson:"file_path"`
-	Sequence   int                `json:"sequence" bson:"sequence"`
-	Data       []byte             `json:"data" bson:"data"`
-	Status     FileFragmentStatus `json:"status" bson:"status"`
-	Note       string             `json:"note" bson:"note"`
-	UploadedAt *time.Time         `json:"uploaded_at" bson:"uploaded_at"`
-	TxSendNft  string             `bson:"tx_send_nft" json:"tx_send_nft"`
-	TxStoreNft string             `bson:"tx_store_nft" json:"tx_store_nft"`
-	CreatedAt  time.Time          `json:"created_at" bson:"created_at"`
+	BaseEntity  `bson:",inline" json:"base_entity"`
+	TokenId     string             `json:"token_id" bson:"token_id"`
+	FilePath    string             `json:"file_path" bson:"file_path"`
+	Sequence    int                `json:"sequence" bson:"sequence"`
+	Data        []byte             `json:"data" bson:"data"`
+	Status      FileFragmentStatus `json:"status" bson:"status"`
+	Note        string             `json:"note" bson:"note"`
+	UploadedAt  *time.Time         `json:"uploaded_at" bson:"uploaded_at"`
+	TxSendNft   string             `bson:"tx_send_nft" json:"tx_send_nft"`
+	TxStoreNft  string             `bson:"tx_store_nft" json:"tx_store_nft"`
+	GasPrice    string             `bson:"gas_price" json:"gas_price"`
+	NewGasPrice string             `bson:"new_gas_price" json:"new_gas_price"`
+	CreatedAt   time.Time          `json:"created_at" bson:"created_at"`
 }
 
 func (m TokenFileFragment) TableName() string {
