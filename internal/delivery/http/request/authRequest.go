@@ -38,12 +38,12 @@ type UpdateProfileRequest struct {
 }
 
 type ProfileSocial struct {
-	Web       string `json:"web"`
-	Twitter   string `json:"twitter"`
-	Discord   string `json:"discord"`
-	Medium    string `json:"medium"`
-	Instagram string `json:"instagram"`
-	EtherScan string `json:"etherScan"`
+	Web       *string `json:"web"`
+	Twitter   *string `json:"twitter"`
+	Discord   *string `json:"discord"`
+	Medium    *string `json:"medium"`
+	Instagram *string `json:"instagram"`
+	EtherScan *string `json:"etherScan"`
 }
 
 func (g GenerateMessageRequest) SelfValidate() error {
