@@ -51,6 +51,17 @@ func (h *httpDelivery) profile(w http.ResponseWriter, r *http.Request) {
 					}
 				}
 			}
+
+			if projectResp, err := h.Usecase.GetProjects(structure.FilterProjects{
+				BaseFilters: structure.BaseFilters{
+					Page:  1,
+					Limit: 1,
+				},
+				WalletAddress: &profile.WalletAddress,
+			}); err == nil && projectResp.Total > 0 {
+				resp.IsArtist = true
+			}
+
 			return resp, nil
 		},
 	).ServeHTTP(w, r)
