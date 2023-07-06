@@ -6805,6 +6805,9 @@ const docTemplate = `{
                 "genNFTAddr": {
                     "type": "string"
                 },
+                "hasZipFile": {
+                    "type": "boolean"
+                },
                 "hash": {
                     "type": "string"
                 },
@@ -7355,6 +7358,9 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "avatar": {
+                    "type": "string"
+                },
+                "banner": {
                     "type": "string"
                 },
                 "bio": {
@@ -8202,6 +8208,9 @@ const docTemplate = `{
                 "avatar": {
                     "type": "string"
                 },
+                "banner": {
+                    "type": "string"
+                },
                 "bio": {
                     "type": "string"
                 },
@@ -8822,6 +8831,9 @@ const docTemplate = `{
                 "avatar": {
                     "type": "string"
                 },
+                "banner": {
+                    "type": "string"
+                },
                 "bio": {
                     "type": "string"
                 },
@@ -8836,6 +8848,9 @@ const docTemplate = `{
                 },
                 "id": {
                     "type": "string"
+                },
+                "isArtist": {
+                    "type": "boolean"
                 },
                 "profileSocial": {
                     "$ref": "#/definitions/response.ProfileSocial"

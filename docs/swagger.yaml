@@ -275,6 +275,8 @@ definitions:
         type: boolean
       genNFTAddr:
         type: string
+      hasZipFile:
+        type: boolean
       hash:
         type: string
       htmlFile:
@@ -657,6 +659,8 @@ definitions:
   entity.Users:
     properties:
       avatar:
+        type: string
+      banner:
         type: string
       bio:
         type: string
@@ -1213,6 +1217,8 @@ definitions:
     properties:
       avatar:
         type: string
+      banner:
+        type: string
       bio:
         type: string
       displayName:
@@ -1622,6 +1628,8 @@ definitions:
     properties:
       avatar:
         type: string
+      banner:
+        type: string
       bio:
         type: string
       canCreateProposal:
@@ -1632,6 +1640,8 @@ definitions:
         type: string
       id:
         type: string
+      isArtist:
+        type: boolean
       profileSocial:
         $ref: '#/definitions/response.ProfileSocial'
       proposal:

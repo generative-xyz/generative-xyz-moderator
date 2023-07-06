@@ -6798,6 +6798,9 @@
                 "genNFTAddr": {
                     "type": "string"
                 },
+                "hasZipFile": {
+                    "type": "boolean"
+                },
                 "hash": {
                     "type": "string"
                 },
@@ -7348,6 +7351,9 @@
             "type": "object",
             "properties": {
                 "avatar": {
+                    "type": "string"
+                },
+                "banner": {
                     "type": "string"
                 },
                 "bio": {
@@ -8195,6 +8201,9 @@
                 "avatar": {
                     "type": "string"
                 },
+                "banner": {
+                    "type": "string"
+                },
                 "bio": {
                     "type": "string"
                 },
@@ -8815,6 +8824,9 @@
                 "avatar": {
                     "type": "string"
                 },
+                "banner": {
+                    "type": "string"
+                },
                 "bio": {
                     "type": "string"
                 },
@@ -8829,6 +8841,9 @@
                 },
                 "id": {
                     "type": "string"
+                },
+                "isArtist": {
+                    "type": "boolean"
                 },
                 "profileSocial": {
                     "$ref": "#/definitions/response.ProfileSocial"
