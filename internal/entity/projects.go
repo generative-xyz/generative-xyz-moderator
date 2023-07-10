@@ -121,6 +121,8 @@ type Projects struct {
 	// GM whitelist holder
 	IsSupportGMHolder bool   `json:"isSupportGMHolder" bson:"isSupportGMHolder"`
 	MinimumGMSupport  string `json:"minimumGMSupport" bson:"minimumGMSupport"`
+
+	CurrentLoginUserID string `json:"-" bson:"-"`
 }
 
 func (p *Projects) IsMintTC() bool {

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"math/big"
 	"net/http"
 	"strings"
 
@@ -214,6 +215,8 @@ func (h *httpDelivery) projectDetail(w http.ResponseWriter, r *http.Request) {
 				logger.AtLog.Logger.Error("GetProjectDetailWithFeeInfo failed", zap.Error(err))
 				return nil, err
 			}
+
+			project.CurrentLoginUserID = vars[utils.SIGNED_USER_ID]
 			resp, err := h.projectToResp(project)
 			if err != nil {
 				return nil, err
@@ -615,6 +618,23 @@ func (h *httpDelivery) projectToResp(input *entity.Projects) (*response.ProjectR
 	} else {
 		// crawler
 		resp.IsGenerative = false
+	}
+
+	if input.IsSupportGMHolder && input.CurrentLoginUserID != "" {
+		minimumGMSupport, ok := new(big.Int).SetString(input.MinimumGMSupport, 10)
+		if ok && minimumGMSupport.Cmp(new(big.Int).SetUint64(0)) > 0 {
+			currentUser, err := h.Usecase.UserProfile(input.CurrentLoginUserID)
+			if err == nil {
+				gmBalance, err := h.Usecase.GetGMBalance(currentUser.WalletAddress)
+				if err == nil {
+					resp.CurrentUserBalanceGM = gmBalance.String()
+					if gmBalance.Cmp(minimumGMSupport) >= 0 {
+						resp.MintPrice = "0"
+						resp.MintPriceEth = "0"
+					}
+				}
+			}
+		}
 	}
 
 	return resp, nil
