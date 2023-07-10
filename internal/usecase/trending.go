@@ -180,6 +180,11 @@ func (u Usecase) JobSyncProjectTrending() error {
 				trendingScore *= u.Config.TrendingConfig.BoostedWeight
 			}
 
+			//Move BITCOIN BABBIES out of the top
+			if project.TokenID == "1001203" {
+				trendingScore = trendingScore / 2
+			}
+
 			u.Repo.UpdateTrendingScoreForProject(project.TokenID, trendingScore)
 			logger.AtLog.Logger.Info("SyncProjectTrending.UpdateTrendingScoreForProject", zap.Any("projectID", project.TokenID), zap.Any("trendingScore", trendingScore), zap.Any("volumnInBtc", zap.Any("volumnInBtc)", volumnInBtc)))
 			if numListings != 0 {
