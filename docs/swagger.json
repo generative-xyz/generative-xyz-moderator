@@ -6727,6 +6727,10 @@
                 "isHidden": {
                     "type": "boolean"
                 },
+                "isSupportGMHolder": {
+                    "description": "GM whitelist holder",
+                    "type": "boolean"
+                },
                 "isSynced": {
                     "type": "boolean"
                 },
@@ -6744,6 +6748,9 @@
                 },
                 "maxSupply": {
                     "type": "integer"
+                },
+                "minimumGMSupport": {
+                    "type": "string"
                 },
                 "mintFee": {
                     "type": "integer"
@@ -7457,6 +7464,10 @@
                 "isFullChain": {
                     "type": "boolean"
                 },
+                "isSupportGMHolder": {
+                    "description": "GM whitelist holder",
+                    "type": "boolean"
+                },
                 "license": {
                     "type": "string"
                 },
@@ -7468,6 +7479,9 @@
                 },
                 "maxSupply": {
                     "type": "integer"
+                },
+                "minimumGMSupport": {
+                    "type": "string"
                 },
                 "mintPrice": {
                     "type": "string"
@@ -7638,6 +7652,10 @@
                 "isFullChain": {
                     "type": "boolean"
                 },
+                "isSupportGMHolder": {
+                    "description": "GM whitelist holder",
+                    "type": "boolean"
+                },
                 "license": {
                     "type": "string"
                 },
@@ -7649,6 +7667,9 @@
                 },
                 "maxSupply": {
                     "type": "integer"
+                },
+                "minimumGMSupport": {
+                    "type": "string"
                 },
                 "mintPrice": {
                     "type": "string"
@@ -8016,11 +8037,18 @@
                 "isHidden": {
                     "type": "boolean"
                 },
+                "isSupportGMHolder": {
+                    "description": "GM whitelist holder",
+                    "type": "boolean"
+                },
                 "limitMintPerProcess": {
                     "type": "integer"
                 },
                 "maxSupply": {
                     "type": "integer"
+                },
+                "minimumGMSupport": {
+                    "type": "string"
                 },
                 "mintPrice": {
                     "type": "string"
@@ -8083,6 +8111,13 @@
         "request.UpdateProjectReq": {
             "type": "object",
             "properties": {
+                "isSupportGMHolder": {
+                    "description": "GM whitelist holder",
+                    "type": "boolean"
+                },
+                "minimumGMSupport": {
+                    "type": "string"
+                },
                 "priority": {
                     "type": "integer"
                 }

@@ -6734,6 +6734,10 @@ const docTemplate = `{
                 "isHidden": {
                     "type": "boolean"
                 },
+                "isSupportGMHolder": {
+                    "description": "GM whitelist holder",
+                    "type": "boolean"
+                },
                 "isSynced": {
                     "type": "boolean"
                 },
@@ -6751,6 +6755,9 @@ const docTemplate = `{
                 },
                 "maxSupply": {
                     "type": "integer"
+                },
+                "minimumGMSupport": {
+                    "type": "string"
                 },
                 "mintFee": {
                     "type": "integer"
@@ -7464,6 +7471,10 @@ const docTemplate = `{
                 "isFullChain": {
                     "type": "boolean"
                 },
+                "isSupportGMHolder": {
+                    "description": "GM whitelist holder",
+                    "type": "boolean"
+                },
                 "license": {
                     "type": "string"
                 },
@@ -7475,6 +7486,9 @@ const docTemplate = `{
                 },
                 "maxSupply": {
                     "type": "integer"
+                },
+                "minimumGMSupport": {
+                    "type": "string"
                 },
                 "mintPrice": {
                     "type": "string"
@@ -7645,6 +7659,10 @@ const docTemplate = `{
                 "isFullChain": {
                     "type": "boolean"
                 },
+                "isSupportGMHolder": {
+                    "description": "GM whitelist holder",
+                    "type": "boolean"
+                },
                 "license": {
                     "type": "string"
                 },
@@ -7656,6 +7674,9 @@ const docTemplate = `{
                 },
                 "maxSupply": {
                     "type": "integer"
+                },
+                "minimumGMSupport": {
+                    "type": "string"
                 },
                 "mintPrice": {
                     "type": "string"
@@ -8023,11 +8044,18 @@ const docTemplate = `{
                 "isHidden": {
                     "type": "boolean"
                 },
+                "isSupportGMHolder": {
+                    "description": "GM whitelist holder",
+                    "type": "boolean"
+                },
                 "limitMintPerProcess": {
                     "type": "integer"
                 },
                 "maxSupply": {
                     "type": "integer"
+                },
+                "minimumGMSupport": {
+                    "type": "string"
                 },
                 "mintPrice": {
                     "type": "string"
@@ -8090,6 +8118,13 @@ const docTemplate = `{
         "request.UpdateProjectReq": {
             "type": "object",
             "properties": {
+                "isSupportGMHolder": {
+                    "description": "GM whitelist holder",
+                    "type": "boolean"
+                },
+                "minimumGMSupport": {
+                    "type": "string"
+                },
                 "priority": {
                     "type": "integer"
                 }

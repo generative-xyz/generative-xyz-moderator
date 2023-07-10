@@ -228,6 +228,21 @@ func (u Usecase) CreateMintReceiveAddress(input structure.MintNftBtcData) (*enti
 		}
 	}
 
+	if p.IsSupportGMHolder && p.MinimumGMSupport != "" && p.MinimumGMSupport != "0" {
+		if user, err := u.Repo.FindUserByID(input.UserID); err == nil && user != nil {
+			minimumGMSupport, ok := new(big.Int).SetString(p.MinimumGMSupport, 10)
+			if ok {
+				// check GM balance of wallet address
+				balance, err := u.GetGMBalance(strings.ToLower(user.WalletAddress))
+				if err == nil {
+					if balance.Cmp(minimumGMSupport) >= 0 { // user's balance >= minimumGMSupport
+						mintPrice = big.NewInt(0)
+					}
+				}
+			}
+		}
+	}
+
 	// cal fee:
 	// todo: cal fee for minting on TC:
 	feeInfos, err := u.calMintFeeInfo(mintPrice.Int64(), p.MaxFileSize, int64(input.FeeRate), 0, 0)

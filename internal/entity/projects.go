@@ -118,6 +118,12 @@ type Projects struct {
 	IsBigFile                bool                `bson:"isBigFile"`
 	HasZipFile               bool                `bson:"hasZipFile"`
 	AuctionWinnerList        []AuctionWinnerList `bson:"-" json:"auctionWinnerList"`
+
+	// GM whitelist holder
+	IsSupportGMHolder bool   `json:"isSupportGMHolder" bson:"isSupportGMHolder"`
+	MinimumGMSupport  string `json:"minimumGMSupport" bson:"minimumGMSupport"`
+
+	CurrentLoginUserID string `json:"-" bson:"-"`
 }
 
 func (p *Projects) IsMintTC() bool {
