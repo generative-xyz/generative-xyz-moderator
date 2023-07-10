@@ -1020,21 +1020,19 @@ func (u Usecase) FilterTokensNew(filter structure.FilterTokens) (*entity.Paginat
 			item.MintingInfo = entity.MintingInfo{Done: 0, All: 0, Pending: 0}
 			item.IsMinting = false
 
-			mintingInfo, err := u.Repo.AggregateMintingInfo(ctx, item.TokenID)
-			if err == nil {
-				if len(mintingInfo) >= 1 {
-					mtinfo := mintingInfo[0]
-					item.MintingInfo = entity.MintingInfo{
-						All:     mtinfo.All,
-						Done:    mtinfo.Done,
-						Pending: mtinfo.Pending,
-					}
-					if mtinfo.Done < mtinfo.All {
-						item.IsMinting = true
-						item.IsOnChain = false
-					} else {
-						item.IsOnChain = true
-					}
+			mintingInfo, _ := u.Repo.AggregateMintingInfo(ctx, item.TokenID)
+			if len(mintingInfo) >= 1 {
+				mtinfo := mintingInfo[0]
+				item.MintingInfo = entity.MintingInfo{
+					All:     mtinfo.All,
+					Done:    mtinfo.Done,
+					Pending: mtinfo.Pending,
+				}
+				if mtinfo.Done < mtinfo.All {
+					item.IsMinting = true
+					item.IsOnChain = false
+				} else {
+					item.IsOnChain = true
 				}
 			} else {
 				item.IsOnChain = true
