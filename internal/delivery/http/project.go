@@ -99,7 +99,7 @@ func (h *httpDelivery) updateBTCProject(w http.ResponseWriter, r *http.Request) 
 	iWalletAddress := ctx.Value(utils.SIGNED_WALLET_ADDRESS)
 	walletAddress, ok := iWalletAddress.(string)
 	if !ok {
-		err := errors.New("Wallet address is incorect")
+		err := errors.New("wallet address is incorect")
 		logger.AtLog.Logger.Error("ctx.Value.Token", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
