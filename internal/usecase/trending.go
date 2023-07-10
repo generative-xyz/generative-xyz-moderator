@@ -182,7 +182,7 @@ func (u Usecase) JobSyncProjectTrending() error {
 
 			//Move BITCOIN BABBIES out of the top
 			if project.TokenID == "1001203" {
-				trendingScore = trendingScore / 13 //move after 10000074
+				trendingScore = trendingScore / 15 //move after 10000074
 			}
 
 			u.Repo.UpdateTrendingScoreForProject(project.TokenID, trendingScore)
