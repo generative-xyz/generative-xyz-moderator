@@ -216,7 +216,10 @@ func (h *httpDelivery) projectDetail(w http.ResponseWriter, r *http.Request) {
 				return nil, err
 			}
 
-			project.CurrentLoginUserID = vars[utils.SIGNED_USER_ID]
+			if r.URL.Query().Get("isEdit") == "" {
+				project.CurrentLoginUserID = vars[utils.SIGNED_USER_ID]
+			}
+
 			resp, err := h.projectToResp(project)
 			if err != nil {
 				return nil, err
