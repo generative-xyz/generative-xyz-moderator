@@ -274,7 +274,9 @@ func (u Usecase) JobCheckAirdrop() error {
 					"Airdrop success",
 					airdrop.ReceiverBtcAddressTaproot,
 					fmt.Sprintf("Type: %d - file %s airdrop tx %s for userUUid %s", airdrop.Type, airdrop.File, airdrop.Tx, airdrop.Receiver))
-				go u.NotifyNewAirdrop(airdrop)
+
+				//DISABLED BY REQUEST
+				//go u.NotifyNewAirdrop(airdrop)
 			}
 		}
 	}
