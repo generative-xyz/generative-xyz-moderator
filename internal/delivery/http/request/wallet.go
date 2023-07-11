@@ -16,6 +16,10 @@ type TrackTx struct {
 	Receiver              string   `json:"receiver"`
 }
 
+type TrackTxs struct {
+	TxItems []TrackTx `json:"items"`
+}
+
 type SubmitTx struct {
 	Txs map[string]string `json:"txs"`
 }

@@ -107,6 +107,25 @@ func (h *httpDelivery) trackTx(w http.ResponseWriter, r *http.Request) {
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, "ok", "")
 }
 
+func (h *httpDelivery) trackTxs(w http.ResponseWriter, r *http.Request) {
+	var reqBody request.TrackTxs
+	decoder := json.NewDecoder(r.Body)
+	err := decoder.Decode(&reqBody)
+	if err != nil {
+		logger.AtLog.Logger.Error("httpDelivery.trackTx.Decode", zap.Error(err))
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+
+	err = h.Usecase.TrackWalletTxs(reqBody)
+	if err != nil {
+		logger.AtLog.Logger.Error("httpDelivery.trackTx.TrackWalletTx", zap.Error(err))
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, "ok", "")
+}
+
 func (h *httpDelivery) walletTrackedTx(w http.ResponseWriter, r *http.Request) {
 	limit, err := strconv.Atoi(r.URL.Query().Get("limit"))
 	if err != nil {

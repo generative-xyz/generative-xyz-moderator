@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"rederinghub.io/internal/delivery/http/request"
 	"strconv"
 	"strings"
 	"sync"
@@ -482,6 +483,32 @@ func (u Usecase) TrackWalletTx(address string, tx structure.WalletTrackTx) error
 	}
 
 	return u.Repo.CreateTrackTx(&trackTx)
+}
+
+func (u Usecase) TrackWalletTxs(txs request.TrackTxs) error {
+	for key, tx := range txs.TxItems {
+		if tx.Address == "" || tx.Txhash == "" {
+			return errors.New(fmt.Sprintf("item[%d] -  address nor txhash cannot be empty", key))
+		}
+
+		trackTx := entity.WalletTrackTx{
+			Address:               tx.Address,
+			Txhash:                tx.Txhash,
+			Type:                  tx.Type,
+			Amount:                tx.Amount,
+			InscriptionID:         tx.InscriptionID,
+			InscriptionNumber:     tx.InscriptionNumber,
+			InscriptionList:       tx.InscriptionList,
+			InscriptionNumberList: tx.InscriptionNumberList,
+			Receiver:              tx.Receiver,
+		}
+
+		err := u.Repo.CreateTrackTx(&trackTx)
+		if err != nil {
+			return errors.New(fmt.Sprintf("item[%d] -  %s", key, err.Error()))
+		}
+	}
+	return nil
 }
 
 func (u Usecase) GetWalletTrackTxs(address string, limit, offset int64) ([]structure.WalletTrackTx, error) {
