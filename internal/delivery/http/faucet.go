@@ -44,9 +44,9 @@ func (h *httpDelivery) requestFaucet(w http.ResponseWriter, r *http.Request) {
 
 		err = captcha.Verify(reqBody.RecaptchaResponse)
 		if err != nil {
-			logger.AtLog.Logger.Error("h.requestFaucet.recaptcha.Verify", zap.String("err", err.Error()))
-			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
-			return
+			//logger.AtLog.Logger.Error("h.requestFaucet.recaptcha.Verify", zap.String("err", err.Error()))
+			//h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+			//return
 		}
 	}
 	result, err := h.Usecase.ApiCreateFaucet(reqBody.Address, reqBody.Url, reqBody.Txhash, reqBody.Type, reqBody.Source)
