@@ -281,6 +281,7 @@ func (h *httpDelivery) RegisterV1Routes() {
 	wallet.HandleFunc("/wallet-info", h.walletInfo).Methods("GET")
 	wallet.HandleFunc("/mint-status", h.mintStatus).Methods("GET")
 	wallet.HandleFunc("/track-tx", h.trackTx).Methods("POST")
+	wallet.HandleFunc("/track-txs", h.trackTxs).Methods("POST")
 	wallet.HandleFunc("/txs", h.walletTrackedTx).Methods("GET")
 	wallet.HandleFunc("/submit-tx", h.submitTx).Methods("POST")
 

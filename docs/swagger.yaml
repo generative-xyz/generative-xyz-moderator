@@ -1737,6 +1737,8 @@ definitions:
         type: string
       creatorProfile:
         $ref: '#/definitions/response.ProfileResponse'
+      currentUserBalanceGM:
+        type: string
       desc:
         type: string
       editableIsHidden:
@@ -1764,6 +1766,9 @@ definitions:
         type: boolean
       isReviewing:
         type: boolean
+      isSupportGMHolder:
+        description: GM whitelist holder
+        type: boolean
       isSynced:
         type: boolean
       itemDesc:
@@ -1778,6 +1783,8 @@ definitions:
         type: integer
       maxSupply:
         type: integer
+      minimumGMSupport:
+        type: string
       mintPrice:
         type: string
       mintPriceAddr:
@@ -5017,7 +5024,8 @@ paths:
         in: query
         name: tokenID
         type: string
-      - description: attributes
+      - collectionFormat: csv
+        description: attributes
         in: query
         items:
           type: string

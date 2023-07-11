@@ -5094,6 +5094,7 @@
                         "items": {
                             "type": "string"
                         },
+                        "collectionFormat": "csv",
                         "description": "attributes",
                         "name": "attributes",
                         "in": "query"
@@ -8887,6 +8888,9 @@
                 "creatorProfile": {
                     "$ref": "#/definitions/response.ProfileResponse"
                 },
+                "currentUserBalanceGM": {
+                    "type": "string"
+                },
                 "desc": {
                     "type": "string"
                 },
@@ -8927,6 +8931,10 @@
                 "isReviewing": {
                     "type": "boolean"
                 },
+                "isSupportGMHolder": {
+                    "description": "GM whitelist holder",
+                    "type": "boolean"
+                },
                 "isSynced": {
                     "type": "boolean"
                 },
@@ -8947,6 +8955,9 @@
                 },
                 "maxSupply": {
                     "type": "integer"
+                },
+                "minimumGMSupport": {
+                    "type": "string"
                 },
                 "mintPrice": {
                     "type": "string"
