@@ -30,6 +30,7 @@ const (
 	NEW_MINT_PFPS        DiscordNotiType = "new_mint_pfps"
 	NEW_PROJECT          DiscordNotiType = "new_project"
 	NEW_PROJECT_PROPOSED DiscordNotiType = "new_project_proposed"
+	NEW_ART_WEBHOOK                      = "new_art_webhook"
 	NEW_PROJECT_APPROVED DiscordNotiType = "new_project_approved"
 	NEW_BID              DiscordNotiType = "new_bid"
 	NEW_PROJECT_REPORT   DiscordNotiType = "new_project_report"

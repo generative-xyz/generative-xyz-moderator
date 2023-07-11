@@ -166,8 +166,10 @@ func (u Usecase) getBTCPriceInString(amount float64) string {
 	}
 	return usdPriceString
 }
-func (u Usecase) NotifyNewSale(order entity.DexBTCListing) error {
 
+func (u Usecase) NotifyNewSale(order entity.DexBTCListing) error {
+	//DISABLE by request
+	return nil
 	domain := os.Getenv("DOMAIN")
 	tokenUri, err := u.Repo.FindTokenByTokenID(order.InscriptionID)
 	if err != nil {
@@ -355,6 +357,9 @@ func (u Usecase) NotifyNewListing(order entity.DexBTCListing) error {
 }
 
 func (u Usecase) NotifyNFTMinted(inscriptionID string) error {
+	//DISABLE by request
+	return nil
+
 	domain := os.Getenv("DOMAIN")
 	tokenUri, err := u.Repo.FindTokenByTokenID(inscriptionID)
 	if err != nil {
@@ -518,10 +523,11 @@ func (u Usecase) NotifyNewProject(project *entity.Projects, owner *entity.Users,
 	embed := entity.Embed{
 		Title: fmt.Sprintf("%s\n***%s***", owner.GetDisplayNameByWalletAddress(), collectionName),
 	}
+	msgType = entity.NEW_ART_WEBHOOK
 
 	if proposed {
 		embed.Url = fmt.Sprintf("%s/dao?tab=0&id=%s", domain, proposalID)
-		msgType = entity.NEW_PROJECT_PROPOSED
+		//msgType = entity.NEW_PROJECT_PROPOSED
 		discordMsg.Content = fmt.Sprintf("**NEW DROP PROPOSED #%s ✋**", project.TokenID[len(project.TokenID)-4:])
 		fields = addDiscordField(fields, "Category", category, false)
 		fields = addDiscordField(fields, "", u.resolveShortDescription(project.Description), false)
@@ -530,7 +536,7 @@ func (u Usecase) NotifyNewProject(project *entity.Projects, owner *entity.Users,
 		}
 	} else {
 		embed.Url = fmt.Sprintf("%s/generative/%s", domain, project.GenNFTAddr)
-		msgType = entity.NEW_PROJECT_APPROVED
+		//msgType = entity.NEW_PROJECT_APPROVED
 		discordMsg.Content = fmt.Sprintf("**NEW DROP APPROVED #%s ✅**", project.TokenID[len(project.TokenID)-4:])
 		embed.Thumbnail = entity.Thumbnail{
 			Url: thumbnail,
@@ -691,7 +697,8 @@ func (u Usecase) NotifiNewProjectReport(project *entity.Projects, reportLink, re
 		Message:    discordMsg,
 		NumRetried: 0,
 		Status:     entity.PENDING,
-		Type:       entity.NEW_PROJECT_REPORT,
+		//Type:       entity.NEW_PROJECT_REPORT,
+		Type: entity.NEW_ART_WEBHOOK,
 		Meta: entity.DiscordNotiMeta{
 			ProjectID: project.TokenID,
 			Category:  catName,
@@ -816,7 +823,8 @@ func (u Usecase) NotifyNewProjectVote(daoProject *entity.DaoProject, vote *entit
 		Message:    discordMsg,
 		NumRetried: 0,
 		Status:     entity.PENDING,
-		Type:       entity.NEW_PROJECT_VOTE,
+		//Type:       entity.NEW_PROJECT_VOTE,
+		Type: entity.NEW_ART_WEBHOOK,
 		Meta: entity.DiscordNotiMeta{
 			ProjectID: project.TokenID,
 		},
