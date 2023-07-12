@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"fmt"
+	"rederinghub.io/utils/copier"
 
 	"github.com/go-resty/resty/v2"
 	"rederinghub.io/internal/delivery/http/response"
@@ -270,4 +271,61 @@ func (uc *Usecase) AlgoliaSearchTokenUri(filter *algolia.AlgoliaFilter) ([]entit
 	iTokens := tokens.Result
 	rTokens := iTokens.([]entity.TokenUri)
 	return rTokens, resp.NbHits, resp.NbPages, nil
+}
+
+func (uc *Usecase) DBSearchProject(filter *algolia.AlgoliaFilter) ([]entity.Projects, int, int, error) {
+	if filter.ObjType != "" && filter.ObjType != "project" {
+		return nil, 0, 0, nil
+	}
+
+	pe := &entity.FilterProjects{}
+	pe.Limit = int64(filter.Limit)
+	pe.Page = 1
+
+	pe.Search = &filter.SearchStr
+	hidden := false
+	isSynced := true
+	pe.IsHidden = &hidden
+	pe.IsSynced = &isSynced
+
+	uProjects, total, totalPages, err := uc.Repo.SearchProjects(*pe)
+	if err != nil {
+		return nil, 0, 0, err
+	}
+
+	return uProjects, total, totalPages, nil
+}
+
+func (uc *Usecase) DBSearchArtists(filter *algolia.AlgoliaFilter) ([]*response.ArtistResponse, int, int, error) {
+	if filter.ObjType != "" && filter.ObjType != "artist" {
+		return nil, 0, 0, nil
+	}
+
+	pe := &entity.FilterProjects{}
+	pe.Limit = int64(filter.Limit)
+	pe.Page = 1
+
+	pe.Search = &filter.SearchStr
+	hidden := false
+	isSynced := true
+	pe.IsHidden = &hidden
+	pe.IsSynced = &isSynced
+
+	as1, total, totalPages, err := uc.Repo.SearchArtists(*pe)
+	if err != nil {
+		return nil, 0, 0, err
+	}
+
+	as := []*response.ArtistResponse{}
+	for _, item := range as1 {
+		respItem := &response.ArtistResponse{}
+		err := copier.Copy(respItem, item)
+		if err != nil {
+			return nil, 0, 0, err
+		}
+
+		as = append(as, respItem)
+	}
+
+	return as, total, totalPages, nil
 }

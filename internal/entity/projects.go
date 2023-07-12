@@ -161,6 +161,7 @@ type ProjectMintingInfo struct {
 
 type FilterProjects struct {
 	BaseFilters
+	Search          *string
 	WalletAddress   *string
 	ContractAddress *string
 	Name            *string

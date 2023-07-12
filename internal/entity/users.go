@@ -64,6 +64,16 @@ type Users struct {
 	Slug                    string        `bson:"slug" json:"slug"`
 }
 
+type FilteredUser struct {
+	Users    `bson:",inline" json:"-"`
+	Projects []struct {
+		Name          string `json:"name" bson:"name"`
+		ID            string `bson:"id" json:"id"`
+		WalletAddress string `bson:"walletAddress" json:"walletAddress"`
+	}
+	CountProjects int `bson:"count_projects" json:"count_projects"`
+}
+
 type ProfileSocial struct {
 	Web             string `bson:"web" json:"web,omitempty"`
 	Twitter         string `bson:"twitter" json:"twitter,omitempty"`

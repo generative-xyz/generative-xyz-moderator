@@ -389,6 +389,7 @@ func (r Repository) GetProjects(filter entity.FilterProjects) (*entity.Paginatio
 	resp.PageSize = filter.Limit
 	return resp, nil
 }
+
 func (r Repository) GetProjectsPerPage(page, limit int) ([]entity.Projects, error) {
 	var result []entity.Projects
 
