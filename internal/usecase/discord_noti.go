@@ -168,8 +168,8 @@ func (u Usecase) getBTCPriceInString(amount float64) string {
 }
 
 func (u Usecase) NotifyNewSale(order entity.DexBTCListing) error {
-	//DISABLE by request
-	return nil
+	////DISABLE by request
+	//return nil
 	domain := os.Getenv("DOMAIN")
 	tokenUri, err := u.Repo.FindTokenByTokenID(order.InscriptionID)
 	if err != nil {
@@ -245,15 +245,18 @@ func (u Usecase) NotifyNewSale(order entity.DexBTCListing) error {
 	}
 
 	logger.AtLog.Logger.Info("sending new sale message to discord", zap.Any("message", zap.Any("discordMsg)", discordMsg)))
-	types := []entity.DiscordNotiType{entity.NEW_SALE}
+	//types := []entity.DiscordNotiType{entity.NEW_SALE}
+	types := []entity.DiscordNotiType{}
 	if order.Amount > 0 {
-		if tokenUri.ProjectID == PerceptronProjectID {
-			types = append(types, entity.NEW_SALE_PERCEPTRON)
-		} else if category == PFPsCategory {
-			types = append(types, entity.NEW_SALE_PFPS)
-		} else {
-			types = append(types, entity.NEW_SALE_ART)
-		}
+		//if tokenUri.ProjectID == PerceptronProjectID {
+		//	types = append(types, entity.NEW_SALE_PERCEPTRON)
+		//} else if category == PFPsCategory {
+		//	types = append(types, entity.NEW_SALE_PFPS)
+		//} else {
+		//	types = append(types, entity.NEW_SALE_ART)
+		//}
+
+		types = append(types, entity.NEW_ART_WEBHOOK)
 	}
 	for _, t := range types {
 		noti := entity.DiscordNoti{
@@ -358,7 +361,7 @@ func (u Usecase) NotifyNewListing(order entity.DexBTCListing) error {
 
 func (u Usecase) NotifyNFTMinted(inscriptionID string) error {
 	//DISABLE by request
-	return nil
+	//return nil
 
 	domain := os.Getenv("DOMAIN")
 	tokenUri, err := u.Repo.FindTokenByTokenID(inscriptionID)
@@ -449,15 +452,18 @@ func (u Usecase) NotifyNFTMinted(inscriptionID string) error {
 		Embeds:    []entity.Embed{embed},
 	}
 
-	types := []entity.DiscordNotiType{entity.NEW_MINT}
+	//types := []entity.DiscordNotiType{entity.NEW_MINT}
+	types := []entity.DiscordNotiType{}
 	if tokenUri.ProjectID == PerceptronProjectID {
 		types = append(types, entity.NEW_MINT_PERCEPTRON)
 	} else if mintPriceInNum > 0 {
-		if category == PFPsCategory {
-			types = append(types, entity.NEW_MINT_PFPS)
-		} else {
-			types = append(types, entity.NEW_MINT_ART)
-		}
+		//if category == PFPsCategory {
+		//	types = append(types, entity.NEW_MINT_PFPS)
+		//} else {
+		//	types = append(types, entity.NEW_MINT_ART)
+		//}
+
+		types = append(types, entity.NEW_ART_WEBHOOK)
 	}
 
 	for _, t := range types {
@@ -526,7 +532,7 @@ func (u Usecase) NotifyNewProject(project *entity.Projects, owner *entity.Users,
 	msgType = entity.NEW_ART_WEBHOOK
 
 	if proposed {
-		embed.Url = fmt.Sprintf("%s/dao?tab=0&id=%s", domain, proposalID)
+		embed.Url = fmt.Sprintf("%s/govern?tab=0&id=%s", domain, proposalID)
 		//msgType = entity.NEW_PROJECT_PROPOSED
 		discordMsg.Content = fmt.Sprintf("**NEW DROP PROPOSED #%s ✋**", project.TokenID[len(project.TokenID)-4:])
 		fields = addDiscordField(fields, "Category", category, false)
