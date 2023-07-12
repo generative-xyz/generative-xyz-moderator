@@ -279,7 +279,7 @@ func (r Repository) ListUserBywalletAddressBtcTaproot(address []string) ([]*resp
 
 		projects := []*response.ProjectBasicInfo{}
 		for _, p := range uProjects {
-			projects = append(projects, &response.ProjectBasicInfo{Id: p.ID.Hex(), Name: p.Name, WalletAddress: p.CreatorProfile.WalletAddress})
+			projects = append(projects, &response.ProjectBasicInfo{ID: p.ID.Hex(), Name: p.Name, WalletAddress: p.CreatorProfile.WalletAddress})
 		}
 
 		d := &response.ArtistResponse{Projects: projects}
@@ -340,7 +340,7 @@ func (r Repository) ListUsers(filter structure.FilterUsers) (*entity.Pagination,
 
 		projects := []*response.ProjectBasicInfo{}
 		for _, p := range uProjects {
-			projects = append(projects, &response.ProjectBasicInfo{Id: p.ID.Hex(), Name: p.Name, WalletAddress: p.CreatorProfile.WalletAddress})
+			projects = append(projects, &response.ProjectBasicInfo{ID: p.ID.Hex(), Name: p.Name, WalletAddress: p.CreatorProfile.WalletAddress})
 		}
 
 		d := &response.ArtistResponse{Projects: projects}
@@ -386,7 +386,7 @@ func (r Repository) ListArtist(filter entity.FilteArtist) (*entity.Pagination, e
 
 		projects := []*response.ProjectBasicInfo{}
 		for _, p := range uProjects {
-			projects = append(projects, &response.ProjectBasicInfo{Id: p.ID.Hex(), Name: p.Name, WalletAddress: p.CreatorProfile.WalletAddress})
+			projects = append(projects, &response.ProjectBasicInfo{ID: p.ID.Hex(), Name: p.Name, WalletAddress: p.CreatorProfile.WalletAddress})
 		}
 
 		d := &response.ArtistResponse{Projects: projects}

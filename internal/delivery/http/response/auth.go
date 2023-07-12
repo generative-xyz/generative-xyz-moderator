@@ -41,7 +41,7 @@ type ArtistResponse struct {
 }
 
 type ProjectBasicInfo struct {
-	Id            string `json:"id"`
+	ID            string `json:"id"`
 	Name          string `json:"name"`
 	WalletAddress string `json:"walletAddress"`
 }
