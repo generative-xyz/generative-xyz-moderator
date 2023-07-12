@@ -2,7 +2,6 @@ package repository
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"go.mongodb.org/mongo-driver/bson"
 	"math"
@@ -248,7 +247,6 @@ func (r Repository) SearchArtists(filter entity.FilterProjects) ([]*entity.Filte
 		}
 
 		if len(t) == 0 {
-			err = errors.New("Cannot count document")
 			return
 		}
 
