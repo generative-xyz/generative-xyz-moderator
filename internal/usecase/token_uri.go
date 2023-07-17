@@ -1507,18 +1507,18 @@ func (u Usecase) GetTokensMap(tokenIDs []string) (map[string]entity.TokenUri, er
 	return tokenIdToToken, nil
 }
 
+type tokenOwner struct {
+	Address string `json:"address"`
+	Name    string `json:"name"`
+	Avatar  string `json:"avatar"`
+	Count   int    `json:"count"`
+}
+
 func (u Usecase) AnalyticsTokenUriOwner(f structure.FilterTokens) (interface{}, error) {
 	filter := &entity.FilterTokenUris{}
 	err := copier.Copy(filter, f)
 	if err != nil {
 		return nil, err
-	}
-
-	type tokenOwner struct {
-		Address string `json:"address"`
-		Name    string `json:"name"`
-		Avatar  string `json:"avatar"`
-		Count   int    `json:"count"`
 	}
 
 	owners := make(map[string]*tokenOwner)
