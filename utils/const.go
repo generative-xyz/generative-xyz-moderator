@@ -141,6 +141,7 @@ const (
 	COLLECTION_TOKEN_URI_METADATA              string = "token_uri_metadata"
 	COLLECTION_FILES                           string = "files"
 	COLLECTION_PROJECTS                        string = "projects"
+	COLLECTION_PROJECT_PROTAB                  string = "projects_protab" // protab of generative
 	COLLECTION_PROJECT_ALLOW_LIST              string = "project_allow_list"
 	COLLECTION_PROJECT_ZIPLINKS                string = "project_zip_links"
 	COLLECTION_CONFIGS                         string = "configs"
