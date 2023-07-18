@@ -396,6 +396,10 @@ func (u Usecase) watchPendingDexBTCListing() error {
 					}
 				}
 			} else {
+				if len(txStatus.Outputs) == 0 {
+					continue
+				}
+
 				if txStatus.Outputs[idx].SpentBy != "" {
 					spentTx = txStatus.Outputs[idx].SpentBy
 				}

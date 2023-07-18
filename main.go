@@ -276,7 +276,7 @@ func startServer() {
 	protab, _ := project_protab_crontab_server.NewProjectProtabCrontabServer(uc)
 	servers["project_protab"] = delivery.AddedServer{
 		Server:  protab,
-		Enabled: conf.TxConsumerConfig.Enabled,
+		Enabled: true,
 	}
 
 	isGmEnabled := false
