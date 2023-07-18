@@ -66,7 +66,9 @@ func (r Repository) GetProjectsProtab(filter entity.FilterProjects) ([]*entity.P
 
 	skip := (filter.Page - 1) * filter.Limit
 	pipeline := bson.A{
-
+		bson.D{{"$match", bson.D{
+			{"tokenid", bson.M{"$ne": ""}},
+		}}},
 		bson.D{{"$sort", bson.D{
 			{"is_buyable", entity.SORT_DESC},
 			{"volume", entity.SORT_DESC},
@@ -140,7 +142,9 @@ func (r Repository) AggregateProjectsProtab(filter entity.FilterProjects) ([]*en
 
 	skip := (filter.Page - 1) * filter.Limit
 	pipeline := bson.A{
-
+		bson.D{{"$match", bson.D{
+			{"tokenid", bson.M{"$ne": ""}},
+		}}},
 		bson.D{{"$sort", bson.D{
 			{"is_buyable", entity.SORT_DESC},
 			{"volume", entity.SORT_DESC},
