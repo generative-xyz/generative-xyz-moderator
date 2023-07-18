@@ -354,10 +354,10 @@ func (u Usecase) watchPendingDexBTCListing() error {
 					//log.Printf("JobWatchPendingDexBTCListing btc.CheckOutcoinSpentBlockStream success\n")
 				}
 				if spentTx == "" {
-					log.Printf("JobWatchPendingDexBTCListing GetInscriptionByIDFromOrd %v\n", order.InscriptionID)
+					//log.Printf("JobWatchPendingDexBTCListing GetInscriptionByIDFromOrd %v\n", order.InscriptionID)
 					inscriptionInfo, err := u.GetInscriptionByIDFromOrd(order.InscriptionID)
 					if err != nil {
-						log.Printf("JobWatchPendingDexBTCListing GetInscriptionByIDFromOrd %v\n", order.Inputs)
+						//log.Printf("JobWatchPendingDexBTCListing GetInscriptionByIDFromOrd %v\n", order.Inputs)
 						continue
 					}
 					if inscriptionInfo != nil {
