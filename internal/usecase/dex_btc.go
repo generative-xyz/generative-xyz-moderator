@@ -344,14 +344,14 @@ func (u Usecase) watchPendingDexBTCListing() error {
 			// txStatus, err := bs.CheckTx(inscriptionTx[0])
 			txStatus, exist := preCheckTxs[inscriptionTx[0]]
 			if !exist {
-				log.Printf("JobWatchPendingDexBTCListing bs.CheckTx(txhash) %v\n", order.Inputs)
+				//log.Printf("JobWatchPendingDexBTCListing bs.CheckTx(txhash) %v\n", order.Inputs)
 				spentTx, err = btc.CheckOutcoinSpentBlockStream(inscriptionTx[0], uint(idx))
 				if err != nil {
 					log.Printf("JobWatchPendingDexBTCListing btc.CheckOutcoinSpentBlockStream %v\n", order.Inputs)
 					continue
 				}
 				if spentTx != "" {
-					log.Printf("JobWatchPendingDexBTCListing btc.CheckOutcoinSpentBlockStream success\n")
+					//log.Printf("JobWatchPendingDexBTCListing btc.CheckOutcoinSpentBlockStream success\n")
 				}
 				if spentTx == "" {
 					log.Printf("JobWatchPendingDexBTCListing GetInscriptionByIDFromOrd %v\n", order.InscriptionID)

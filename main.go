@@ -273,10 +273,17 @@ func startServer() {
 		Enabled: conf.TxConsumerConfig.Enabled,
 	}
 
+	pProtabBool := false
+	pProtab := os.Getenv("PROJECT_PROTAB_ENABLED")
+	if pProtab != "" {
+		if pProtab == "true" {
+			pProtabBool = true
+		}
+	}
 	protab, _ := project_protab_crontab_server.NewProjectProtabCrontabServer(uc)
 	servers["project_protab"] = delivery.AddedServer{
 		Server:  protab,
-		Enabled: conf.TxConsumerConfig.Enabled,
+		Enabled: pProtabBool,
 	}
 
 	isGmEnabled := false
