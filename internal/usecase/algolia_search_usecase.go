@@ -595,6 +595,7 @@ func (uc *Usecase) DBProjectProtabAPIFormatData(filter *algolia.AlgoliaFilter) (
 			Project: &response.ProjectInfo{
 				Name:            p.Project.Name,
 				ContractAddress: p.Project.ContractAddress,
+				TokenId:         p.Project.TokenId,
 				Thumbnail:       p.Project.Thumbnail,
 				CreatorAddress:  p.Project.CreatorAddress,
 				MaxSupply:       int64(p.Project.MaxSupply),
