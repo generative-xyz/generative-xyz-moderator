@@ -26,6 +26,24 @@ type ProjectsProtab struct {
 	IsBuyable         bool    `bson:"is_buyable" json:"is_buyable"`
 }
 
+type UpdateProjectsProtab struct {
+	BaseEntityNoID    `bson:",inline" json:"-"`
+	ContractAddress   string  `bson:"contractAddress" json:"contractAddress"`
+	TokenID           string  `bson:"tokenid" json:"tokenID"`
+	TokenIDInt        int64   `bson:"tokenIDInt" json:"tokenIDInt"`
+	Name              string  `bson:"name" json:"name"`
+	CreatorAddress    string  `bson:"creatorAddress" json:"creatorAddrr"`
+	CreatorAddressBTC string  `bson:"creatorAddrrBTC" json:"creatorAddrrBTC"`
+	Thumbnail         string  `bson:"thumbnail" json:"thumbnail"`
+	MaxSupply         int64   `bson:"maxSupply" json:"maxSupply"`
+	MintVolume        float64 `bson:"mint_volume" json:"mint_volume"`
+	Volume            float64 `bson:"volume" json:"volume"`
+	FloorPrice        float64 `bson:"floor_price" json:"floor_price"`
+	CEXVolume         float64 `bson:"cex_volume" json:"cex_volume"`
+	Listed            int     `bson:"listed" json:"listed"`
+	IsBuyable         bool    `bson:"is_buyable" json:"is_buyable"`
+}
+
 type ProjectsProtabAPI struct {
 	BaseEntityNoID `bson:",inline" json:"-"`
 	ProjectsProtab `bson:",inline" json:"-"`
@@ -63,5 +81,9 @@ func (u ProjectsProtab) TableName() string {
 }
 
 func (u ProjectsProtab) ToBson() (*bson.D, error) {
+	return helpers.ToDoc(u)
+}
+
+func (u UpdateProjectsProtab) ToBson() (*bson.D, error) {
 	return helpers.ToDoc(u)
 }
