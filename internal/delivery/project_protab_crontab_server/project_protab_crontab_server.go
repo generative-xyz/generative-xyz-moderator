@@ -2,6 +2,7 @@ package project_protab_crontab_server
 
 import (
 	"rederinghub.io/internal/usecase"
+	"rederinghub.io/utils/logger"
 	"time"
 )
 
@@ -16,6 +17,7 @@ func NewProjectProtabCrontabServer(uc *usecase.Usecase) (*ProjectProtabCrontabSe
 }
 
 func (tx ProjectProtabCrontabServer) StartServer() {
+	logger.AtLog.Logger.Info("ProjectProtabCrontabServer")
 	for {
 
 		tx.Usecase.JobProjectProtab()
