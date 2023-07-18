@@ -342,7 +342,7 @@ type ProjectUniqueOwnersChan struct {
 	Err             error
 }
 
-func (uc *Usecase) JobProjectProtab() error {
+func (uc Usecase) JobProjectProtab() error {
 	key := fmt.Sprintf("CrontabDBProjectProtab")
 	page := 1
 	limit := 100
@@ -405,7 +405,7 @@ func (uc *Usecase) JobProjectProtab() error {
 	return nil
 }
 
-func (uc *Usecase) JobProjectProtabUniqueOwner() error {
+func (uc Usecase) JobProjectProtabUniqueOwner() error {
 	key := fmt.Sprintf("JobProjectProtabUniqueOwner")
 	page := 1
 	limit := 10
