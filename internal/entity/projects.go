@@ -190,7 +190,7 @@ type ProjectFloorPrice struct {
 
 type ProjectVolume struct {
 	ID     string  `json:"_id" bson:"_id"`
-	Amount float64 `bson:"sale" json:"sale"`
+	Amount float64 `bson:"Amount" json:"Amount"`
 }
 
 func (u Projects) TableName() string {

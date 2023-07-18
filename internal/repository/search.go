@@ -460,6 +460,7 @@ func (r Repository) AggregateForProjectsProtab(filter entity.FilterProjects) ([]
 	}
 
 	for _, p := range projects {
+
 		l := *pListedFChan.Data
 		f := *pFloorPriceFChan.Data
 		pv := *pVolumeFChan.Data
