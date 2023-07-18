@@ -101,7 +101,7 @@ func (h *httpDelivery) getCollectionListing(w http.ResponseWriter, r *http.Reque
 		Page: int(bf.Page), Limit: int(bf.Limit),
 	}
 
-	dataResp, t, tp, err := h.Usecase.AlgoliaSearchProjectListing(filter)
+	dataResp, t, tp, err := h.Usecase.DBProjectProtabAPIFormatData(filter)
 	result := &entity.Pagination{}
 	result.Result = dataResp
 	result.Page = int64(filter.Page)

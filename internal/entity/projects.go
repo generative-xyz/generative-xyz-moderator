@@ -178,6 +178,21 @@ type FilterProjects struct {
 	RevealTxHash    *string
 }
 
+type ProjectListed struct {
+	ID     string `json:"_id" bson:"_id"`
+	Listed int    `bson:"listed" json:"listed"`
+}
+
+type ProjectFloorPrice struct {
+	ID     string  `json:"_id" bson:"_id"`
+	Amount float64 `bson:"total_amount" json:"total_amount"`
+}
+
+type ProjectVolume struct {
+	ID     string  `json:"_id" bson:"_id"`
+	Amount float64 `bson:"sale" json:"sale"`
+}
+
 func (u Projects) TableName() string {
 	return utils.COLLECTION_PROJECTS
 }
