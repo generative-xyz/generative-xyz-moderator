@@ -11,6 +11,7 @@ import (
 	"rederinghub.io/external/mempool_space"
 	"rederinghub.io/external/token_explorer"
 	gm_crontab_sever "rederinghub.io/internal/delivery/gm_crontab_server"
+	"rederinghub.io/internal/delivery/project_protab_crontab_server"
 	"strconv"
 	"time"
 
@@ -269,6 +270,12 @@ func startServer() {
 	txConsumer, _ := txserver.NewTxServer(&g, *uc, *conf)
 	servers["txconsumer"] = delivery.AddedServer{
 		Server:  txConsumer,
+		Enabled: conf.TxConsumerConfig.Enabled,
+	}
+
+	protab, _ := project_protab_crontab_server.NewProjectProtabCrontabServer(uc)
+	servers["project_protab"] = delivery.AddedServer{
+		Server:  protab,
 		Enabled: conf.TxConsumerConfig.Enabled,
 	}
 
