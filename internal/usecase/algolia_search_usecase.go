@@ -408,7 +408,7 @@ func (uc Usecase) JobProjectProtab() error {
 
 func (uc Usecase) JobProjectProtabUniqueOwner() error {
 	key := fmt.Sprintf("JobProjectProtabUniqueOwner")
-	page := 14
+	page := 1
 	limit := 10
 
 	for {
