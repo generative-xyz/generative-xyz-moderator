@@ -35,7 +35,7 @@ type ProjectsProtabAPI struct {
 
 type ProjectsProtabAPIProject struct {
 	Name            string                              `json:"name" bson:"name"`
-	TokenId         string                              `json:"tokenId" bson:"tokenId"`
+	TokenId         string                              `json:"tokenid" bson:"tokenid"`
 	Thumbnail       string                              `json:"thumbnail" bson:"thumbnail"`
 	ContractAddress string                              `json:"contractAddress" bson:"contractAddress"`
 	CreatorAddress  string                              `json:"creatorAddress" bson:"creatorAddress"`
