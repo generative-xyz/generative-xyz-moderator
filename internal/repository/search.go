@@ -152,7 +152,8 @@ func (r Repository) AggregateForProjectsProtab(filter entity.FilterProjects) ([]
 	match := bson.D{
 		{"isHidden", false},
 		{"isSynced", true},
-		{"tokenid", bson.M{"$nin": []string{"999998", "999999", "999997"}}},
+		{"tokenid", bson.M{"$nin": []string{"999998", "999999", "999997", ""}}}, // remove 1 central pixel ordinal
+		//{"categories", bson.M{"$nin": []string{"63edb893ced83bb22d0b5925"}}},    //other category
 	}
 
 	skip := (filter.Page - 1) * filter.Limit

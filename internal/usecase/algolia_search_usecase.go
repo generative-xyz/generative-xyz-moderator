@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"go.uber.org/zap"
 	"rederinghub.io/utils/copier"
+	"rederinghub.io/utils/helpers"
 	"rederinghub.io/utils/logger"
 	"strings"
 	"sync"
@@ -407,7 +408,7 @@ func (uc Usecase) JobProjectProtab() error {
 
 func (uc Usecase) JobProjectProtabUniqueOwner() error {
 	key := fmt.Sprintf("JobProjectProtabUniqueOwner")
-	page := 1
+	page := 14
 	limit := 10
 
 	for {
@@ -421,6 +422,8 @@ func (uc Usecase) JobProjectProtabUniqueOwner() error {
 			logger.AtLog.Logger.Error(key, zap.Error(err))
 			return err
 		}
+
+		helpers.CreateFile("test.json", uProjects)
 
 		if len(uProjects) == 0 {
 			break
@@ -635,12 +638,12 @@ func (uc *Usecase) CalculateUniqueOwner(wg *sync.WaitGroup, inputChan chan entit
 		GenNFTAddr: &pID,
 	})
 
-	if err == nil {
+	if err != nil || owners == nil {
+		logger.AtLog.Logger.Error(key, zap.Error(err), zap.String("projectID", in.TokenID))
+	} else {
 		owners1 := owners.([]*tokenOwner)
 		owner = len(owners1)
-		//logger.AtLog.Logger.Info(key, zap.Int("owner", owner), zap.String("projectID", in.TokenID))
-	} else {
-		logger.AtLog.Logger.Error(key, zap.Error(err), zap.String("projectID", in.TokenID))
+		logger.AtLog.Logger.Info(key, zap.Int("owner", owner), zap.String("projectID", in.TokenID))
 	}
 
 	outputChan <- ProjectUniqueOwnersChan{
