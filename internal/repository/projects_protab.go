@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"github.com/jinzhu/copier"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"math"
@@ -16,7 +17,14 @@ func (r Repository) InsertProjectProData(input *entity.ProjectsProtab) error {
 		{"tokenid", input.TokenID},
 	}
 
-	updatedData, err := input.ToBson()
+	u := &entity.UpdateProjectsProtab{}
+
+	err := copier.Copy(u, input)
+	if err != nil {
+		return err
+	}
+
+	updatedData, err := u.ToBson()
 	if err != nil {
 		return err
 	}
