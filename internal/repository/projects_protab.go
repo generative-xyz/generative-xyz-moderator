@@ -43,6 +43,28 @@ func (r Repository) InsertProjectProData(input *entity.ProjectsProtab) error {
 	return err
 }
 
+func (r Repository) UpdateProjectVolumeBuyable(contractAddress, tokenID string, volume float64, buyable bool) error {
+
+	f := bson.D{
+		{"contractAddress", contractAddress},
+		{"tokenid", tokenID},
+	}
+
+	update := bson.M{
+		"$set": bson.D{
+			{"stats.volume", volume},
+			{"stats.buyable", buyable},
+		},
+	}
+
+	_, err := r.DB.Collection(entity.Projects{}.TableName()).UpdateOne(context.TODO(), f, update)
+	if err != nil {
+		return err
+	}
+
+	return err
+}
+
 func (r Repository) UpdateProjectUniqueOwner(contractAddress string, tokenID string, owners int) error {
 
 	f := bson.D{
@@ -139,21 +161,55 @@ func (r Repository) GetProjectsProtab(filter entity.FilterProjects) ([]*entity.P
 }
 
 func (r Repository) AggregateProjectsProtab(filter entity.FilterProjects) ([]*entity.ProjectsProtabAPI, int, int, error) {
+	match := bson.D{
+		{"tokenid", bson.D{{"$ne", ""}}},
+		{"isHidden", false},
+		{"isSynced", true},
+	}
 
 	skip := (filter.Page - 1) * filter.Limit
 	pipeline := bson.A{
-		bson.D{{"$match", bson.D{
-			{"tokenid", bson.M{"$ne": ""}},
-		}}},
-		bson.D{{"$sort", bson.D{
-			{"is_buyable", entity.SORT_DESC},
-			{"volume", entity.SORT_DESC},
-		}}},
+		bson.D{
+			{"$project",
+				bson.D{
+					{"tokenid", 1},
+					{"contractAddress", 1},
+					{"name", 1},
+					{"description", 1},
+					{"thumbnail", 1},
+					{"creatorAddress", 1},
+					{"isSynced", 1},
+					{"isHidden", 1},
+					{"index", 1},
+					{"indexReverse", 1},
+					{"maxSupply", 1},
+					{"is_buyable", 1},
+					{"stats.buyable", 1},
+					{"stats.volume", 1},
+					{"creatorProfile.wallet_address", 1},
+					{"creatorProfile.wallet_address_payment", 1},
+					{"creatorProfile.wallet_address_btc", 1},
+					{"creatorProfile.wallet_address_btc_taproot", 1},
+					{"creatorProfile.display_name", 1},
+					{"creatorProfile.avatar", 1},
+				},
+			},
+		},
+		bson.D{
+			{"$match", match},
+		},
+		bson.D{
+			{"$sort",
+				bson.D{
+					{"stats.buyable", entity.SORT_DESC},
+					{"stats.volume", entity.SORT_DESC},
+				},
+			},
+		},
 		bson.D{{"$skip", skip}},
 		bson.D{{"$limit", filter.Limit}},
 	}
 
-	match := bson.D{}
 	projectsChan := make(chan SearchProjectProtabAPIChan, 1)
 	totalProjectsChan := make(chan SearchTotalProjectsChan, 1)
 
@@ -171,7 +227,7 @@ func (r Repository) AggregateProjectsProtab(filter entity.FilterProjects) ([]*en
 		pipeline = append(pipeline, bson.D{
 			{"$lookup",
 				bson.D{
-					{"from", "projects"},
+					{"from", utils.COLLECTION_PROJECT_PROTAB},
 					{"localField", "tokenid"},
 					{"foreignField", "tokenid"},
 					{"pipeline",
@@ -179,82 +235,45 @@ func (r Repository) AggregateProjectsProtab(filter entity.FilterProjects) ([]*en
 							bson.D{
 								{"$project",
 									bson.D{
-										{"name", 1},
-										{"tokenid", 1},
-										{"thumbnail", 1},
-										{"contractAddress", 1},
-										{"creatorAddress", 1},
-										{"maxSupply", 1},
-										{"isMintedOut", 1},
-										{"mintingInfo", 1},
-										{"index", 1},
-										{"indexReverse", 1},
-									},
-								},
-							},
-							bson.D{
-								{"$addFields",
-									bson.D{
-										{"mintingInfo",
-											bson.D{
-												{"index", "$index"},
-												{"indexReverse", "$indexReverse"},
-											},
-										},
+										{"cex_volume", 1},
+										{"floor_price", 1},
+										{"is_buyable", 1},
+										{"listed", 1},
+										{"mint_volume", 1},
+										{"unique_owners", 1},
+										{"volume", 1},
 									},
 								},
 							},
 						},
 					},
-					{"as", "project"},
+					{"as", "projects_detail"},
 				},
 			},
 		},
 			bson.D{
 				{"$unwind",
 					bson.D{
-						{"path", "$project"},
-						{"preserveNullAndEmptyArrays", false},
-					},
-				},
-			},
-			bson.D{{"$addFields", bson.D{{"owner", "$project.creatorAddress"}}}},
-			bson.D{
-				{"$lookup",
-					bson.D{
-						{"from", "users"},
-						{"localField", "owner"},
-						{"foreignField", "wallet_address"},
-						{"pipeline",
-							bson.A{
-								bson.D{
-									{"$project",
-										bson.D{
-											{"wallet_address", 1},
-											{"wallet_address_payment", 1},
-											{"wallet_address_btc", 1},
-											{"wallet_address_btc_taproot", 1},
-											{"display_name", 1},
-											{"avatar", 1},
-										},
-									},
-								},
-							},
-						},
-						{"as", "owner"},
+						{"path", "$projects_detail"},
+						{"preserveNullAndEmptyArrays", true},
 					},
 				},
 			},
 			bson.D{
-				{"$unwind",
+				{"$addFields",
 					bson.D{
-						{"path", "$owner"},
-						{"preserveNullAndEmptyArrays", false},
+						{"cex_volume", "$projects_detail.cex_volume"},
+						{"floor_price", "$projects_detail.floor_price"},
+						{"is_buyable", "$projects_detail.is_buyable"},
+						{"listed", "$projects_detail.listed"},
+						{"mint_volume", "$projects_detail.mint_volume"},
+						{"unique_owners", "$projects_detail.unique_owners"},
+						{"volume", "$projects_detail.volume"},
 					},
 				},
 			})
 
-		c, err := r.DB.Collection(utils.COLLECTION_PROJECT_PROTAB).Aggregate(context.TODO(), pipeline)
+		c, err := r.DB.Collection(utils.COLLECTION_PROJECTS).Aggregate(context.TODO(), pipeline)
 		if err != nil {
 			return
 		}
@@ -274,7 +293,7 @@ func (r Repository) AggregateProjectsProtab(filter entity.FilterProjects) ([]*en
 			}
 		}()
 
-		totalItems, err := r.DB.Collection(utils.COLLECTION_PROJECT_PROTAB).CountDocuments(context.TODO(), match)
+		totalItems, err := r.DB.Collection(utils.COLLECTION_PROJECTS).CountDocuments(context.TODO(), match)
 		if err != nil {
 			return
 		}

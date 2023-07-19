@@ -33,6 +33,10 @@ type ProjectStat struct {
 	ListedPercent      int32  `bson:"listedPercent" json:"listedPercent"`
 	MintedCount        int32  `bson:"minted_count" json:"mintedCount"`
 	TrendingScore      int64  `bson:"trending_score" json:"trendingScore"`
+
+	//volume, buyable for sorting
+	Volume  float64 `bson:"volume" json:"volume"`
+	Buyable bool    `bson:"buyable" json:"buyable"`
 }
 
 type MaxProjectID struct {
