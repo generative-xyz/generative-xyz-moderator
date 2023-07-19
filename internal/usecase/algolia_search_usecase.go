@@ -377,11 +377,33 @@ func (uc *Usecase) JobProjectProtab() error {
 		var wg sync.WaitGroup
 		for i, p := range projects {
 
-			wg.Add(1)
+			wg.Add(2)
+
+			//insert protab data
 			go func(wg *sync.WaitGroup, p *entity.ProjectsProtab) {
 				defer wg.Done()
 
 				err := uc.Repo.InsertProjectProData(p)
+				if err != nil {
+					logger.AtLog.Logger.Error(fmt.Sprintf("%s - projectID %s", key, p.TokenID), zap.Error(err),
+						zap.String("project", p.TokenID),
+						//zap.String("contract_address", p.ContractAddress),
+					)
+					//return err
+				} else {
+					//logger.AtLog.Logger.Info(fmt.Sprintf("%s - projectID %s", key, p.TokenID), zap.Error(err),
+					//	zap.Any("project", p.TokenIDInt),
+					//	//zap.String("contract_address", p.ContractAddress),
+					//)
+				}
+
+			}(&wg, p)
+
+			//update volume, is_buyable project
+			go func(wg *sync.WaitGroup, p *entity.ProjectsProtab) {
+				defer wg.Done()
+
+				err := uc.Repo.UpdateProjectVolumeBuyable(p.ContractAddress, p.TokenID, p.Volume, p.IsBuyable)
 				if err != nil {
 					logger.AtLog.Logger.Error(fmt.Sprintf("%s - projectID %s", key, p.TokenID), zap.Error(err),
 						zap.String("project", p.TokenID),
@@ -582,6 +604,10 @@ func (uc *Usecase) DBProjectProtabAPIFormatData(filter *algolia.AlgoliaFilter) (
 
 	listings := []*response.ProjectListing{}
 	for _, p := range uProjects {
+		isMintedOut := false
+		if int64(p.MaxSupply) == int64(p.Index) {
+			isMintedOut = true
+		}
 
 		respItem := &response.ProjectListing{
 			ObjectID:        p.TokenID,
@@ -600,25 +626,25 @@ func (uc *Usecase) DBProjectProtabAPIFormatData(filter *algolia.AlgoliaFilter) (
 			TotalVolume: uint64(p.Volume),
 			IsBuyable:   p.IsBuyable,
 			Project: &response.ProjectInfo{
-				Name:            p.Project.Name,
-				ContractAddress: p.Project.ContractAddress,
-				TokenId:         p.Project.TokenId,
-				Thumbnail:       p.Project.Thumbnail,
-				CreatorAddress:  p.Project.CreatorAddress,
-				MaxSupply:       int64(p.Project.MaxSupply),
-				IsMintedOut:     p.Project.IsMintedOut,
+				Name:            p.Name,
+				ContractAddress: p.ContractAddress,
+				TokenId:         p.TokenID,
+				Thumbnail:       p.Thumbnail,
+				CreatorAddress:  p.CreatorAddress,
+				MaxSupply:       int64(p.MaxSupply),
+				IsMintedOut:     isMintedOut,
 				MintingInfo: response.ProjectMintingInfo{
-					Index:        int64(p.Project.MintingInfo.Index),
-					IndexReverse: int64(p.Project.MintingInfo.IndexReverse),
+					Index:        int64(p.Index),
+					IndexReverse: int64(p.IndexReverse),
 				},
 			},
 			Owner: &response.OwnerInfo{
-				WalletAddress:           p.Owner.WalletAddress,
-				WalletAddressPayment:    p.Owner.WalletAddressPayment,
-				WalletAddressBTC:        p.Owner.WalletAddressBtc,
-				WalletAddressBTCTaproot: p.Owner.WalletAddressBtcTaproot,
-				DisplayName:             p.Owner.DisplayName,
-				Avatar:                  p.Owner.Avatar,
+				WalletAddress:           p.CreatorProfile.WalletAddress,
+				WalletAddressPayment:    p.CreatorProfile.WalletAddressPayment,
+				WalletAddressBTC:        p.CreatorProfile.WalletAddressBtc,
+				WalletAddressBTCTaproot: p.CreatorProfile.WalletAddressBtcTaproot,
+				DisplayName:             p.CreatorProfile.DisplayName,
+				Avatar:                  p.CreatorProfile.Avatar,
 			},
 			Priority: 1,
 		}

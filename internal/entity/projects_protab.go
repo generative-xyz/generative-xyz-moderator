@@ -24,6 +24,8 @@ type ProjectsProtab struct {
 	Listed            int     `bson:"listed" json:"listed"`
 	UniqueOwners      int     `bson:"unique_owners" json:"unique_owners"`
 	IsBuyable         bool    `bson:"is_buyable" json:"is_buyable"`
+	Index             int     `bson:"index" json:"index"`
+	IndexReverse      int     `bson:"indexReverse" json:"indexReverse"`
 }
 
 type UpdateProjectsProtab struct {
@@ -47,19 +49,18 @@ type UpdateProjectsProtab struct {
 type ProjectsProtabAPI struct {
 	BaseEntityNoID `bson:",inline" json:"-"`
 	ProjectsProtab `bson:",inline" json:"-"`
-	Project        ProjectsProtabAPIProject `bson:"project" json:"project"`
-	Owner          ProjectsProtabAPIOwner   `bson:"owner" json:"owner"`
+	//ProjectsProtabAPIProject `bson:",inline" json:"-"`
+	CreatorProfile ProjectsProtabAPIOwner `bson:"creatorProfile" json:"creatorProfile"`
 }
 
 type ProjectsProtabAPIProject struct {
-	Name            string                              `json:"name" bson:"name"`
-	TokenId         string                              `json:"tokenid" bson:"tokenid"`
-	Thumbnail       string                              `json:"thumbnail" bson:"thumbnail"`
-	ContractAddress string                              `json:"contractAddress" bson:"contractAddress"`
-	CreatorAddress  string                              `json:"creatorAddress" bson:"creatorAddress"`
-	MaxSupply       int                                 `json:"maxSupply" bson:"maxSupply"`
-	IsMintedOut     bool                                `json:"isMintedOut" bson:"isMintedOut"`
-	MintingInfo     ProjectsProtabAPIProjectMintingInfo `json:"mintingInfo" bson:"mintingInfo"`
+	Name            string `json:"name" bson:"name"`
+	TokenId         string `json:"tokenid" bson:"tokenid"`
+	Thumbnail       string `json:"thumbnail" bson:"thumbnail"`
+	ContractAddress string `json:"contractAddress" bson:"contractAddress"`
+	CreatorAddress  string `json:"creatorAddress" bson:"creatorAddress"`
+	MaxSupply       int    `json:"maxSupply" bson:"maxSupply"`
+	IsMintedOut     bool   `json:"isMintedOut" bson:"isMintedOut"`
 }
 
 type ProjectsProtabAPIProjectMintingInfo struct {
