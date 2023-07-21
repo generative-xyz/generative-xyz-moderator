@@ -732,3 +732,54 @@ func (r Repository) GetDexBTCTrackingInternalByStatus(statuses []entity.DexBTCTr
 // 	}
 // 	return resp, nil
 // }
+
+func (r Repository) TestGetAllDexBTListings(skip int64, limit int64) ([]entity.DexBTCListing, error) {
+	resp := []entity.DexBTCListing{}
+	//filter := bson.M{}
+
+	pipeline := bson.A{
+		bson.D{{"$sort", bson.D{
+			{"_id", entity.SORT_DESC},
+		}}},
+		bson.D{{"$skip", skip}},
+		bson.D{{"$limit", limit}},
+	}
+
+	cursor, err := r.DB.Collection(entity.DexBTCListing{}.TableName()).Aggregate(context.TODO(), pipeline)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = cursor.All(context.TODO(), &resp); err != nil {
+		return nil, err
+	}
+
+	return resp, nil
+}
+
+func (r Repository) TestGetAllTokens(skip int64, limit int64) ([]entity.TokenUri, error) {
+	resp := []entity.TokenUri{}
+	//filter := bson.M{}
+
+	pipeline := bson.A{
+		bson.D{{"$match", bson.D{
+			{"project_id", "1002573"},
+		}}},
+		bson.D{{"$sort", bson.D{
+			{"_id", entity.SORT_DESC},
+		}}},
+		bson.D{{"$skip", skip}},
+		bson.D{{"$limit", limit}},
+	}
+
+	cursor, err := r.DB.Collection(entity.TokenUri{}.TableName()).Aggregate(context.TODO(), pipeline)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = cursor.All(context.TODO(), &resp); err != nil {
+		return nil, err
+	}
+
+	return resp, nil
+}
