@@ -20,10 +20,7 @@ func CaptureThumbnail(repo *repository.Repository, uc *usecase.Usecase, projectI
 
 	tokenCap := []entity.TokenUri{}
 	for _, tok := range tokens {
-
-		if tok.OrderInscriptionIndex >= 12 && tok.OrderInscriptionIndex <= 20 {
-			tokenCap = append(tokenCap, tok)
-		}
+		tokenCap = append(tokenCap, tok)
 	}
 
 	type dataChan struct {

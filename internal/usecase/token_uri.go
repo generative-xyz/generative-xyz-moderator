@@ -56,17 +56,17 @@ func (u Usecase) RunAndCap(token *entity.TokenUri) (*structure.TokenAnimationURI
 	}
 	resp := &structure.TokenAnimationURI{}
 	logger.AtLog.Logger.Info("RunAndCap", zap.Any("tokenID", token.TokenID))
-	if token.ThumbnailCapturedAt != nil && token.ParsedImage != nil && !strings.HasSuffix(*token.ParsedImage, "i0") {
-		resp = &structure.TokenAnimationURI{
-			ParsedImage: *token.ParsedImage,
-			Thumbnail:   token.Thumbnail,
-			Traits:      token.ParsedAttributes,
-			TraitsStr:   token.ParsedAttributesStr,
-			CapturedAt:  token.ThumbnailCapturedAt,
-			IsUpdated:   false,
-		}
-		return resp, nil
-	}
+	//if token.ThumbnailCapturedAt != nil && token.ParsedImage != nil && !strings.HasSuffix(*token.ParsedImage, "i0") {
+	//	resp = &structure.TokenAnimationURI{
+	//		ParsedImage: *token.ParsedImage,
+	//		Thumbnail:   token.Thumbnail,
+	//		Traits:      token.ParsedAttributes,
+	//		TraitsStr:   token.ParsedAttributesStr,
+	//		CapturedAt:  token.ThumbnailCapturedAt,
+	//		IsUpdated:   false,
+	//	}
+	//	return resp, nil
+	//}
 
 	eCH, err := strconv.ParseBool(os.Getenv("ENABLED_CHROME_HEADLESS"))
 	if err != nil {

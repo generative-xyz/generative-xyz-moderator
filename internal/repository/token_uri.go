@@ -1308,7 +1308,7 @@ func (r Repository) GetAllTokensByProjectID(projectID string) ([]entity.TokenUri
 	f := bson.D{{
 		Key:   utils.KEY_PROJECT_ID,
 		Value: projectID,
-	}}
+	}, {"token_id", "7000011"}}
 
 	opts := options.FindOptions{}
 	opts.Sort = bson.D{
