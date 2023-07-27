@@ -8,7 +8,6 @@ import (
 	"rederinghub.io/internal/repository"
 	"rederinghub.io/internal/usecase"
 	"rederinghub.io/utils/helpers"
-	"strings"
 	"sync"
 )
 
@@ -28,6 +27,8 @@ func CaptureThumbnail(repo *repository.Repository, uc *usecase.Usecase, projectI
 		Thumbnail string
 		ProjectID string
 		Err       error
+		Attrs     []entity.TokenUriAttr
+		AttrStrs  []entity.TokenUriAttrStr
 	}
 
 	respArr := make(chan dataChan, len(tokenCap))
@@ -44,6 +45,8 @@ func CaptureThumbnail(repo *repository.Repository, uc *usecase.Usecase, projectI
 				TokenID:   tok.TokenID,
 				Thumbnail: resp.Thumbnail,
 				ProjectID: tok.ProjectID,
+				Attrs:     resp.Traits,
+				AttrStrs:  resp.TraitsStr,
 				Err:       err,
 			}
 
@@ -64,6 +67,7 @@ func CaptureThumbnail(repo *repository.Repository, uc *usecase.Usecase, projectI
 		outFromChan := <-respArr
 		key := fmt.Sprintf("%s-%s", outFromChan.ProjectID, outFromChan.TokenID)
 		captured[key] = outFromChan.Thumbnail
+		repo.UpdateTokenThumbnailByTokenId(outFromChan.ProjectID, outFromChan.TokenID, outFromChan.Thumbnail, outFromChan.Attrs, outFromChan.AttrStrs)
 	}
 
 	helpers.CreateFile("token-thumbnail.json", captured)
@@ -82,15 +86,15 @@ func UpdateThumbnail(repo *repository.Repository, uc *usecase.Usecase, fileName 
 		return
 	}
 
-	for key, value := range respArr {
-		arr := strings.Split(key, "-")
-		//contract := arr[0]
-		tokenID := arr[1]
-		projectID := arr[0]
-		thumbnail := value
-
-		repo.UpdateTokenThumbnailByTokenId(projectID, tokenID, thumbnail)
-	}
+	//for key, value := range respArr {
+	//	arr := strings.Split(key, "-")
+	//	//contract := arr[0]
+	//	//tokenID := arr[1]
+	//	//projectID := arr[0]
+	//	//thumbnail := value
+	//
+	//	//repo.UpdateTokenThumbnailByTokenId(projectID, tokenID, thumbnail)
+	//}
 
 	return
 }

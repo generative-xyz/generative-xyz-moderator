@@ -1464,14 +1464,16 @@ func (r Repository) UpdateTokenPriceByTokenId(tokenId string, price int64) error
 	return err
 }
 
-func (r Repository) UpdateTokenThumbnailByTokenId(projectID string, tokenId string, thumbnail string) error {
+func (r Repository) UpdateTokenThumbnailByTokenId(projectID string, tokenId string, thumbnail string, attr []entity.TokenUriAttr, attrStr []entity.TokenUriAttrStr) error {
 	filter := bson.D{
 		{Key: "token_id", Value: tokenId},
 		{Key: "project_id", Value: projectID},
 	}
 	update := bson.M{
 		"$set": bson.M{
-			"thumbnail": thumbnail,
+			"thumbnail":             thumbnail,
+			"parsed_attributes":     attr,
+			"parsed_attributes_str": attrStr,
 		},
 	}
 	_, err := r.DB.Collection(utils.COLLECTION_TOKEN_URI).UpdateOne(context.TODO(), filter, update)
