@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"github.com/jinzhu/copier"
 	"github.com/pkg/errors"
@@ -426,6 +427,8 @@ func (u Usecase) NotifyNFTMinted(inscriptionID string) error {
 	if parsedThumbnailUrl != nil {
 		parsedThumbnail = parsedThumbnailUrl.String()
 	}
+
+	parsedThumbnail = u.ParseImage(tokenUri.Thumbnail, *project.CatureThumbnailDelayTime)
 
 	embed := entity.Embed{
 		Url:    fmt.Sprintf("%s/generative/%s/%s", domain, project.GenNFTAddr, tokenUri.TokenID),
@@ -1016,4 +1019,42 @@ func (u Usecase) TestSendNoti() {
 		u.JobSendDiscordNoti()
 		fmt.Println("done")
 	}
+}
+
+func (u *Usecase) ParseImage(imageURL string, delaytime int) string {
+	parseImageUrl := "https://devnet.generative.xyz/generative/api/photo/pare-html"
+
+	postData := make(map[string]interface{})
+	postData["display_url"] = imageURL
+	postData["delay_time"] = delaytime
+	postData["app_id"] = "mint-noti"
+
+	resp, _, _, err := helpers.HttpRequest(parseImageUrl, "POST", make(map[string]string), postData)
+	if err != nil {
+		return imageURL
+	}
+
+	type respdata struct {
+		Err    error `json:"error"`
+		Status bool  `json:"status"`
+		Data   struct {
+			Image string `json:"image"`
+		} `json:"data"`
+	}
+
+	response := &respdata{}
+	err = json.Unmarshal(resp, response)
+	if err != nil {
+		return imageURL
+	}
+
+	if !response.Status {
+		return imageURL
+	}
+
+	if response.Err != nil {
+		return imageURL
+	}
+
+	return response.Data.Image
 }
