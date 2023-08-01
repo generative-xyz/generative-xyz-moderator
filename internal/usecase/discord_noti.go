@@ -428,7 +428,12 @@ func (u Usecase) NotifyNFTMinted(inscriptionID string) error {
 		parsedThumbnail = parsedThumbnailUrl.String()
 	}
 
-	parsedThumbnail = u.ParseImage(tokenUri.Thumbnail, *project.CatureThumbnailDelayTime)
+	delay := entity.DEFAULT_CAPTURE_TIME
+	if project.CatureThumbnailDelayTime != nil {
+		delay = *project.CatureThumbnailDelayTime
+	}
+
+	parsedThumbnail = u.ParseImage(tokenUri.Thumbnail, delay)
 
 	embed := entity.Embed{
 		Url:    fmt.Sprintf("%s/generative/%s/%s", domain, project.GenNFTAddr, tokenUri.TokenID),
