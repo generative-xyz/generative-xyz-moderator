@@ -185,8 +185,8 @@ func (h *httpDelivery) tokenURIWithResp(w http.ResponseWriter, r *http.Request) 
 		filter := &algolia.AlgoliaFilter{SearchStr: token.TokenID}
 		aresp, _, _, err := h.Usecase.AlgoliaSearchInscription(filter)
 		if err != nil {
-			logger.AtLog.Logger.Error("h.Usecase.AlgoliaSearchInscription", zap.Error(err))
-			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+			//logger.AtLog.Logger.Error("h.Usecase.AlgoliaSearchInscription", zap.Error(err))
+			//h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		} else {
 			for _, i := range aresp {
 				if i.Inscription != nil && i.Inscription.ObjectId == token.TokenID {
