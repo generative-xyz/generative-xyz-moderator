@@ -546,7 +546,7 @@ func (r Repository) SearchArtists(filter entity.FilterProjects) ([]*entity.Filte
 			},
 		},
 		bson.D{{"$addFields", bson.D{{"count_projects", bson.D{{"$size", "$projects"}}}}}},
-		bson.D{{"$match", bson.D{{"count_projects", bson.D{{"$gte", 1}}}}}},
+		//bson.D{{"$match", bson.D{{"count_projects", bson.D{{"$gte", 1}}}}}},
 	}
 
 	pipeline1 := append(pipeline, bson.D{{"$sort", bson.D{{"score", entity.SORT_DESC}}}})
