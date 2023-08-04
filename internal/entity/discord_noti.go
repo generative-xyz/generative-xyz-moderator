@@ -23,6 +23,7 @@ const (
 	NEW_SALE_PERCEPTRON  DiscordNotiType = "new_sale_perceptron"
 	NEW_SALE_ART         DiscordNotiType = "new_sale_art"
 	NEW_SALE_PFPS        DiscordNotiType = "new_sale_pfps"
+	NEW_SALE_RECALL      DiscordNotiType = "new_sale_recall"
 	NEW_LISTING          DiscordNotiType = "new_listing"
 	NEW_MINT             DiscordNotiType = "new_mint"
 	NEW_MINT_PERCEPTRON  DiscordNotiType = "new_mint_perceptron"

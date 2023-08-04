@@ -27,6 +27,7 @@ const (
 	MaxSendDiscordRetryTimes = 3
 	MaxFindImageRetryTimes   = 20
 	PerceptronProjectID      = "1002573"
+	RecallProjectID          = "1001311"
 	PFPsCategory             = "PFPs"
 )
 
@@ -252,6 +253,8 @@ func (u Usecase) NotifyNewSale(order entity.DexBTCListing) ([]entity.DiscordNoti
 	if order.Amount > 0 {
 		if tokenUri.ProjectID == PerceptronProjectID {
 			types = append(types, entity.NEW_SALE_PERCEPTRON)
+		} else if tokenUri.ProjectID == RecallProjectID {
+			types = append(types, entity.NEW_SALE_RECALL)
 		} else if category == PFPsCategory {
 			types = append(types, entity.NEW_SALE_PFPS)
 		}
