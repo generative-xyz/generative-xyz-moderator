@@ -175,6 +175,7 @@ const (
 	COLLECTION_BTC_TX_SUBMIT                   string = "btc_tx_submit"
 	COLLECTION_TOKEN_ACTIVITY                  string = "token_activities"
 	COLLECTION_DISCORD_PARTNER                 string = "discord_partners"
+	COLLECTION_DISCORD_CUTOM_TYPES             string = "discord_custom_types"
 	COLLECTION_TOKEN_TX                        string = "token_txs"
 	COLLECTION_DEX_BTC_TRACKING_INTERNAL       string = "dex_btc_tracking_internal"
 	COLLECTION_GLOBAL_VARIABLE                 string = "global_variables"

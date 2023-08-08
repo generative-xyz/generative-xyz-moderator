@@ -260,6 +260,14 @@ func (u Usecase) NotifyNewSale(order entity.DexBTCListing) ([]entity.DiscordNoti
 			types = append(types, entity.NEW_SALE_BITCOINBABIES)
 		} else if category == PFPsCategory {
 			types = append(types, entity.NEW_SALE_PFPS)
+		} else {
+
+			//convert webhook type for the specific projects
+			k, err := u.Repo.GetCutomTypeByProjectID(tokenUri.ProjectID, string(entity.NEW_SALE))
+			if err == nil && k != nil {
+				t := entity.DiscordNotiType(*k)
+				types = append(types, t)
+			}
 		}
 
 		//else {
@@ -485,6 +493,13 @@ func (u Usecase) NotifyNFTMinted(inscriptionID string) error {
 		//}
 
 		//types = append(types, entity.NEW_ART_WEBHOOK)
+	}
+
+	//convert webhook type for the specific projects
+	k, err := u.Repo.GetCutomTypeByProjectID(tokenUri.ProjectID, string(entity.NEW_SALE))
+	if err == nil && k != nil {
+		t := entity.DiscordNotiType(*k)
+		types = append(types, t)
 	}
 
 	for _, t := range types {
