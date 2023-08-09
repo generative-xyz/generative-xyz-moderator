@@ -496,7 +496,7 @@ func (u Usecase) NotifyNFTMinted(inscriptionID string) error {
 	}
 
 	//convert webhook type for the specific projects
-	k, err := u.Repo.GetCutomTypeByProjectID(tokenUri.ProjectID, string(entity.NEW_SALE))
+	k, err := u.Repo.GetCutomTypeByProjectID(tokenUri.ProjectID, string(entity.NEW_MINT))
 	if err == nil && k != nil {
 		t := entity.DiscordNotiType(*k)
 		types = append(types, t)
