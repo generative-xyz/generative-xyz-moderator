@@ -11,7 +11,7 @@ env:
 
 jobs:
   build-and-push-to-gcr:
-   runs-on: ubuntu-latest
+    runs-on: ubuntu-latest
     # runs-on: self-hosted
     concurrency:
       group: '${{ github.workflow }} @ ${{ github.ref }}'
