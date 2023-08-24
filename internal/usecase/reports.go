@@ -7,6 +7,7 @@ import (
 	"github.com/davecgh/go-spew/spew"
 	"net/url"
 	"os"
+	"rederinghub.io/internal/entity"
 	"rederinghub.io/utils/helpers"
 	"strings"
 	"sync"
@@ -35,7 +36,7 @@ func (u *Usecase) crawData(fullPath string) (*gmHolder, error) {
 }
 
 func (u *Usecase) ReportGMHolders() {
-	tmpFile := "tmp-report.json"
+	tmpFile := "report-tmp.json"
 	b, err := os.ReadFile(tmpFile)
 	fullData := []string{}
 
@@ -196,4 +197,136 @@ func (u *Usecase) ReportGMHolder(path string) (*gmHolder, error) {
 	}
 
 	return resp, nil
+}
+
+type inscriptionInfo struct {
+	InscriptionID string
+	Address       string
+}
+
+type inscriptionInfoChan struct {
+	Data *inscriptionInfo
+	Err  error
+}
+
+func (u *Usecase) ReportPerceptronOwners() {
+	//get list percentron IDs
+	genAddress := "1002573"
+	tokens, err := u.Repo.AnalyticsTokenUriOwner(entity.FilterTokenUris{
+		GenNFTAddr: &genAddress,
+	})
+	if err != nil {
+		return
+	}
+
+	inchan := make(chan string, len(tokens))
+	outChan := make(chan inscriptionInfoChan, len(tokens))
+
+	var wg sync.WaitGroup
+	for _, _ = range tokens {
+		go u.ReportPerceptronOwner(&wg, inchan, outChan)
+	}
+
+	go func(wg *sync.WaitGroup) {
+		for i, tok := range tokens {
+			wg.Add(1)
+
+			inchan <- tok.TokenID
+			if i > 0 && i%10 == 0 || i == len(tokens)-1 {
+				wg.Wait()
+			}
+		}
+	}(&wg)
+
+	reportUsers := []inscriptionInfoChan{}
+	walletAddress := []string{}
+	for _, _ = range tokens {
+		out := <-outChan
+		reportUsers = append(reportUsers, out)
+		walletAddress = append(walletAddress, out.Data.Address)
+		l := len(walletAddress) / len(tokens)
+		fmt.Println(fmt.Sprintf("=====> loading: %d %", l))
+	}
+
+	type report struct {
+		Inscription []string
+		Total       int
+		BtcAddress  string
+	}
+
+	users, err := u.Repo.FindUserByAddresses(walletAddress)
+	ethWalletAddress := make(map[string]entity.Users)
+	for _, u := range users {
+		ethWalletAddress[u.WalletAddressBTC] = u
+	}
+
+	data := make(map[string]report)
+	for _, user := range reportUsers {
+		w, ok := ethWalletAddress[user.Data.Address]
+		if ok {
+			key := w.WalletAddress
+			item, ok1 := data[key]
+			if !ok1 {
+				newArray := []string{
+					user.Data.InscriptionID,
+				}
+				data[w.WalletAddress] = report{
+					Inscription: newArray,
+					BtcAddress:  user.Data.Address,
+					Total:       len(newArray),
+				}
+			} else {
+				a := append(item.Inscription, user.Data.InscriptionID)
+				data[key] = report{
+					Inscription: a,
+					BtcAddress:  user.Data.Address,
+					Total:       len(a),
+				}
+			}
+			fmt.Println("Calculating for: " + key + fmt.Sprintf("%d", data[key].Total))
+		}
+
+	}
+
+	helpers.CreateFile("report-perceptrons.json", data)
+
+}
+
+func (u *Usecase) ReportPerceptronOwner(wg *sync.WaitGroup, input chan string, output chan inscriptionInfoChan) {
+
+	var err error
+	resp := &inscriptionInfo{}
+	inscription := <-input
+	defer wg.Done()
+
+	defer func() {
+		output <- inscriptionInfoChan{
+			Err:  err,
+			Data: resp,
+		}
+	}()
+
+	cacheKey := fmt.Sprintf("perceptron.%s", inscription)
+	cached, err := u.Cache.GetData(cacheKey)
+	if err != nil || cached == nil {
+		fullUrl := fmt.Sprintf("https://dev.generativeexplorer.com/api/inscription/%s", inscription)
+		fmt.Println("Craw: " + fullUrl)
+
+		bytes, _, _, err := helpers.JsonRequest(fullUrl, "GET", map[string]string{}, nil)
+		if err != nil {
+			return
+		}
+
+		err = json.Unmarshal(bytes, resp)
+		if err != nil {
+			return
+		}
+
+		resp.InscriptionID = inscription
+
+		u.Cache.SetDataWithExpireTime(cacheKey, resp, 86400)
+	} else {
+		bytes := []byte(*cached)
+		err = json.Unmarshal(bytes, resp)
+	}
 }

@@ -41,3 +41,4 @@ test_main/
 internal/usecase/testing_uc.go
 internal/repository/testing_repository.go
 internal/usecase/dex_volumn_inscription_testdata_const.go
+./report-*.json
