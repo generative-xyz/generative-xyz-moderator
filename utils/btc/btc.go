@@ -566,7 +566,7 @@ func GetBalanceFromQuickNode(address string, qn string) (*structure.BlockCypherW
 	var respond QuickNodeUTXO_Resp
 	var result structure.BlockCypherWalletInfo
 
-	payload := strings.NewReader(fmt.Sprintf("{\n\t\"method\": \"qn_addressBalance\",\n\t\"params\": [\n\t\t\"%v\"\n\t]\n}", address))
+	payload := strings.NewReader(fmt.Sprintf("{\n\t\"method\": \"bb_getutxos\",\n\t\"params\": [\n\t\t\"%v\"\n\t]\n}", address))
 
 	req, err := http.NewRequest("POST", qn, payload)
 	if err != nil {
@@ -586,6 +586,7 @@ func GetBalanceFromQuickNode(address string, qn string) (*structure.BlockCypherW
 	}
 	err = json.Unmarshal(body, &respond)
 	if err != nil {
+		log.Println(string(body))
 		return nil, err
 	}
 	totalBalance := 0
