@@ -132,15 +132,29 @@ type BTCTxInfo struct {
 	Status  string `json:"status"`
 }
 
-type QuickNodeUTXO struct {
-	Version  int    `json:"version"`
-	Height   int    `json:"height"`
-	Value    int    `json:"value"`
-	Script   string `json:"script"`
-	Address  string `json:"address"`
-	Coinbase bool   `json:"coinbase"`
-	Hash     string `json:"hash"`
-	Index    int    `json:"index"`
+// type QuickNodeUTXO struct {
+// 	Version  int    `json:"version"`
+// 	Height   int    `json:"height"`
+// 	Value    int    `json:"value"`
+// 	Script   string `json:"script"`
+// 	Address  string `json:"address"`
+// 	Coinbase bool   `json:"coinbase"`
+// 	Hash     string `json:"hash"`
+// 	Index    int    `json:"index"`
+// }
+
+type QuickNodeUTXO_NEW struct {
+	Txid          string `json:"txid"`
+	Vout          int    `json:"vout"`
+	Value         string `json:"value"`
+	Height        int    `json:"height"`
+	Confirmations int    `json:"confirmations"`
+}
+
+type QuickNodeUTXO_Resp struct {
+	ID      int                 `json:"id"`
+	Result  []QuickNodeUTXO_NEW `json:"result"`
+	Jsonrpc string              `json:"jsonrpc"`
 }
 
 type QuickNodeTx struct {

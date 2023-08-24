@@ -9,6 +9,7 @@ import (
 	"math/big"
 	"net/http"
 	"regexp"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -561,7 +562,8 @@ func GetBTCTxStatusExtensive(txhash string, bs *BlockcypherService, qn string) (
 }
 
 func GetBalanceFromQuickNode(address string, qn string) (*structure.BlockCypherWalletInfo, error) {
-	var utxoList []QuickNodeUTXO
+	// var utxoList []QuickNodeUTXO
+	var respond QuickNodeUTXO_Resp
 	var result structure.BlockCypherWalletInfo
 
 	payload := strings.NewReader(fmt.Sprintf("{\n\t\"method\": \"qn_addressBalance\",\n\t\"params\": [\n\t\t\"%v\"\n\t]\n}", address))
@@ -582,18 +584,22 @@ func GetBalanceFromQuickNode(address string, qn string) (*structure.BlockCypherW
 	if err != nil {
 		return nil, err
 	}
-	err = json.Unmarshal(body, &utxoList)
+	err = json.Unmarshal(body, &respond)
 	if err != nil {
 		return nil, err
 	}
 	totalBalance := 0
 	convertedUTXOList := []structure.TxRef{}
-	for _, utxo := range utxoList {
-		totalBalance += utxo.Value
+	for _, utxo := range respond.Result {
+		value, err := strconv.ParseUint(utxo.Value, 10, 64)
+		if err != nil {
+			return nil, err
+		}
+		totalBalance += int(value)
 		newTxReft := structure.TxRef{
-			TxHash:      utxo.Hash,
-			TxOutputN:   utxo.Index,
-			Value:       utxo.Value,
+			TxHash:      utxo.Txid,
+			TxOutputN:   utxo.Vout,
+			Value:       int(value),
 			BlockHeight: utxo.Height,
 		}
 		convertedUTXOList = append(convertedUTXOList, newTxReft)
