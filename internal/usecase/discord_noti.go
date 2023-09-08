@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"github.com/jinzhu/copier"
 	"github.com/pkg/errors"
@@ -26,6 +27,8 @@ const (
 	MaxSendDiscordRetryTimes = 3
 	MaxFindImageRetryTimes   = 20
 	PerceptronProjectID      = "1002573"
+	RecallProjectID          = "1001311"
+	BitcoinBabieProjectID    = "1001203"
 	PFPsCategory             = "PFPs"
 )
 
@@ -156,17 +159,29 @@ func (u Usecase) NotifyNewAirdrop(airdrop *entity.Airdrop) error {
 	return nil
 }
 
-func (u Usecase) NotifyNewSale(order entity.DexBTCListing) error {
+func (u Usecase) getBTCPriceInString(amount float64) string {
+	btcPrice, _ := helpers.GetExternalPrice("BTC")
+	usdPrice := 0.0
+	usdPriceString := "0"
+	if btcPrice != 0 {
+		usdPrice = amount * (btcPrice / 100000000)
+		usdPriceString = Commas(fmt.Sprintf("%v", int64(usdPrice)))
+	}
+	return usdPriceString
+}
 
+func (u Usecase) NotifyNewSale(order entity.DexBTCListing) ([]entity.DiscordNoti, error) {
+	////DISABLE by request
+	//return nil
 	domain := os.Getenv("DOMAIN")
 	tokenUri, err := u.Repo.FindTokenByTokenID(order.InscriptionID)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	project, err := u.Repo.FindProjectByTokenID(tokenUri.ProjectID)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	var category string
@@ -179,12 +194,13 @@ func (u Usecase) NotifyNewSale(order entity.DexBTCListing) error {
 
 	owner, err := u.Repo.FindUserByAddress(project.CreatorProfile.WalletAddress)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	ownerName := owner.GetDisplayNameByWalletAddress()
 
+	usdPriceString := u.getBTCPriceInString(float64(order.Amount))
 	fields := make([]entity.Field, 0)
-	fields = addDiscordField(fields, "Sale Price", u.resolveMintPriceBTC(fmt.Sprintf("%v", order.Amount)), true)
+	fields = addDiscordField(fields, "Sale Price", fmt.Sprintf("%v ($%s USD)", u.resolveMintPriceBTC(fmt.Sprintf("%v", order.Amount)), usdPriceString), true)
 	fields = u.addUserDiscordField(addUserDiscordFieldReq{
 		Fields:  fields,
 		Key:     "Buyer",
@@ -232,16 +248,36 @@ func (u Usecase) NotifyNewSale(order entity.DexBTCListing) error {
 	}
 
 	logger.AtLog.Logger.Info("sending new sale message to discord", zap.Any("message", zap.Any("discordMsg)", discordMsg)))
-	types := []entity.DiscordNotiType{entity.NEW_SALE}
+
+	types := []entity.DiscordNotiType{entity.NEW_ART_WEBHOOK}
+	//types := []entity.DiscordNotiType{}
 	if order.Amount > 0 {
 		if tokenUri.ProjectID == PerceptronProjectID {
 			types = append(types, entity.NEW_SALE_PERCEPTRON)
+		} else if tokenUri.ProjectID == RecallProjectID {
+			types = append(types, entity.NEW_SALE_RECALL)
+		} else if tokenUri.ProjectID == BitcoinBabieProjectID {
+			types = append(types, entity.NEW_SALE_BITCOINBABIES)
 		} else if category == PFPsCategory {
 			types = append(types, entity.NEW_SALE_PFPS)
 		} else {
-			types = append(types, entity.NEW_SALE_ART)
+
+			//convert webhook type for the specific projects
+			k, err := u.Repo.GetCutomTypeByProjectID(tokenUri.ProjectID, string(entity.NEW_SALE))
+			if err == nil && k != nil {
+				t := entity.DiscordNotiType(*k)
+				types = append(types, t)
+			}
 		}
+
+		//else {
+		//	types = append(types, entity.NEW_ART_WEBHOOK)
+		//}
+
+		//types = append(types, entity.NEW_ART_WEBHOOK)
 	}
+
+	respNoti := []entity.DiscordNoti{}
 	for _, t := range types {
 		noti := entity.DiscordNoti{
 			Message:    discordMsg,
@@ -256,6 +292,7 @@ func (u Usecase) NotifyNewSale(order entity.DexBTCListing) error {
 			},
 		}
 
+		respNoti = append(respNoti, noti)
 		// create discord message
 		err = u.CreateDiscordNoti(noti)
 		if err != nil {
@@ -263,7 +300,7 @@ func (u Usecase) NotifyNewSale(order entity.DexBTCListing) error {
 		}
 	}
 
-	return nil
+	return respNoti, err
 }
 
 func (u Usecase) NotifyNewListing(order entity.DexBTCListing) error {
@@ -344,6 +381,9 @@ func (u Usecase) NotifyNewListing(order entity.DexBTCListing) error {
 }
 
 func (u Usecase) NotifyNFTMinted(inscriptionID string) error {
+	//DISABLE by request
+	//return nil
+
 	domain := os.Getenv("DOMAIN")
 	tokenUri, err := u.Repo.FindTokenByTokenID(inscriptionID)
 	if err != nil {
@@ -384,9 +424,9 @@ func (u Usecase) NotifyNFTMinted(inscriptionID string) error {
 			mintPrice = v.MintPrice
 		}
 	}
-
-	fields = addDiscordField(fields, "Mint Price", u.resolveMintPriceBTC(mintPrice), true)
 	mintPriceInNum, _ := strconv.Atoi(mintPrice)
+	usdPriceString := u.getBTCPriceInString(float64(mintPriceInNum))
+	fields = addDiscordField(fields, "Mint Price", fmt.Sprintf("%v ($%s USD)", u.resolveMintPriceBTC(mintPrice), usdPriceString), true)
 
 	fields = u.addUserDiscordField(addUserDiscordFieldReq{
 		Fields:  fields,
@@ -401,6 +441,13 @@ func (u Usecase) NotifyNFTMinted(inscriptionID string) error {
 	if parsedThumbnailUrl != nil {
 		parsedThumbnail = parsedThumbnailUrl.String()
 	}
+
+	delay := entity.DEFAULT_CAPTURE_TIME
+	if project.CatureThumbnailDelayTime != nil {
+		delay = *project.CatureThumbnailDelayTime
+	}
+
+	parsedThumbnail = u.ParseImage(tokenUri.Thumbnail, delay)
 
 	embed := entity.Embed{
 		Url:    fmt.Sprintf("%s/generative/%s/%s", domain, project.GenNFTAddr, tokenUri.TokenID),
@@ -432,16 +479,27 @@ func (u Usecase) NotifyNFTMinted(inscriptionID string) error {
 		Content:   "**NEW MINT**",
 		Embeds:    []entity.Embed{embed},
 	}
-
-	types := []entity.DiscordNotiType{entity.NEW_MINT}
-	if mintPriceInNum > 0 {
-		if tokenUri.ProjectID == PerceptronProjectID {
-			types = append(types, entity.NEW_MINT_PERCEPTRON)
-		} else if category == PFPsCategory {
+	types := []entity.DiscordNotiType{entity.NEW_ART_WEBHOOK}
+	//types := []entity.DiscordNotiType{}
+	if tokenUri.ProjectID == PerceptronProjectID {
+		types = append(types, entity.NEW_MINT_PERCEPTRON)
+	} else if mintPriceInNum > 0 {
+		if category == PFPsCategory {
 			types = append(types, entity.NEW_MINT_PFPS)
-		} else {
-			types = append(types, entity.NEW_MINT_ART)
 		}
+
+		//else {
+		//	types = append(types, entity.NEW_ART_WEBHOOK)
+		//}
+
+		//types = append(types, entity.NEW_ART_WEBHOOK)
+	}
+
+	//convert webhook type for the specific projects
+	k, err := u.Repo.GetCutomTypeByProjectID(tokenUri.ProjectID, string(entity.NEW_MINT))
+	if err == nil && k != nil {
+		t := entity.DiscordNotiType(*k)
+		types = append(types, t)
 	}
 
 	for _, t := range types {
@@ -507,10 +565,11 @@ func (u Usecase) NotifyNewProject(project *entity.Projects, owner *entity.Users,
 	embed := entity.Embed{
 		Title: fmt.Sprintf("%s\n***%s***", owner.GetDisplayNameByWalletAddress(), collectionName),
 	}
+	msgType = entity.NEW_ART_WEBHOOK
 
 	if proposed {
-		embed.Url = fmt.Sprintf("%s/dao?tab=0&id=%s", domain, proposalID)
-		msgType = entity.NEW_PROJECT_PROPOSED
+		embed.Url = fmt.Sprintf("%s/govern?tab=0&id=%s", domain, proposalID)
+		//msgType = entity.NEW_PROJECT_PROPOSED
 		discordMsg.Content = fmt.Sprintf("**NEW DROP PROPOSED #%s ✋**", project.TokenID[len(project.TokenID)-4:])
 		fields = addDiscordField(fields, "Category", category, false)
 		fields = addDiscordField(fields, "", u.resolveShortDescription(project.Description), false)
@@ -519,7 +578,7 @@ func (u Usecase) NotifyNewProject(project *entity.Projects, owner *entity.Users,
 		}
 	} else {
 		embed.Url = fmt.Sprintf("%s/generative/%s", domain, project.GenNFTAddr)
-		msgType = entity.NEW_PROJECT_APPROVED
+		//msgType = entity.NEW_PROJECT_APPROVED
 		discordMsg.Content = fmt.Sprintf("**NEW DROP APPROVED #%s ✅**", project.TokenID[len(project.TokenID)-4:])
 		embed.Thumbnail = entity.Thumbnail{
 			Url: thumbnail,
@@ -680,7 +739,8 @@ func (u Usecase) NotifiNewProjectReport(project *entity.Projects, reportLink, re
 		Message:    discordMsg,
 		NumRetried: 0,
 		Status:     entity.PENDING,
-		Type:       entity.NEW_PROJECT_REPORT,
+		//Type:       entity.NEW_PROJECT_REPORT,
+		Type: entity.NEW_ART_WEBHOOK,
 		Meta: entity.DiscordNotiMeta{
 			ProjectID: project.TokenID,
 			Category:  catName,
@@ -805,7 +865,8 @@ func (u Usecase) NotifyNewProjectVote(daoProject *entity.DaoProject, vote *entit
 		Message:    discordMsg,
 		NumRetried: 0,
 		Status:     entity.PENDING,
-		Type:       entity.NEW_PROJECT_VOTE,
+		//Type:       entity.NEW_PROJECT_VOTE,
+		Type: entity.NEW_ART_WEBHOOK,
 		Meta: entity.DiscordNotiMeta{
 			ProjectID: project.TokenID,
 		},
@@ -943,8 +1004,8 @@ func (u Usecase) CreateDiscordNoti(noti entity.DiscordNoti) error {
 func (u Usecase) TestSendNoti() {
 	domain := os.Getenv("DOMAIN")
 	if domain == "https://devnet.generative.xyz" {
-		//project, _ := u.Repo.FindProjectByTokenID("1")
-		incriptionID := "7000001"
+		//project, _ := u.Repo.FindProjectByTokenID("1001421")
+		incriptionID := "9925b5626058424d2fc93760fb3f86064615c184ac86b2d0c58180742683c2afi0"
 
 		//user, _ := u.Repo.FindUserByWalletAddress(project.CreatorAddrr)
 		//daoProject := &entity.DaoProject{}
@@ -956,10 +1017,10 @@ func (u Usecase) TestSendNoti() {
 		//}
 
 		//u.NotifiNewProjectReport(project, domain, project.CreatorAddrr)
-		//u.Notifynewsale(entity.DexBTCListing{
+		//u.NotifyNewSale(entity.DexBTCListing{
 		//	SellerAddress: project.ContractAddress,
 		//	Buyer:         project.ContractAddress,
-		//	Amount:        100000000,
+		//	Amount:        23000093,
 		//	InscriptionID: incriptionID,
 		//})
 		//u.NotifyNewSale(entity.DexBTCListing{
@@ -984,4 +1045,42 @@ func (u Usecase) TestSendNoti() {
 		u.JobSendDiscordNoti()
 		fmt.Println("done")
 	}
+}
+
+func (u *Usecase) ParseImage(imageURL string, delaytime int) string {
+	parseImageUrl := "https://devnet.generative.xyz/generative/api/photo/pare-html"
+
+	postData := make(map[string]interface{})
+	postData["display_url"] = imageURL
+	postData["delay_time"] = delaytime
+	postData["app_id"] = "mint-noti"
+
+	resp, _, _, err := helpers.HttpRequest(parseImageUrl, "POST", make(map[string]string), postData)
+	if err != nil {
+		return imageURL
+	}
+
+	type respdata struct {
+		Err    error `json:"error"`
+		Status bool  `json:"status"`
+		Data   struct {
+			Image string `json:"image"`
+		} `json:"data"`
+	}
+
+	response := &respdata{}
+	err = json.Unmarshal(resp, response)
+	if err != nil {
+		return imageURL
+	}
+
+	if !response.Status {
+		return imageURL
+	}
+
+	if response.Err != nil {
+		return imageURL
+	}
+
+	return response.Data.Image
 }

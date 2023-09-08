@@ -6,52 +6,51 @@ import (
 	"rederinghub.io/utils/helpers"
 )
 
-type  AggregateWalletAddressItem struct {
-	ID AggregateItemID `bson:"_id" json:"id"`
-	Amount float32 `bson:"amount" json:"amount"`
+type AggregateWalletAddressItem struct {
+	ID     AggregateItemID `bson:"_id" json:"id"`
+	Amount float32         `bson:"amount" json:"amount"`
 }
 
-type  AggregateWalleRespItem struct {
+type AggregateWalleRespItem struct {
 	ProjectID string `bson:"projectID" json:"projectID"`
-	Paytype string `bson:"payType" json:"payType"`
-	Amount string `bson:"amount" json:"amount"`
+	Paytype   string `bson:"payType" json:"payType"`
+	Amount    string `bson:"amount" json:"amount"`
 }
 
-
-type  AggregateProjectItemID struct {
-	ProjectID string `bson:"projectID" json:"projectID"`
-	Paytype string `bson:"payType" json:"payType"`
-	Amount float32 `bson:"amount" json:"amount"`
-	MintPrice int64 `bson:"mintPrice" json:"mintPrice"`
-	BtcRate float32 `bson:"btcRate" json:"btcRate"`
-	EthRate float32 `bson:"ethRate" json:"ethRate"`
+type AggregateProjectItemID struct {
+	ProjectID string  `bson:"projectID" json:"projectID"`
+	Paytype   string  `bson:"payType" json:"payType"`
+	Amount    float32 `bson:"amount" json:"amount"`
+	MintPrice int64   `bson:"mintPrice" json:"mintPrice"`
+	BtcRate   float32 `bson:"btcRate" json:"btcRate"`
+	EthRate   float32 `bson:"ethRate" json:"ethRate"`
 }
 
-type  AggregateProjectItem struct {
-	ID AggregateProjectItemID `bson:"_id" json:"id"`
-	Amount float64 `bson:"amount" json:"amount"`
-	Minted int `bson:"minted" json:"minted"`
+type AggregateProjectItem struct {
+	ID     AggregateProjectItemID `bson:"_id" json:"id"`
+	Amount float64                `bson:"amount" json:"amount"`
+	Minted int                    `bson:"minted" json:"minted"`
 }
 
-type  AggregateProjectItemResp struct {
-	ProjectID string `bson:"projectID" json:"projectID"`
-	Paytype string `bson:"payType" json:"payType"`
-	MintPrice int64 `bson:"mintPrice" json:"mintPrice"`
-	Amount float64 `bson:"amount" json:"amount"`
-	Minted int `bson:"minted" json:"minted"`
-	BtcRate float32 `bson:"btcRate" json:"btcRate"`
-	EthRate float32 `bson:"ethRate" json:"ethRate"`
+type AggregateProjectItemResp struct {
+	ProjectID string  `bson:"projectID" json:"projectID"`
+	Paytype   string  `bson:"payType" json:"payType"`
+	MintPrice int64   `bson:"mintPrice" json:"mintPrice"`
+	Amount    float64 `bson:"amount" json:"amount"`
+	Minted    int     `bson:"minted" json:"minted"`
+	BtcRate   float32 `bson:"btcRate" json:"btcRate"`
+	EthRate   float32 `bson:"ethRate" json:"ethRate"`
 }
 
-type  AggregateAmount struct {
-	ID AggregateItemID `bson:"_id" json:"id"`
-	Amount float64 `bson:"amount" json:"amount"`
-	Earning float64 `bson:"earning" json:"earning"`
+type AggregateAmount struct {
+	ID      AggregateItemID `bson:"_id" json:"id"`
+	Amount  float64         `bson:"amount" json:"amount"`
+	Earning float64         `bson:"earning" json:"earning"`
 }
 
-type  AggregateItemID struct {
-	ProjectID string `bson:"projectID" json:"projectID"`
-	Paytype string `bson:"payType" json:"payType"`
+type AggregateItemID struct {
+	ProjectID      string `bson:"projectID" json:"projectID"`
+	Paytype        string `bson:"payType" json:"payType"`
 	CreatorAddress string `bson:"creatorAddress" json:"creatorAddress"`
 }
 
@@ -63,38 +62,44 @@ type  AggregateItemID struct {
 // }
 
 type FilterVolume struct {
-	ProjectIDs []string
-	AmountType *string
-	UserID *string
-	ProjectID *string
+	ProjectIDs     []string
+	AmountType     *string
+	UserID         *string
+	ProjectID      *string
 	CreatorAddress *string
 }
 
-type VolumeProjectInfo  struct{
-	Name string `bson:"name"`
-	TokenID string `bson:"tokenID"`
+type VolumeProjectInfo struct {
+	Name     string `bson:"name"`
+	TokenID  string `bson:"tokenID"`
 	Thumnail string `bson:"thumbnail"`
 }
 
 type VolumnUserInfo struct {
-	WalletAddress *string `bson:"walletAddress"`
+	WalletAddress    *string `bson:"walletAddress"`
 	WalletAddressBTC *string `bson:"walletAddressBTC"`
-	DisplayName *string  `bson:"displayName"`
-	Avatar   *string  `bson:"avatar"`
+	DisplayName      *string `bson:"displayName"`
+	Avatar           *string `bson:"avatar"`
 }
 
 type UserVolumn struct {
-	BaseEntity              `bson:",inline" json:"-"`
-	PayType *string  `bson:"payType"`
-	CreatorAddress *string `bson:"creatorAddress"`
-	ProjectID *string  `bson:"projectID"`
-	Amount *string  `bson:"amount"`
-	Earning *string  `bson:"earning"`
-	GenEarning *string  `bson:"genEarning"`
-	Minted int  `bson:"minted"`
-	MintPrice int64 `bson:"mintPrice" json:"mintPrice"`
-	Project  VolumeProjectInfo `bson:"project"`
-	User  VolumnUserInfo `bson:"user"`
+	BaseEntity     `bson:",inline" json:"-"`
+	PayType        *string           `bson:"payType"`
+	CreatorAddress *string           `bson:"creatorAddress"`
+	ProjectID      *string           `bson:"projectID"`
+	Amount         *string           `bson:"amount"`
+	Earning        *string           `bson:"earning"`
+	GenEarning     *string           `bson:"genEarning"`
+	Minted         int               `bson:"minted"`
+	MintPrice      int64             `bson:"mintPrice" json:"mintPrice"`
+	Project        VolumeProjectInfo `bson:"project"`
+	User           VolumnUserInfo    `bson:"user"`
+}
+
+type ReportArtist struct {
+	Amount        float64 `bson:"amount" json:"amount"`
+	PayType       string  `bson:"payType" json:"payType"`
+	WalletAddress string  `bson:"walletAddress" json:"walletAddress"`
 }
 
 func (u UserVolumn) TableName() string {

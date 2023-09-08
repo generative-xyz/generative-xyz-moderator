@@ -1,6 +1,7 @@
 package usecase
 
 import (
+	"fmt"
 	"strconv"
 	"time"
 
@@ -53,7 +54,15 @@ func (u Usecase) GetTokenActivities(filter structure.FilterTokenActivities) (*en
 		if activities[id].UserBAddress != "" {
 			activities[id].UserB = userMap[activities[id].UserBAddress]
 		}
-		activities[id].TokenInfo = tokenMap[activities[id].InscriptionID]
+
+		tokenInfo := tokenMap[activities[id].InscriptionID]
+		tokenInfo.PriceBrc20 = entity.PriceBRC20Obj{
+			Value:   fmt.Sprintf("%d", activities[id].Amount),
+			Address: activities[id].Erc20Address,
+			//OfferingID: activities[id],
+		}
+
+		activities[id].TokenInfo = &tokenInfo
 	}
 
 	activitiesResp.Result = activities
@@ -63,7 +72,7 @@ func (u Usecase) GetTokenActivities(filter structure.FilterTokenActivities) (*en
 }
 
 func (u Usecase) JobCreateTokenActivityFromListings() error {
-	for page := int64(1);; page++ {
+	for page := int64(1); ; page++ {
 		logger.AtLog.Logger.Info("StartGetPagingNotCreatedActivitiesListings", zap.Any("page", zap.Any("page)", page)))
 		uListings, err := u.Repo.GetNotCreatedActivitiesListing(page, 100)
 		if err != nil {
@@ -74,7 +83,7 @@ func (u Usecase) JobCreateTokenActivityFromListings() error {
 			break
 		}
 		logger.AtLog.Logger.Info("StartGetPagingNotCreatedActivitiesListings", zap.Any("page", zap.Any("page)", page)))
-		
+
 		for _, listing := range listings {
 			token, err := u.Repo.FindTokenByTokenID(listing.InscriptionID)
 			if err != nil && !errors.Is(err, mongo.ErrNoDocuments) {
@@ -88,13 +97,13 @@ func (u Usecase) JobCreateTokenActivityFromListings() error {
 
 			if listing.Verified && !listing.CreatedVerifiedActivity && !listing.FromOtherMkp {
 				activity := entity.TokenActivity{
-					Type: entity.TokenListing,
-					Title: "Listing",
-					UserAAddress: listing.SellerAddress,
-					Amount: int64(listing.Amount),
-					Time: listing.CreatedAt,			
+					Type:          entity.TokenListing,
+					Title:         "Listing",
+					UserAAddress:  listing.SellerAddress,
+					Amount:        int64(listing.Amount),
+					Time:          listing.CreatedAt,
 					InscriptionID: listing.InscriptionID,
-					ProjectID: projectID,
+					ProjectID:     projectID,
 				}
 				err := u.Repo.InsertTokenActivity(&activity)
 				if err != nil {
@@ -106,13 +115,13 @@ func (u Usecase) JobCreateTokenActivityFromListings() error {
 			}
 			if listing.Cancelled && !listing.CreatedCancelledActivity {
 				activity := entity.TokenActivity{
-					Type: entity.TokenCancelListing,
-					Title: "Cancel Listing",
-					UserAAddress: listing.SellerAddress,
-					Amount: int64(listing.Amount),
-					Time: listing.CancelAt,				
+					Type:          entity.TokenCancelListing,
+					Title:         "Cancel Listing",
+					UserAAddress:  listing.SellerAddress,
+					Amount:        int64(listing.Amount),
+					Time:          listing.CancelAt,
 					InscriptionID: listing.InscriptionID,
-					ProjectID: projectID,
+					ProjectID:     projectID,
 				}
 				err := u.Repo.InsertTokenActivity(&activity)
 				if err != nil {
@@ -124,14 +133,14 @@ func (u Usecase) JobCreateTokenActivityFromListings() error {
 			}
 			if listing.Matched && !listing.CreatedMatchedActivity {
 				activity := entity.TokenActivity{
-					Type: entity.TokenMatched,
-					Title: "Saled",
-					UserAAddress: listing.SellerAddress,
-					UserBAddress: listing.Buyer,
-					Amount: int64(listing.Amount),
-					Time: listing.MatchAt,
+					Type:          entity.TokenMatched,
+					Title:         "Saled",
+					UserAAddress:  listing.SellerAddress,
+					UserBAddress:  listing.Buyer,
+					Amount:        int64(listing.Amount),
+					Time:          listing.MatchAt,
 					InscriptionID: listing.InscriptionID,
-					ProjectID: projectID,
+					ProjectID:     projectID,
 				}
 				err := u.Repo.InsertTokenActivity(&activity)
 				if err != nil {
@@ -147,7 +156,7 @@ func (u Usecase) JobCreateTokenActivityFromListings() error {
 }
 
 func (u Usecase) JobCreateTokenMintActivityFromTokenUri() error {
-	for page := int64(1);; page++ {
+	for page := int64(1); ; page++ {
 		logger.AtLog.Logger.Info("StartGetPagingNotCreatedActivitiesToken", zap.Any("page", zap.Any("page)", page)))
 		uTokens, err := u.Repo.GetNotCreatedActivitiesToken(page, 100)
 		if err != nil {
@@ -158,7 +167,7 @@ func (u Usecase) JobCreateTokenMintActivityFromTokenUri() error {
 			break
 		}
 		logger.AtLog.Logger.Info("StartGetPagingNotCreatedActivitiesTokens", zap.Any("page", zap.Any("page)", page)))
-		
+
 		for _, token := range tokens {
 			var minterAddress string
 			var amount int64
@@ -177,13 +186,13 @@ func (u Usecase) JobCreateTokenMintActivityFromTokenUri() error {
 			}
 
 			activity := entity.TokenActivity{
-				Type: entity.TokenMint,
-				Title: "Minted",
-				UserAAddress: minterAddress,
-				Time: token.CreatedAt,
+				Type:          entity.TokenMint,
+				Title:         "Minted",
+				UserAAddress:  minterAddress,
+				Time:          token.CreatedAt,
 				InscriptionID: token.TokenID,
-				ProjectID: token.ProjectID,
-				Amount: amount,
+				ProjectID:     token.ProjectID,
+				Amount:        amount,
 			}
 			err = u.Repo.InsertTokenActivity(&activity)
 			if err != nil {

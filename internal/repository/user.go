@@ -42,6 +42,33 @@ func (r Repository) FindUserByWalletAddress(walletAddress string) (*entity.Users
 	return resp, nil
 }
 
+func (r Repository) FindUserByWalletAddressEQ(walletAddress string) (*entity.Users, error) {
+	resp := &entity.Users{}
+
+	cached, err := r.GetCache(utils.COLLECTION_USERS, walletAddress)
+	if err == nil && cached != nil {
+		err = helpers.Transform(cached, resp)
+		if err != nil {
+			return nil, err
+		}
+
+		return resp, nil
+	}
+
+	usr, err := r.FilterOne(utils.COLLECTION_USERS, bson.D{{utils.KEY_WALLET_ADDRESS, walletAddress}})
+	if err != nil {
+		return nil, err
+	}
+
+	err = helpers.Transform(usr, resp)
+	if err != nil {
+		return nil, err
+	}
+
+	r.CreateCache(utils.COLLECTION_USERS, walletAddress, resp)
+	return resp, nil
+}
+
 func (r Repository) FindUserByBtcAddress(btcAddress string) (*entity.Users, error) {
 	resp := &entity.Users{}
 
@@ -61,6 +88,20 @@ func (r Repository) FindUserByBtcAddress(btcAddress string) (*entity.Users, erro
 func (r Repository) FindUserByBtcAddressTaproot(btcAddress string) (*entity.Users, error) {
 	resp := &entity.Users{}
 	usr, err := r.FilterOne(utils.COLLECTION_USERS, bson.D{{utils.KEY_WALLET_ADDRESS_BTC_TAPROOT, btcAddress}})
+	if err != nil {
+		return nil, err
+	}
+
+	err = helpers.Transform(usr, resp)
+	if err != nil {
+		return nil, err
+	}
+	return resp, nil
+}
+
+func (r Repository) FindUserBySlug(slug string) (*entity.Users, error) {
+	resp := &entity.Users{}
+	usr, err := r.FilterOne(utils.COLLECTION_USERS, bson.D{{utils.KEY_WALLET_SLUG, slug}})
 	if err != nil {
 		return nil, err
 	}
@@ -238,7 +279,7 @@ func (r Repository) ListUserBywalletAddressBtcTaproot(address []string) ([]*resp
 
 		projects := []*response.ProjectBasicInfo{}
 		for _, p := range uProjects {
-			projects = append(projects, &response.ProjectBasicInfo{Id: p.ID.Hex(), Name: p.Name, WalletAddress: p.CreatorProfile.WalletAddress})
+			projects = append(projects, &response.ProjectBasicInfo{ID: p.ID.Hex(), Name: p.Name, WalletAddress: p.CreatorProfile.WalletAddress})
 		}
 
 		d := &response.ArtistResponse{Projects: projects}
@@ -299,7 +340,7 @@ func (r Repository) ListUsers(filter structure.FilterUsers) (*entity.Pagination,
 
 		projects := []*response.ProjectBasicInfo{}
 		for _, p := range uProjects {
-			projects = append(projects, &response.ProjectBasicInfo{Id: p.ID.Hex(), Name: p.Name, WalletAddress: p.CreatorProfile.WalletAddress})
+			projects = append(projects, &response.ProjectBasicInfo{ID: p.ID.Hex(), Name: p.Name, WalletAddress: p.CreatorProfile.WalletAddress})
 		}
 
 		d := &response.ArtistResponse{Projects: projects}
@@ -345,7 +386,7 @@ func (r Repository) ListArtist(filter entity.FilteArtist) (*entity.Pagination, e
 
 		projects := []*response.ProjectBasicInfo{}
 		for _, p := range uProjects {
-			projects = append(projects, &response.ProjectBasicInfo{Id: p.ID.Hex(), Name: p.Name, WalletAddress: p.CreatorProfile.WalletAddress})
+			projects = append(projects, &response.ProjectBasicInfo{ID: p.ID.Hex(), Name: p.Name, WalletAddress: p.CreatorProfile.WalletAddress})
 		}
 
 		d := &response.ArtistResponse{Projects: projects}
@@ -398,4 +439,56 @@ func (r Repository) GetAllUserProfiles() ([]entity.Users, error) {
 	}
 
 	return users, nil
+}
+
+// For reporting
+func (r Repository) ListUsersWithPagination(filter structure.FilterUsers) (*entity.Pagination, error) {
+	users := []*entity.Users{}
+	resp := &entity.Pagination{}
+
+	filter1 := bson.M{}
+	filter1[utils.KEY_DELETED_AT] = nil
+
+	if len(filter.Ids) != 0 {
+		objectIDs, err := utils.StringsToObjects(filter.Ids)
+		if err == nil {
+			filter1["_id"] = bson.M{"$in": objectIDs}
+		}
+	}
+
+	if filter.Email != nil && *filter.Email != "" {
+		filter1["email"] = *filter.Email
+	}
+
+	if filter.Search != nil && len(*filter.Search) >= 3 {
+		filter1["$or"] = []bson.M{
+			{"display_name": primitive.Regex{Pattern: *filter.Search, Options: "i"}},
+			{"wallet_address": primitive.Regex{Pattern: *filter.Search, Options: "i"}},
+			{"wallet_address_btc_taproot": primitive.Regex{Pattern: *filter.Search, Options: "i"}},
+			{"wallet_address_btc": primitive.Regex{Pattern: *filter.Search, Options: "i"}},
+		}
+	}
+
+	if filter.WalletAddress != nil && *filter.WalletAddress != "" {
+		filter1["wallet_address"] = *filter.WalletAddress
+	}
+
+	if filter.UserType != nil {
+		filter1["user_type"] = *filter.UserType
+	}
+
+	p, err := r.Paginate(utils.COLLECTION_USERS, filter.Page, filter.Limit, filter1, bson.D{}, []Sort{}, &users)
+	if err != nil {
+		return nil, err
+	}
+
+	resp.Result = users
+	//resp.Limit = p.Pagination.PerPage
+	resp.Page = p.Pagination.Page
+	// resp.Next = p.Pagination.Next
+	// resp.Prev = p.Pagination.Prev
+	// resp.TotalPage = p.Pagination.TotalPage
+	resp.Total = p.Pagination.Total
+	resp.PageSize = filter.Limit
+	return resp, nil
 }

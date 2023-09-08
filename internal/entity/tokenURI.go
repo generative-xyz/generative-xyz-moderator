@@ -12,8 +12,10 @@ import (
 type TokenPaidType string
 
 const (
-	ETH TokenPaidType = "eth"
-	BIT TokenPaidType = "btc"
+	ETH   TokenPaidType = "eth"
+	BIT   TokenPaidType = "btc"
+	PEPE  TokenPaidType = "pepe"
+	TURBO TokenPaidType = "turbo"
 )
 
 type InscriptionDetail struct {
@@ -117,6 +119,8 @@ type TokenUri struct {
 	OriginalInscribedBy            string        `bson:"originalInscribedBy"`
 	CreatedMintActivity            bool          `bson:"created_mint_activity"`
 	CreatedTokenTx                 bool          `bson:"created_token_tx"`
+	Buyable                        bool          `bson:"-"`
+	PriceBrc20                     PriceBRC20Obj `bson:"-"`
 }
 
 type TokenUriOnwer struct {
@@ -161,6 +165,8 @@ type TokenUriListingFilter struct {
 	OrderID               primitive.ObjectID   `bson:"orderID" json:"orderID"`
 	Price                 int64                `bson:"priceBTC" json:"priceBTC"`
 	PriceETH              string               `bson:"priceETH" json:"priceETH"`
+	PriceBRC20            string               `bson:"priceBRC20" json:"-"`
+	PriceBRC20Address     string               `bson:"priceBRC20Address" json:"-"`
 	Buyable               bool                 `bson:"buyable" json:"buyable"`
 	SellVerified          bool                 `bson:"sell_verified" json:"sell_verified"`
 	OwnerAddr             bool                 `bson:"ownerAddr" json:"ownerAddr"`
@@ -171,7 +177,31 @@ type TokenUriListingFilter struct {
 		TokenID string `bson:"tokenid" json:"tokenID"`
 		Royalty int64  `bson:"royalty" json:"royalty"`
 	} `bson:"project" json:"project"`
-	NftTokenID string `bson:"nftTokenId" json:"nftTokenId"`
+	PriceBRC20Obj PriceBRC20Obj `json:"priceBrc20"`
+	NftTokenID    string        `bson:"nftTokenId" json:"nftTokenId"`
+	Royalty       int64         `json:"royalty"`
+	TokenIDMini   int           `bson:"token_id_mini"`
+	ProjectName   string        `bson:"project_name"`
+	CreatorName   string        `bson:"creator_name"`
+	OfferingID    string        `bson:"offering_id"`
+	IsMinting     bool          `bson:"-" json:"is_minting"`
+	MintingInfo   MintingInfo   `bson:"-" json:"minting_info"`
+
+	TokenIDData string `json:"tokenIDData"`
+	IsOnChain   bool   `json:"isOnchain" bson:"isOnchain"`
+}
+
+type MintingInfo struct {
+	TokenID string `bson:"token_id" json:"token_id"`
+	All     int    `bson:"all" json:"all"`
+	Pending int    `bson:"pending" json:"pending"`
+	Done    int    `bson:"done" json:"done"`
+}
+
+type PriceBRC20Obj struct {
+	Value      string `json:"value"`
+	Address    string `json:"address"`
+	OfferingID string `json:"offering_id"`
 }
 
 type TokenURIListingOwner struct {

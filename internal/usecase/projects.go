@@ -274,7 +274,9 @@ func (u Usecase) JobCheckAirdrop() error {
 					"Airdrop success",
 					airdrop.ReceiverBtcAddressTaproot,
 					fmt.Sprintf("Type: %d - file %s airdrop tx %s for userUUid %s", airdrop.Type, airdrop.File, airdrop.Tx, airdrop.Receiver))
-				go u.NotifyNewAirdrop(airdrop)
+
+				//DISABLED BY REQUEST
+				//go u.NotifyNewAirdrop(airdrop)
 			}
 		}
 	}
@@ -706,11 +708,11 @@ func (u Usecase) UpdateBTCProject(req structure.UpdateBTCProjectReq) (*entity.Pr
 		return nil, err
 	}
 
-	if strings.ToLower(p.CreatorAddrr) != strings.ToLower(*req.CreatetorAddress) {
-		err := errors.New("Only owner can update this project")
-		logger.AtLog.Logger.Error("UpdateBTCProject", zap.Error(err), zap.Any("req", req))
-		return nil, err
-	}
+	//if strings.ToLower(p.CreatorAddrr) != strings.ToLower(*req.CreatetorAddress) {
+	//	err := errors.New("Only owner can update this project")
+	//	logger.AtLog.Error("pjID.empty", err.Error(), err)
+	//	return nil, err
+	//}
 
 	if req.Name != nil && *req.Name != "" {
 		p.Name = *req.Name
@@ -860,7 +862,12 @@ func (u Usecase) DeleteBTCProject(req structure.UpdateBTCProjectReq) (*entity.Pr
 	p.Status = false
 	p.IsHidden = true
 
-	updated, err := u.Repo.UpdateProject(p.UUID, p)
+	//updated, err := u.Repo.UpdateProject(p.UUID, p)
+	updated, err := u.Repo.UpdateProjectFields(p.UUID, map[string]interface{}{
+		"isSynced": p.IsSynced,
+		"status":   p.Status,
+		"isHidden": p.IsHidden,
+	})
 	if err != nil {
 		logger.AtLog.Error("UpdateProject", zap.Any("err.UpdateProject", err))
 		return nil, err
@@ -892,7 +899,10 @@ func (u Usecase) SetCategoriesForBTCProject(req structure.UpdateBTCProjectReq) (
 		p.Categories = []string{req.Categories[0]}
 	}
 
-	updated, err := u.Repo.UpdateProject(p.UUID, p)
+	//updated, err := u.Repo.UpdateProject(p.UUID, p)
+	updated, err := u.Repo.UpdateProjectFields(p.UUID, map[string]interface{}{
+		"categories": p.Categories,
+	})
 	if err != nil {
 		logger.AtLog.Error("updated", err.Error(), err)
 		return nil, err
@@ -914,10 +924,23 @@ func (u Usecase) UpdateProject(req structure.UpdateProjectReq) (*entity.Projects
 		p.Priority = &priority
 	}
 
+	if req.IsSupportGMHolder != nil {
+		p.IsSupportGMHolder = *req.IsSupportGMHolder
+	}
+	if req.MinimumGMSupport != nil {
+		p.MinimumGMSupport = *req.MinimumGMSupport
+	}
+
 	if len(p.ReportUsers) >= u.Config.MaxReportCount {
 		p.IsHidden = true
 	}
-	updated, err := u.Repo.UpdateProject(p.UUID, p)
+	//updated, err := u.Repo.UpdateProject(p.UUID, p)
+	updated, err := u.Repo.UpdateProjectFields(p.UUID, map[string]interface{}{
+		"priority":          p.Priority,
+		"isHidden":          p.IsHidden,
+		"isSupportGMHolder": p.IsSupportGMHolder,
+		"minimumGMSupport":  p.MinimumGMSupport,
+	})
 	if err != nil {
 		logger.AtLog.Error("UpdateProject", zap.Any("err.UpdateProject", err))
 		return nil, err
@@ -1252,7 +1275,7 @@ func (u Usecase) GetProjectDetailWithFeeInfo(req structure.GetProjectDetailMessa
 
 	// get index if project in TC:
 	if c.IsMintTC() {
-		contract, _ := generative_nft_contract.NewGenerativeNftContract(common.HexToAddress(c.GenNFTAddr), u.TcClient.GetClient())
+		contract, _ := generative_nft_contract.NewGenerativeNftContract(common.HexToAddress(c.GenNFTAddr), u.TcClientPublicNode.GetClient())
 		if contract != nil {
 			projectContract, err := contract.Project(nil)
 			if err == nil {
@@ -1491,22 +1514,15 @@ func (u Usecase) getProjectDetailFromChainWithoutCache(req structure.GetProjectD
 
 	contractDataKey := fmt.Sprintf("detail.%s.%s", req.ContractAddress, req.ProjectID)
 
-	logger.AtLog.Info("req", req)
-
 	addr := common.HexToAddress(req.ContractAddress)
 	// call to contract to get emotion
-	client, err := helpers.TCDialer()
-	if err != nil {
-		logger.AtLog.Error("ethclient.Dial", err.Error(), err)
-		return nil, err
-	}
 
 	projectID := new(big.Int)
 	projectID, ok := projectID.SetString(req.ProjectID, 10)
 	if !ok {
 		return nil, errors.New("cannot convert tokenID")
 	}
-	contractDetail, err := u.getNftContractDetailInternal(client, addr, *projectID)
+	contractDetail, err := u.getNftContractDetailInternal(u.TcClientPublicNode.GetClient(), addr, *projectID)
 	if err != nil {
 		logger.AtLog.Error("u.getNftContractDetailInternal", err.Error(), err)
 		return nil, err
@@ -1528,11 +1544,7 @@ func (u Usecase) getProjectDetailFromChain(req structure.GetProjectDetailMessage
 
 		addr := common.HexToAddress(req.ContractAddress)
 		// call to contract to get emotion
-		client, err := helpers.TCDialer()
-		if err != nil {
-			logger.AtLog.Error("ethclient.Dial", err.Error(), err)
-			return nil, err
-		}
+		client := u.TcClientPublicNode.GetClient()
 
 		projectID := new(big.Int)
 		projectID, ok := projectID.SetString(req.ProjectID, 10)
@@ -1699,7 +1711,6 @@ func (u Usecase) getNftContractDetailInternal(client *ethclient.Client, contract
 		NftTokenUri:   *tokenFromChain.TokenURI,
 	}
 
-	logger.AtLog.Info("resp", resp)
 	if dataFromNftPChan.Err == nil && dataFromNftPChan.Data != nil {
 		resp.NftProjectDetail = *dataFromNftPChan.Data
 	} else {
@@ -1712,7 +1723,6 @@ func (u Usecase) getNftContractDetailInternal(client *ethclient.Client, contract
 		}
 	}
 
-	logger.AtLog.Info("resp", resp)
 	return resp, nil
 }
 
@@ -1720,6 +1730,7 @@ func (u Usecase) UnzipProjectFile(zipPayload *structure.ProjectUnzipPayload) (*e
 	var err error
 	pe := &entity.Projects{}
 	zipLink := zipPayload.ZipLink
+	isBigFile := false
 
 	defer func() {
 		now := time.Now().UTC()
@@ -1787,7 +1798,6 @@ func (u Usecase) UnzipProjectFile(zipPayload *structure.ProjectUnzipPayload) (*e
 	nftTokenURI["image"] = pe.Thumbnail
 	nftTokenURI["animation_url"] = ""
 	nftTokenURI["attributes"] = []string{}
-	logger.AtLog.Logger.Info(fmt.Sprintf("UnzipProjectFile.%s", pe.TokenID), zap.Any("zipPayload", zipPayload), zap.String("projectID", pe.TokenID))
 
 	images := []string{}
 
@@ -1809,7 +1819,6 @@ func (u Usecase) UnzipProjectFile(zipPayload *structure.ProjectUnzipPayload) (*e
 		return nil, err
 	}
 
-	logger.AtLog.Logger.Info(fmt.Sprintf("UnzipProjectFile.%s", pe.TokenID), zap.Any("ReadFolder", unzipFoler), zap.String("projectID", pe.TokenID), zap.Error(err))
 	maxSize := uint64(0)
 	rand.Seed(time.Now().UnixNano())
 	rand.Shuffle(len(files), func(i, j int) { files[i], files[j] = files[j], files[i] })
@@ -1830,7 +1839,6 @@ func (u Usecase) UnzipProjectFile(zipPayload *structure.ProjectUnzipPayload) (*e
 	}
 	//
 
-	logger.AtLog.Logger.Info(fmt.Sprintf("UnzipProjectFile.%s", pe.TokenID), zap.Any("zipPayload", zipPayload), zap.Any("projecID", pe.TokenID), zap.Int("images", len(pe.Images)))
 	pe.Images = images
 	if len(images) > 0 {
 		pe.IsFullChain = true
@@ -1851,15 +1859,26 @@ func (u Usecase) UnzipProjectFile(zipPayload *structure.ProjectUnzipPayload) (*e
 		}
 
 	}
+
 	pe.IsHidden = true
 	pe.Status = true
 	pe.IsSynced = true
+	pe.IsBigFile = isBigFile
 
 	networkFee := big.NewInt(u.networkFeeBySize(int64(maxSize / 4))) // will update after unzip and check data
 	pe.MaxFileSize = int64(maxSize)
 	pe.NetworkFee = networkFee.String()
 
-	updated, err := u.Repo.UpdateProject(pe.UUID, pe)
+	//updated, err := u.Repo.UpdateProject(pe.UUID, pe)
+	updated, err := u.Repo.UpdateProjectFields(pe.UUID, map[string]interface{}{
+		"images":      pe.Images,
+		"isFullChain": pe.IsFullChain,
+		"isHidden":    pe.IsHidden,
+		"status":      pe.Status,
+		"isSynced":    pe.IsSynced,
+		"maxFileSize": pe.MaxFileSize,
+		"networkFee":  pe.NetworkFee,
+	})
 	if err != nil {
 		logger.AtLog.Error(fmt.Sprintf("UnzipProjectFile.%s", pe.TokenID), zap.Any("ReadFolder", unzipFoler), zap.String("projectID", pe.TokenID), zap.Error(err))
 		return nil, err
@@ -2444,7 +2463,10 @@ func (u Usecase) GetProjectsFloorPrice(projects []string) (map[string]uint64, er
 }
 
 func (u Usecase) UpdateProjectHash(req structure.UpdateProjectHash) (*entity.Projects, error) {
-	p, err := u.Repo.FindProjectByTxHash(*req.TxHash)
+	p, err := u.Repo.FindProjectByTxHash(*req.TxHash, bson.D{
+		{"txHex", 0},
+		{"nftTokenUri", 0},
+	})
 	if err != nil {
 		logger.AtLog.Error("UpdateProjectHash", zap.Any("err.FindProjectBy", err))
 		return nil, err
@@ -2458,7 +2480,11 @@ func (u Usecase) UpdateProjectHash(req structure.UpdateProjectHash) (*entity.Pro
 		p.RevealTxHash = *req.RevealTxHash
 	}
 
-	updated, err := u.Repo.UpdateProject(p.UUID, p)
+	//updated, err := u.Repo.UpdateProject(p.UUID, p)
+	updated, err := u.Repo.UpdateProjectFields(p.UUID, map[string]interface{}{
+		"commitTxHash": p.CommitTxHash,
+		"revealTxHash": p.RevealTxHash,
+	})
 	if err != nil {
 		logger.AtLog.Error("UpdateProject", zap.Any("err.UpdateProject", err))
 		return nil, err
@@ -2466,4 +2492,121 @@ func (u Usecase) UpdateProjectHash(req structure.UpdateProjectHash) (*entity.Pro
 
 	logger.AtLog.Logger.Info("UpdateProject", zap.Any("project", p), zap.Any("updated", updated))
 	return p, nil
+}
+
+func (u Usecase) UnzipETHProjectFile(zipPayload *structure.ProjectUnzipPayload) (*entity.Projects, error) {
+	var err error
+	key := fmt.Sprintf("CreateProject.ProcessEthZip.%s", zipPayload.ProjectID)
+	defer func() {
+		uzStatus := entity.UzipStatusSuccess
+		if err != nil {
+			logger.AtLog.Logger.Error(
+				key,
+				zap.String("zipLink", zipPayload.ZipLink),
+				zap.String("projectID", zipPayload.ProjectID),
+				zap.Any("uzStatus", uzStatus),
+				zap.Error(err),
+			)
+			uzStatus = entity.UzipStatusFail
+		} else {
+			logger.AtLog.Logger.Info(
+				key,
+				zap.String("zipLink", zipPayload.ZipLink),
+				zap.String("projectID", zipPayload.ProjectID),
+				zap.Any("uzStatus", uzStatus),
+			)
+		}
+		now := time.Now().UTC()
+
+		zipLinks, err1 := u.Repo.GetProjectUnzip(zipPayload.ProjectID)
+		if err1 != nil {
+			if errors.Is(err1, mongo.ErrNoDocuments) {
+				projectZip := &entity.ProjectZipLinks{
+					ProjectID:   zipPayload.ProjectID,
+					ZipLink:     zipPayload.ZipLink,
+					ProjectType: entity.ETH,
+					ReTries:     0,
+					Status:      uzStatus,
+				}
+
+				logs := []entity.ProjectZipLinkLog{
+					entity.ProjectZipLinkLog{
+						Message:     "Create eth project",
+						Status:      uzStatus,
+						CreatedTime: &now,
+					},
+				}
+				projectZip.Logs = logs
+				err1 = u.Repo.InsertOne(projectZip.TableName(), projectZip)
+				if err1 != nil {
+					logger.AtLog.Logger.Error(fmt.Sprintf("CreateProject.ProcessEthZip.%s", zipPayload.ProjectID), zap.String("zipLink", zipPayload.ZipLink),
+						zap.Error(err1))
+				}
+			}
+		} else {
+			zipLinks.Logs = append(zipLinks.Logs, entity.ProjectZipLinkLog{
+				Message:     "",
+				Status:      uzStatus,
+				CreatedTime: &now,
+			})
+			zipLinks.Status = uzStatus
+			zipLinks.ReTries = zipLinks.ReTries + 1
+
+			_, err1 = u.Repo.UpdateProjectUnzip(zipPayload.ProjectID, zipLinks)
+			if err1 != nil {
+				logger.AtLog.Logger.Error(fmt.Sprintf("CreateProject.ProcessEthZip.%s", zipPayload.ProjectID), zap.String("zipLink", zipPayload.ZipLink),
+					zap.Error(err1))
+			}
+		}
+
+	}()
+
+	isBigFile := false
+	pe, err := u.Repo.FindProjectByTxHash(zipPayload.ProjectID, bson.D{
+		{"txHex", 0},
+		{"nftTokenUri", 0},
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	imageLinks, maxSize, err := u.ProcessEthZip(zipPayload.ZipLink)
+	if err != nil {
+		return nil, err
+	}
+
+	networkFee := big.NewInt(u.networkFeeBySize(int64(maxSize / 4))) // will update after unzip and check data
+
+	//Only TC projects are allowed
+	//check project has big file ($gt: 350kb):
+	// project only has 1 uploaded file, its size is greater than 350kb
+	if len(imageLinks) == 1 {
+		//350kb = 350000 bytes
+		// size of the json file
+		if maxSize > uint64(350000) {
+			isBigFile = true
+		}
+	}
+
+	///Update these fields
+	//pe.IsBigFile = isBigFile
+	//pe.Images = imageLinks
+	//pe.MaxFileSize = int64(maxSize)
+	//pe.NetworkFee = networkFee.String()
+
+	///Update these fields
+	updated := make(map[string]interface{})
+	updated["isBigFile"] = isBigFile
+	updated["images"] = imageLinks
+	updated["maxFileSize"] = int64(maxSize)
+	updated["networkFee"] = networkFee.String()
+
+	//if project is fully onchain, is synced is updated by unzip
+	updated["isSynced"] = true
+	_, err = u.Repo.UpdateProjectFields(pe.UUID, updated)
+	if err != nil {
+		return nil, err
+	}
+
+	return pe, nil
 }

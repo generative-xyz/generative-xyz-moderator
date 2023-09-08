@@ -56,7 +56,8 @@ func (h *httpDelivery) dexBTCListing(w http.ResponseWriter, r *http.Request) {
 	}
 	// Discord Notify NEW LISTING
 	if listing != nil {
-		go h.Usecase.NotifyNewListing(*listing)
+		//DISABLED by request
+		//go h.Usecase.NotifyNewListing(*listing)
 	}
 
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, "ok", "")

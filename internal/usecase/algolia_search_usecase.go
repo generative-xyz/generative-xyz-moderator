@@ -2,6 +2,12 @@ package usecase
 
 import (
 	"fmt"
+	"go.uber.org/zap"
+	"rederinghub.io/utils/copier"
+	"rederinghub.io/utils/helpers"
+	"rederinghub.io/utils/logger"
+	"strings"
+	"sync"
 
 	"github.com/go-resty/resty/v2"
 	"rederinghub.io/internal/delivery/http/response"
@@ -270,4 +276,410 @@ func (uc *Usecase) AlgoliaSearchTokenUri(filter *algolia.AlgoliaFilter) ([]entit
 	iTokens := tokens.Result
 	rTokens := iTokens.([]entity.TokenUri)
 	return rTokens, resp.NbHits, resp.NbPages, nil
+}
+
+func (uc *Usecase) DBSearchProject(filter *algolia.AlgoliaFilter) ([]entity.Projects, int, int, error) {
+	if filter.ObjType != "" && filter.ObjType != "project" {
+		return nil, 0, 0, nil
+	}
+
+	pe := &entity.FilterProjects{}
+	pe.Limit = int64(filter.Limit)
+	pe.Page = 1
+
+	pe.Search = &filter.SearchStr
+	hidden := false
+	isSynced := true
+	pe.IsHidden = &hidden
+	pe.IsSynced = &isSynced
+
+	uProjects, total, totalPages, err := uc.Repo.SearchProjects(*pe)
+	if err != nil {
+		return nil, 0, 0, err
+	}
+
+	return uProjects, total, totalPages, nil
+}
+
+func (uc *Usecase) DBSearchArtists(filter *algolia.AlgoliaFilter) ([]*response.ArtistResponse, int, int, error) {
+	if filter.ObjType != "" && filter.ObjType != "artist" {
+		return nil, 0, 0, nil
+	}
+
+	pe := &entity.FilterProjects{}
+	pe.Limit = int64(filter.Limit)
+	pe.Page = 1
+
+	pe.Search = &filter.SearchStr
+	hidden := false
+	isSynced := true
+	pe.IsHidden = &hidden
+	pe.IsSynced = &isSynced
+
+	as1, total, totalPages, err := uc.Repo.SearchArtists(*pe)
+	if err != nil {
+		return nil, 0, 0, err
+	}
+
+	as := []*response.ArtistResponse{}
+	for _, item := range as1 {
+		respItem := &response.ArtistResponse{}
+		err := copier.Copy(respItem, item)
+		if err != nil {
+			return nil, 0, 0, err
+		}
+
+		as = append(as, respItem)
+	}
+
+	return as, total, totalPages, nil
+}
+
+// Project - protab
+type ProjectUniqueOwnersChan struct {
+	ProjectID       string
+	ContractAddress string
+	Owners          int
+	Err             error
+}
+
+func (uc *Usecase) JobProjectProtab() error {
+	key := fmt.Sprintf("CrontabDBProjectProtab")
+	logger.AtLog.Logger.Info(key)
+
+	page := 1
+	limit := 100
+
+	for {
+		filter := &algolia.AlgoliaFilter{
+			Page:  page,
+			Limit: limit,
+		}
+
+		projects, totalItems, totalPages, err := uc.DBProjectProtab(filter)
+		if err != nil {
+			logger.AtLog.Logger.Error(key, zap.Error(err))
+			return err
+		}
+
+		if len(projects) == 0 {
+			break
+		}
+
+		key := fmt.Sprintf("CrontabDBProjectProtab - page: %d, limit: %d", page, limit)
+		logger.AtLog.Logger.Info(key,
+			zap.Int("projects", len(projects)),
+			zap.Int("totalItems", totalItems),
+			zap.Int("totalPages", totalPages),
+		)
+
+		//save projects to DB
+		var wg sync.WaitGroup
+		for i, p := range projects {
+
+			wg.Add(2)
+
+			//insert protab data
+			go func(wg *sync.WaitGroup, p *entity.ProjectsProtab) {
+				defer wg.Done()
+
+				err := uc.Repo.InsertProjectProData(p)
+				if err != nil {
+					logger.AtLog.Logger.Error(fmt.Sprintf("%s - projectID %s", key, p.TokenID), zap.Error(err),
+						zap.String("project", p.TokenID),
+						//zap.String("contract_address", p.ContractAddress),
+					)
+					//return err
+				} else {
+					//logger.AtLog.Logger.Info(fmt.Sprintf("%s - projectID %s", key, p.TokenID), zap.Error(err),
+					//	zap.Any("project", p.TokenIDInt),
+					//	//zap.String("contract_address", p.ContractAddress),
+					//)
+				}
+
+			}(&wg, p)
+
+			//update volume, is_buyable project
+			go func(wg *sync.WaitGroup, p *entity.ProjectsProtab) {
+				defer wg.Done()
+
+				err := uc.Repo.UpdateProjectVolumeBuyable(p.ContractAddress, p.TokenID, p.Volume, p.IsBuyable)
+				if err != nil {
+					logger.AtLog.Logger.Error(fmt.Sprintf("%s - projectID %s", key, p.TokenID), zap.Error(err),
+						zap.String("project", p.TokenID),
+						//zap.String("contract_address", p.ContractAddress),
+					)
+					//return err
+				} else {
+					//logger.AtLog.Logger.Info(fmt.Sprintf("%s - projectID %s", key, p.TokenID), zap.Error(err),
+					//	zap.Any("project", p.TokenIDInt),
+					//	//zap.String("contract_address", p.ContractAddress),
+					//)
+				}
+
+			}(&wg, p)
+
+			if (i > 0 && i%20 == 0) || (i == len(projects)-1) {
+				wg.Wait()
+			}
+		}
+
+		page++
+	}
+
+	return nil
+}
+
+func (uc *Usecase) JobProjectProtabUniqueOwner() error {
+	key := fmt.Sprintf("JobProjectProtabUniqueOwner")
+	logger.AtLog.Logger.Info(key)
+
+	page := 1
+	limit := 10
+
+	for {
+		filter := &algolia.AlgoliaFilter{
+			Page:  page,
+			Limit: limit,
+		}
+
+		uProjects, totalItems, totalPages, err := uc.DBProjectProtabAggerateOwner(filter)
+		if err != nil {
+			logger.AtLog.Logger.Error(key, zap.Error(err))
+			return err
+		}
+
+		helpers.CreateFile("test.json", uProjects)
+
+		if len(uProjects) == 0 {
+			break
+		}
+
+		key := fmt.Sprintf("JobProjectProtabUniqueOwner - page: %d, limit: %d", page, limit)
+		logger.AtLog.Logger.Info(key,
+			zap.Int("projects", len(uProjects)),
+			zap.Int("totalItems", totalItems),
+			zap.Int("totalPages", totalPages),
+		)
+
+		//calculate unique owners
+		inputChan := make(chan entity.ProjectsProtab, len(uProjects))
+		outputChan := make(chan ProjectUniqueOwnersChan, len(uProjects))
+
+		var wg sync.WaitGroup
+
+		for _, _ = range uProjects {
+			go uc.CalculateUniqueOwner(&wg, inputChan, outputChan)
+		}
+
+		for i, pe := range uProjects {
+			wg.Add(1)
+			inputChan <- *pe
+			if (i != 0 && i%10 == 0) || (i == len(uProjects)-1) {
+				wg.Wait()
+			}
+		}
+
+		for _, _ = range uProjects {
+
+			dataFChan := <-outputChan
+			if dataFChan.Err != nil {
+				logger.AtLog.Logger.Error(fmt.Sprintf("%s - contract: %s, tokenID: %s", key, dataFChan.ContractAddress, dataFChan.ProjectID), zap.Error(err))
+				continue
+			}
+
+			//skip if owner is zero
+			if dataFChan.Owners == 0 {
+				continue
+			}
+
+			err := uc.Repo.UpdateProjectUniqueOwner(dataFChan.ContractAddress, dataFChan.ProjectID, dataFChan.Owners)
+			if err != nil {
+				logger.AtLog.Logger.Error(fmt.Sprintf("%s - contract: %s, tokenID: %s", key, dataFChan.ContractAddress, dataFChan.ProjectID), zap.Error(err))
+				continue
+			}
+
+			logger.AtLog.Logger.Info(fmt.Sprintf("%s - contract: %s, tokenID: %s", key, dataFChan.ContractAddress, dataFChan.ProjectID), zap.Int("owners", dataFChan.Owners))
+
+		}
+
+		page++
+	}
+
+	return nil
+}
+
+func (uc *Usecase) DBProjectProtab(filter *algolia.AlgoliaFilter) ([]*entity.ProjectsProtab, int, int, error) {
+	if filter.ObjType != "" && filter.ObjType != "project" {
+		return nil, 0, 0, nil
+	}
+
+	pe := &entity.FilterProjects{}
+	pe.Limit = int64(filter.Limit)
+	pe.Page = int64(filter.Page)
+
+	pe.Search = &filter.SearchStr
+	hidden := false
+	isSynced := true
+	pe.IsHidden = &hidden
+	pe.IsSynced = &isSynced
+
+	uProjects, total, totalPages, err := uc.Repo.AggregateForProjectsProtab(*pe)
+	if err != nil {
+		return nil, 0, 0, err
+	}
+
+	for _, p := range uProjects {
+		//p.UniqueOwners = uOwners[p.TokenID]
+		p.Volume = p.Volume + p.MintVolume + p.CEXVolume
+		if p.FloorPrice > 0 {
+			p.IsBuyable = true
+		}
+
+		//hard code for 2 projects
+		if p.TokenID == "1000001" {
+			p.Volume = 1407649205
+		} else if p.TokenID == "1002573" {
+			p.Volume = 866067000
+		}
+	}
+
+	//calculate unique owners
+	return uProjects, total, totalPages, nil
+}
+
+func (uc *Usecase) DBProjectProtabAggerateOwner(filter *algolia.AlgoliaFilter) ([]*entity.ProjectsProtab, int, int, error) {
+	if filter.ObjType != "" && filter.ObjType != "project" {
+		return nil, 0, 0, nil
+	}
+
+	pe := &entity.FilterProjects{}
+	pe.Limit = int64(filter.Limit)
+	pe.Page = int64(filter.Page)
+
+	pe.Search = &filter.SearchStr
+	hidden := false
+	isSynced := true
+	pe.IsHidden = &hidden
+	pe.IsSynced = &isSynced
+
+	uProjects, total, totalPages, err := uc.Repo.GetProjectsProtab(*pe)
+	if err != nil {
+		return nil, 0, 0, err
+	}
+
+	//calculate unique owners
+	return uProjects, total, totalPages, nil
+}
+
+func (uc *Usecase) DBProjectProtabAPI(filter *algolia.AlgoliaFilter) ([]*entity.ProjectsProtabAPI, int, int, error) {
+	if filter.ObjType != "" && filter.ObjType != "project" {
+		return nil, 0, 0, nil
+	}
+
+	pe := &entity.FilterProjects{}
+	pe.Limit = int64(filter.Limit)
+	pe.Page = int64(filter.Page)
+
+	pe.Search = &filter.SearchStr
+	hidden := false
+	isSynced := true
+	pe.IsHidden = &hidden
+	pe.IsSynced = &isSynced
+
+	uProjects, total, totalPages, err := uc.Repo.AggregateProjectsProtab(*pe)
+	if err != nil {
+		return nil, 0, 0, err
+	}
+
+	//calculate unique owners
+	return uProjects, total, totalPages, nil
+}
+
+func (uc *Usecase) DBProjectProtabAPIFormatData(filter *algolia.AlgoliaFilter) ([]*response.ProjectListing, int, int, error) {
+	uProjects, total, totalPages, err := uc.DBProjectProtabAPI(filter)
+	if err != nil {
+		return nil, 0, 0, err
+	}
+
+	listings := []*response.ProjectListing{}
+	for _, p := range uProjects {
+		isMintedOut := false
+		if int64(p.MaxSupply) == int64(p.Index) {
+			isMintedOut = true
+		}
+
+		respItem := &response.ProjectListing{
+			ObjectID:        p.TokenID,
+			ContractAddress: p.ContractAddress,
+			TotalSupply:     p.MaxSupply,
+			NumberOwners:    int64(p.UniqueOwners),
+			ProjectMarketplaceData: &response.ProjectMarketplaceData{
+				Listed:          uint64(p.Listed),
+				FloorPrice:      uint64(p.FloorPrice),
+				TotalVolume:     uint64(p.Volume),
+				CEXVolume:       uint64(p.CEXVolume),
+				MintVolume:      uint64(p.MintVolume),
+				FirstSaleVolume: float64(0), //TODO - update this field
+			},
+			IsHidden:    false, // hidden projects are filtered out of this collection
+			TotalVolume: uint64(p.Volume),
+			IsBuyable:   p.IsBuyable,
+			Project: &response.ProjectInfo{
+				Name:            p.Name,
+				ContractAddress: p.ContractAddress,
+				TokenId:         p.TokenID,
+				Thumbnail:       p.Thumbnail,
+				CreatorAddress:  p.CreatorAddress,
+				MaxSupply:       int64(p.MaxSupply),
+				IsMintedOut:     isMintedOut,
+				MintingInfo: response.ProjectMintingInfo{
+					Index:        int64(p.Index),
+					IndexReverse: int64(p.IndexReverse),
+				},
+			},
+			Owner: &response.OwnerInfo{
+				WalletAddress:           p.CreatorProfile.WalletAddress,
+				WalletAddressPayment:    p.CreatorProfile.WalletAddressPayment,
+				WalletAddressBTC:        p.CreatorProfile.WalletAddressBtc,
+				WalletAddressBTCTaproot: p.CreatorProfile.WalletAddressBtcTaproot,
+				DisplayName:             p.CreatorProfile.DisplayName,
+				Avatar:                  p.CreatorProfile.Avatar,
+			},
+			Priority: 1,
+		}
+		listings = append(listings, respItem)
+	}
+
+	//calculate unique owners
+	return listings, total, totalPages, nil
+}
+
+func (uc *Usecase) CalculateUniqueOwner(wg *sync.WaitGroup, inputChan chan entity.ProjectsProtab, outputChan chan ProjectUniqueOwnersChan) {
+	defer wg.Done()
+	in := <-inputChan
+	owner := 0
+	var err error
+
+	key := fmt.Sprintf("CalculateUniqueOwner - projectID: %s ", in.TokenID)
+
+	pID := strings.ToLower(in.TokenID)
+	owners, err := uc.AnalyticsTokenUriOwner(structure.FilterTokens{
+		GenNFTAddr: &pID,
+	})
+
+	if err != nil || owners == nil {
+		logger.AtLog.Logger.Error(key, zap.Error(err), zap.String("projectID", in.TokenID))
+	} else {
+		owners1 := owners.([]*tokenOwner)
+		owner = len(owners1)
+		logger.AtLog.Logger.Info(key, zap.Int("owner", owner), zap.String("projectID", in.TokenID))
+	}
+
+	outputChan <- ProjectUniqueOwnersChan{
+		ProjectID:       in.TokenID,
+		ContractAddress: strings.ToLower(in.ContractAddress),
+		Err:             err,
+		Owners:          owner,
+	}
 }

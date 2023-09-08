@@ -1,5 +1,11 @@
 package structure
 
+import (
+	"time"
+
+	"rederinghub.io/external/etherscan"
+)
+
 type FilterProjects struct {
 	BaseFilters
 	WalletAddress   *string
@@ -79,6 +85,10 @@ type CreateBtcProjectReq struct {
 	LimitMintPerProcess    int      `json:"limitMintPerProcess"`
 	Index                  int64    `json:"-"`
 	IsHidden               *bool    `json:"-"`
+
+	// GM whitelist holder
+	IsSupportGMHolder bool   `json:"isSupportGMHolder"`
+	MinimumGMSupport  string `json:"minimumGMSupport"`
 }
 
 type UpdateBTCProjectReq struct {
@@ -118,8 +128,12 @@ type CreateProposaltReq struct {
 }
 
 type UpdateProjectReq struct {
-	TokenID        string `json:"tokenID"`
-	Priority       *int   `json:"priority"`
+	TokenID  string `json:"tokenID"`
+	Priority *int   `json:"priority"`
+	// GM whitelist holder
+	IsSupportGMHolder *bool   `json:"isSupportGMHolder"`
+	MinimumGMSupport  *string `json:"minimumGMSupport"`
+
 	ContracAddress string `json:"contractAddress"`
 }
 
@@ -163,4 +177,45 @@ type VolumnLogs struct {
 type ProjectFloorPrice struct {
 	ID    string `bson:"_id" json:"id"`
 	Floor uint64 `bson:"floor" json:"floor"`
+}
+
+type AnalyticsProjectDeposit struct {
+	Value            string                             `json:"value"`
+	Currency         string                             `json:"currency"`
+	CurrencyRate     float64                            `json:"currencyRate"`
+	UsdtValue        float64                            `json:"usdtValue"`
+	UsdtExtra        float64                            `json:"usdtExtra"`
+	TotalGMReceive   float64                            `json:"totalGMReceive"`
+	Items            []*etherscan.AddressTxItemResponse `json:"items"`
+	MapItems         map[string]*etherscan.AddressTxItemResponse
+	MapTokensDeposit map[string][]TokensDeposit `json:"map_tokens_deposit"`
+}
+
+type AnalyticsProjectDepositExternal struct {
+	Error  interface{}             `json:"error"`
+	Status bool                    `json:"status"`
+	Data   AnalyticsProjectDeposit `json:"data"`
+}
+
+type TokensDeposit struct {
+	Name      string  `json:"name"`
+	Value     string  `json:"value"`
+	UsdtValue float64 `json:"usdtValue"`
+}
+
+type AnalyticsProjectDepositChan struct {
+	Value *AnalyticsProjectDeposit
+	Err   error
+}
+
+type WalletResponse struct {
+	UserAddress  string     `json:"user_address"`
+	ENS          string     `json:"ens"`
+	Avatar       string     `json:"avatar"`
+	Address      string     `json:"address"`
+	Status       int        `json:"status"`
+	Type         string     `json:"type"`
+	NativeAmount []string   `json:"native_amounts"`
+	CreatedAt    *time.Time `json:"created_at"`
+	UpdatedAt    *time.Time `json:"updated_at"`
 }

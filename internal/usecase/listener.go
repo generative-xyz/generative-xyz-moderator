@@ -4,10 +4,16 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"go.mongodb.org/mongo-driver/bson"
 	"math/big"
+	"rederinghub.io/utils"
 	"strconv"
 	"strings"
 	"time"
+
+	"rederinghub.io/utils/blockchain"
+
+	"rederinghub.io/utils/contracts/generative_nft_contract"
 
 	"rederinghub.io/internal/delivery/http/response"
 
@@ -38,14 +44,14 @@ type projectStatChan struct {
 }
 
 func (u Usecase) ResolveMarketplaceListTokenEvent(chainLog types.Log) error {
-	marketplaceContract, err := generative_marketplace_lib.NewGenerativeMarketplaceLib(chainLog.Address, u.Blockchain.GetClient())
+	marketplaceContract, err := generative_marketplace_lib.NewGenerativeMarketplaceLib(chainLog.Address, u.TcClientPublicNode.GetClient())
+	blocknumber := chainLog.BlockNumber
+
 	if err != nil {
 		logger.AtLog.Logger.Error("cannot init marketplace contract", zap.Error(err))
 		return err
 	}
 	event, err := marketplaceContract.ParseListingToken(chainLog)
-	blocknumber := chainLog.BlockNumber
-
 	if err != nil {
 		logger.AtLog.Logger.Error("cannot parse list token event", zap.Error(err))
 		return err
@@ -61,28 +67,28 @@ func (u Usecase) ResolveMarketplaceListTokenEvent(chainLog types.Log) error {
 }
 
 func (u Usecase) ResolveMarketplacePurchaseTokenEvent(chainLog types.Log) error {
-	marketplaceContract, err := generative_marketplace_lib.NewGenerativeMarketplaceLib(chainLog.Address, u.Blockchain.GetClient())
+	marketplaceContract, err := generative_marketplace_lib.NewGenerativeMarketplaceLib(chainLog.Address, u.TcClientPublicNode.GetClient())
 	if err != nil {
-		logger.AtLog.Logger.Error("cannot init marketplace contract", zap.Error(err))
+		logger.AtLog.Logger.Error("ResolveMarketplacePurchaseTokenEvent", zap.Error(err))
 		return err
 	}
 	event, err := marketplaceContract.ParsePurchaseToken(chainLog)
 	if err != nil {
-		logger.AtLog.Logger.Error("cannot parse purchase token event", zap.Error(err))
+		logger.AtLog.Logger.Error("ResolveMarketplacePurchaseTokenEvent", zap.Error(err))
 		return err
 	}
 
-	err = u.PurchaseToken(event)
+	err = u.PurchaseToken(event, chainLog.BlockNumber)
 
 	if err != nil {
-		logger.AtLog.Logger.Error("fail when resolve purchase token event", zap.Error(err))
+		logger.AtLog.Logger.Error("ResolveMarketplacePurchaseTokenEvent", zap.Error(err))
 	}
 
 	return nil
 }
 
 func (u Usecase) ResolveMarketplaceMakeOffer(chainLog types.Log) error {
-	marketplaceContract, err := generative_marketplace_lib.NewGenerativeMarketplaceLib(chainLog.Address, u.Blockchain.GetClient())
+	marketplaceContract, err := generative_marketplace_lib.NewGenerativeMarketplaceLib(chainLog.Address, u.TcClientPublicNode.GetClient())
 	if err != nil {
 		logger.AtLog.Logger.Error("cannot init marketplace contract", zap.Error(err))
 		return err
@@ -105,7 +111,7 @@ func (u Usecase) ResolveMarketplaceMakeOffer(chainLog types.Log) error {
 }
 
 func (u Usecase) ResolveMarketplaceAcceptOfferEvent(chainLog types.Log) error {
-	marketplaceContract, err := generative_marketplace_lib.NewGenerativeMarketplaceLib(chainLog.Address, u.Blockchain.GetClient())
+	marketplaceContract, err := generative_marketplace_lib.NewGenerativeMarketplaceLib(chainLog.Address, u.TcClientPublicNode.GetClient())
 	if err != nil {
 		logger.AtLog.Logger.Error("cannot init marketplace contract", zap.Error(err))
 		return err
@@ -116,7 +122,7 @@ func (u Usecase) ResolveMarketplaceAcceptOfferEvent(chainLog types.Log) error {
 		return err
 	}
 
-	err = u.AcceptMakeOffer(event)
+	err = u.AcceptMakeOffer(event, chainLog.BlockNumber)
 
 	if err != nil {
 		logger.AtLog.Logger.Error("fail when resolve accept offer event", zap.Error(err))
@@ -126,28 +132,31 @@ func (u Usecase) ResolveMarketplaceAcceptOfferEvent(chainLog types.Log) error {
 }
 
 func (u Usecase) ResolveMarketplaceCancelListing(chainLog types.Log) error {
-	marketplaceContract, err := generative_marketplace_lib.NewGenerativeMarketplaceLib(chainLog.Address, u.Blockchain.GetClient())
+	marketplaceContract, err := generative_marketplace_lib.NewGenerativeMarketplaceLib(chainLog.Address, u.TcClientPublicNode.GetClient())
 	if err != nil {
-		logger.AtLog.Logger.Error("cannot init marketplace contract", zap.Error(err))
+		logger.AtLog.Logger.Error("ResolveMarketplaceCancelListing", zap.Error(err))
 		return err
 	}
 	event, err := marketplaceContract.ParseCancelListing(chainLog)
 	if err != nil {
-		logger.AtLog.Logger.Error("cannot parse cancel listing event", zap.Error(err))
+		logger.AtLog.Logger.Error("ResolveMarketplaceCancelListing", zap.Error(err))
 		return err
 	}
 
 	err = u.CancelListing(event)
 
 	if err != nil {
-		logger.AtLog.Logger.Error("fail when resolve cancel listing event", zap.Error(err))
+		logger.AtLog.Logger.Error("ResolveMarketplaceCancelListing", zap.Error(err))
 	}
+
+	blockNumber := chainLog.BlockNumber
+	u.TokenActivites(blockNumber, event.Data.Price.Int64(), strings.ToLower(event.Data.Erc20Token.String()), event.Data.TokenId.String(), strings.ToLower(event.Data.Seller.String()), "", entity.TokenCancelListing, "Cancel Listing")
 
 	return nil
 }
 
 func (u Usecase) ResolveMarketplaceCancelOffer(chainLog types.Log) error {
-	marketplaceContract, err := generative_marketplace_lib.NewGenerativeMarketplaceLib(chainLog.Address, u.Blockchain.GetClient())
+	marketplaceContract, err := generative_marketplace_lib.NewGenerativeMarketplaceLib(chainLog.Address, u.TcClientPublicNode.GetClient())
 	if err != nil {
 		logger.AtLog.Logger.Error("cannot init marketplace contract", zap.Error(err))
 		return err
@@ -158,7 +167,7 @@ func (u Usecase) ResolveMarketplaceCancelOffer(chainLog types.Log) error {
 		return err
 	}
 
-	err = u.CancelOffer(event)
+	err = u.CancelOffer(event, chainLog.BlockNumber)
 
 	if err != nil {
 		logger.AtLog.Logger.Error("fail when resolve cancel offer event", zap.Error(err))
@@ -201,8 +210,16 @@ func (u Usecase) UpdateProjectFromChain(contractAddr string, tokenIDStr string, 
 	}()
 
 	txnHash = strings.ToLower(txnHash)
-	project, err = u.Repo.FindProjectByTxHash(txnHash)
+	project, err = u.Repo.FindProjectByTxHash(txnHash, bson.D{
+		{"txHex", 0},
+		{"nftTokenUri", 0},
+	})
 	if err != nil {
+		return nil, err
+	}
+
+	if project.Status == true && project.IsSynced == true && project.IsHidden == false {
+		err := errors.New("Skip: Project is synced")
 		return nil, err
 	}
 
@@ -229,7 +246,7 @@ func (u Usecase) UpdateProjectFromChain(contractAddr string, tokenIDStr string, 
 	now := time.Now().UTC()
 
 	blockNumberString := fmt.Sprintf("%d", blockNumber)
-	project.IsSynced = true
+
 	project.Name = projectDetail.ProjectDetail.Name
 	project.ContractAddress = contractAddr
 	project.CreatorName = projectDetail.ProjectDetail.Creator
@@ -322,6 +339,12 @@ func (u Usecase) UpdateProjectFromChain(contractAddr string, tokenIDStr string, 
 	}
 	project.CreatorProfile = *user
 	project.CreatorAddrrBTC = user.WalletAddressBTC
+
+	// IsSynced will be updated by unzip, if project has zipfile
+	if !project.HasZipFile {
+		project.IsSynced = true
+	}
+
 	_, err = u.Repo.UpdateProject(project.UUID, project)
 	if err != nil {
 		return nil, err
@@ -342,6 +365,62 @@ func (u Usecase) UpdateProjectFromChain(contractAddr string, tokenIDStr string, 
 	}
 
 	return project, nil
+}
+
+func (u Usecase) UpdateTokenOwner(chainLog types.Log, blockchain *blockchain.TcNetwork) error {
+	contract, err := generative_nft_contract.NewGenerativeNftContract(chainLog.Address, u.TcClientPublicNode.GetClient())
+	if err != nil {
+		logger.AtLog.Logger.Error("cannot init marketplace contract", zap.Error(err))
+		return err
+	}
+
+	event, err := contract.ParseTransfer(chainLog)
+	if err != nil {
+		logger.AtLog.Logger.Error("cannot parse purchase token event", zap.Error(err))
+		return err
+	}
+
+	tokenIdStr := event.TokenId.String()
+	// override listing.TokenId
+	if projectId, ok := utils.ExceptionProjectContract[strings.ToLower(event.Raw.Address.String())]; ok {
+		projectIdInt, _ := new(big.Int).SetString(projectId, 10)
+		projectIdInt = new(big.Int).Mul(projectIdInt, big.NewInt(1000000))
+		tokenIdStr = projectIdInt.Add(projectIdInt, event.TokenId).String()
+	}
+
+	token, err := u.Repo.FindTokenByTokenID(tokenIdStr)
+	if err != nil {
+		logger.AtLog.Logger.Error("cannot find token", zap.Error(err))
+		return err
+	}
+	project, err := u.Repo.FindProjectByTokenID(token.ProjectID)
+	if err != nil {
+		logger.AtLog.Logger.Error("cannot find project", zap.Error(err))
+		return err
+	}
+
+	blockInfo, err := blockchain.GetClient().BlockByNumber(context.Background(), big.NewInt(int64(chainLog.BlockNumber)))
+	if err != nil {
+		logger.AtLog.Logger.Error("cannot get block info", zap.Error(err))
+		return err
+	}
+
+	err = u.Repo.UpdateTokenOwnerAddr(token.TokenID, strings.ToLower(event.To.String()))
+	if err != nil {
+		logger.AtLog.Logger.Error("fail when resolve purchase token event", zap.Error(err))
+	}
+
+	return u.Repo.InsertTokenActivity(&entity.TokenActivity{
+		Type:          entity.TokenTransfer,
+		Title:         "Transfer",
+		UserAAddress:  event.From.String(),
+		UserBAddress:  event.To.String(),
+		InscriptionID: project.InscriptionIcon,
+		ProjectID:     token.ProjectID,
+		TokenInfo:     token,
+		Time:          &blockInfo.ReceivedAt,
+	})
+
 }
 
 // func (u Usecase) GetProjectsFromChain() error {

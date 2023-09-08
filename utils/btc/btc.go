@@ -9,6 +9,7 @@ import (
 	"math/big"
 	"net/http"
 	"regexp"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -52,7 +53,7 @@ func (bs *BlockcypherService) EstimateFeeTransactionWithPreferenceFromSegwitAddr
 	outAddrs := make(map[string]big.Int)
 
 	flag := -1
-	mintFee := 5000
+	mintFee := 10000
 
 	for addr, amount := range destinations {
 
@@ -561,10 +562,11 @@ func GetBTCTxStatusExtensive(txhash string, bs *BlockcypherService, qn string) (
 }
 
 func GetBalanceFromQuickNode(address string, qn string) (*structure.BlockCypherWalletInfo, error) {
-	var utxoList []QuickNodeUTXO
+	// var utxoList []QuickNodeUTXO
+	var respond QuickNodeUTXO_Resp
 	var result structure.BlockCypherWalletInfo
 
-	payload := strings.NewReader(fmt.Sprintf("{\n\t\"method\": \"qn_addressBalance\",\n\t\"params\": [\n\t\t\"%v\"\n\t]\n}", address))
+	payload := strings.NewReader(fmt.Sprintf("{\n\t\"method\": \"bb_getutxos\",\n\t\"params\": [\n\t\t\"%v\"\n\t, {\"confirmed\": true}]\n}", address))
 
 	req, err := http.NewRequest("POST", qn, payload)
 	if err != nil {
@@ -582,18 +584,23 @@ func GetBalanceFromQuickNode(address string, qn string) (*structure.BlockCypherW
 	if err != nil {
 		return nil, err
 	}
-	err = json.Unmarshal(body, &utxoList)
+	err = json.Unmarshal(body, &respond)
 	if err != nil {
+		log.Println(string(body))
 		return nil, err
 	}
 	totalBalance := 0
 	convertedUTXOList := []structure.TxRef{}
-	for _, utxo := range utxoList {
-		totalBalance += utxo.Value
+	for _, utxo := range respond.Result {
+		value, err := strconv.ParseUint(utxo.Value, 10, 64)
+		if err != nil {
+			return nil, err
+		}
+		totalBalance += int(value)
 		newTxReft := structure.TxRef{
-			TxHash:      utxo.Hash,
-			TxOutputN:   utxo.Index,
-			Value:       utxo.Value,
+			TxHash:      utxo.Txid,
+			TxOutputN:   utxo.Vout,
+			Value:       int(value),
 			BlockHeight: utxo.Height,
 		}
 		convertedUTXOList = append(convertedUTXOList, newTxReft)
@@ -633,7 +640,16 @@ func SendRawTxfromQuickNode(raw_tx string, qn string) (string, error) {
 	}
 	return string(body), nil
 }
+
+var quickNodeRateLock sync.Mutex
+
 func CheckTxfromQuickNode(txhash string, qn string) (*QuickNodeTx, error) {
+
+	quickNodeRateLock.Lock()
+	defer func() {
+		time.Sleep(100 * time.Millisecond)
+		quickNodeRateLock.Unlock()
+	}()
 	var result QuickNodeTx
 
 	payload := strings.NewReader(fmt.Sprintf("{\n\t\"method\": \"getrawtransaction\",\n\t\"params\": [\n\t\t\"%v\",\n\t\t2\n\t]\n}", txhash))
@@ -818,4 +834,32 @@ func (bs *BlockcypherService) BTCGetAddrInfoMulti(addresses []string) (map[strin
 	}
 
 	return balanceMap, nil
+}
+
+func GetBlockCountfromQuickNode(qn string) (*QuickNodeBlockCount, error) {
+	var result QuickNodeBlockCount
+
+	payload := strings.NewReader(fmt.Sprintf("{\n\t\"method\": \"getblockcount\"}"))
+
+	req, err := http.NewRequest("POST", qn, payload)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Add("Content-Type", "application/json")
+
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+
+	defer res.Body.Close()
+	body, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		return nil, err
+	}
+	err = json.Unmarshal(body, &result)
+	if err != nil {
+		return nil, err
+	}
+	return &result, nil
 }

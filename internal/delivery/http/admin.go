@@ -131,7 +131,12 @@ func (h *httpDelivery) deleteRedis(w http.ResponseWriter, r *http.Request) {
 // @Success 200 {object} response.JsonResponse{data=string}
 // @Router /admin/redis [DELETE]
 func (h *httpDelivery) deleteAllRedis(w http.ResponseWriter, r *http.Request) {
-	res, err := h.Usecase.DeleteAllRedis()
+	prefix := r.URL.Query().Get("prefix")
+	if prefix == "" {
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, errors.New("missing prefix"))
+		return
+	}
+	res, err := h.Usecase.DeleteAllRedis(prefix)
 
 	if err != nil {
 		logger.AtLog.Logger.Error("err", zap.Error(err))
@@ -404,5 +409,121 @@ func (h *httpDelivery) updateEnabledJob(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, true, "")
+
+}
+
+func (h *httpDelivery) requestFaucetAdmin(w http.ResponseWriter, r *http.Request) {
+
+	ctx := r.Context()
+	iWalletAddress := ctx.Value(utils.SIGNED_WALLET_ADDRESS)
+
+	fmt.Println("iWalletAddress", iWalletAddress)
+
+	userWalletAddr, ok := iWalletAddress.(string)
+	if !ok {
+		err := errors.New("Wallet address is incorect")
+		logger.AtLog.Logger.Error("ctx.Value.Token", zap.Error(err))
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+	fmt.Println("userWalletAddr", userWalletAddr)
+
+	// check admin user:
+	profile, err := h.Usecase.GetUserProfileByWalletAddress(userWalletAddr)
+	if err != nil {
+		logger.AtLog.Logger.Error("h.Usecase.GetUserProfileByWalletAddress(", zap.Error(err))
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+	if !profile.IsAdmin {
+		err := errors.New("permission denied")
+		logger.AtLog.Logger.Error("permission", zap.Error(err))
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+
+	var reqBody request.FaucetAdminReq
+	decoder := json.NewDecoder(r.Body)
+	err = decoder.Decode(&reqBody)
+	if err != nil {
+		logger.AtLog.Logger.Error("httpDelivery.requestFaucet.Decode", zap.Error(err))
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+	if len(reqBody.Url) == 0 {
+		err = errors.New("url invalid")
+		logger.AtLog.Logger.Error("h.requestFaucet", zap.String("err", err.Error()))
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+
+	if len(reqBody.ListAddress) > 0 {
+		result, err := h.Usecase.ApiAdminCreateBatchFaucet(reqBody.ListAddress, reqBody.Url, reqBody.Type, reqBody.Amount)
+		if err != nil {
+			logger.AtLog.Logger.Error("h.Usecase.GetFaucetPaymentInfo", zap.String("err", err.Error()))
+			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+			return
+		}
+		h.Response.RespondSuccess(w, http.StatusOK, response.Success, result, "")
+
+	} else if len(reqBody.MapAddress) > 0 {
+		result, err := h.Usecase.ApiAdminCreateMapFaucet(reqBody.MapAddress, reqBody.Url, reqBody.Type)
+		if err != nil {
+			logger.AtLog.Logger.Error("h.Usecase.GetFaucetPaymentInfo", zap.String("err", err.Error()))
+			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+			return
+		}
+		h.Response.RespondSuccess(w, http.StatusOK, response.Success, result, "")
+
+	} else {
+		result, err := h.Usecase.ApiAdminCreateFaucet(reqBody.Address, reqBody.Url, reqBody.Txhash, reqBody.Type, reqBody.Source)
+		if err != nil {
+			logger.AtLog.Logger.Error("h.Usecase.GetFaucetPaymentInfo", zap.String("err", err.Error()))
+			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+			return
+		}
+
+		h.Response.RespondSuccess(w, http.StatusOK, response.Success, result, "")
+	}
+
+}
+
+func (h *httpDelivery) withdrawNewCityFunds(w http.ResponseWriter, r *http.Request) {
+
+	ctx := r.Context()
+	iWalletAddress := ctx.Value(utils.SIGNED_WALLET_ADDRESS)
+
+	fmt.Println("iWalletAddress", iWalletAddress)
+
+	userWalletAddr, ok := iWalletAddress.(string)
+	if !ok {
+		err := errors.New("Wallet address is incorect")
+		logger.AtLog.Logger.Error("ctx.Value.Token", zap.Error(err))
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+	fmt.Println("userWalletAddr", userWalletAddr)
+
+	// check admin user:
+	profile, err := h.Usecase.GetUserProfileByWalletAddress(userWalletAddr)
+	if err != nil {
+		logger.AtLog.Logger.Error("h.Usecase.GetUserProfileByWalletAddress(", zap.Error(err))
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+	if !profile.IsAdmin {
+		err := errors.New("permission denied")
+		logger.AtLog.Logger.Error("permission", zap.Error(err))
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+
+	data, err := h.Usecase.ApiAdminCrawlFunds()
+
+	if err != nil {
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, data, "")
 
 }

@@ -3,11 +3,9 @@ package http
 import (
 	"errors"
 	"fmt"
-	"net/http"
-	"strconv"
-
 	"github.com/gorilla/mux"
 	"go.uber.org/zap"
+	"net/http"
 	"rederinghub.io/internal/delivery/http/response"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/utils/algolia"
@@ -116,17 +114,19 @@ func (h *httpDelivery) searchToken(w http.ResponseWriter, r *http.Request) {
 func (h *httpDelivery) search(w http.ResponseWriter, r *http.Request) {
 	search := r.URL.Query().Get("search")
 	objType := r.URL.Query().Get("type")
-	fromNumberStr := r.URL.Query().Get("fromNumber")
-	toNumberStr := r.URL.Query().Get("toNumber")
-	fromNumber := 0
-	toNumber := 0
 
-	if len(fromNumberStr) > 0 {
-		fromNumber, _ = strconv.Atoi(fromNumberStr)
-	}
-	if len(toNumberStr) > 0 {
-		toNumber, _ = strconv.Atoi(toNumberStr)
-	}
+	//Disabled by request
+	//fromNumberStr := r.URL.Query().Get("fromNumber")
+	//toNumberStr := r.URL.Query().Get("toNumber")
+	//fromNumber := 0
+	//toNumber := 0
+
+	//if len(fromNumberStr) > 0 {
+	//	fromNumber, _ = strconv.Atoi(fromNumberStr)
+	//}
+	//if len(toNumberStr) > 0 {
+	//	toNumber, _ = strconv.Atoi(toNumberStr)
+	//}
 
 	result := &entity.Pagination{}
 	dataResp := []*response.SearchResponse{}
@@ -157,38 +157,36 @@ func (h *httpDelivery) search(w http.ResponseWriter, r *http.Request) {
 	switch objType {
 	case "project":
 		var uProjects []entity.Projects
-		uProjects, t, tp, err = h.Usecase.AlgoliaSearchProject(filter)
+		uProjects, t, tp, err = h.Usecase.DBSearchProject(filter)
 		if err != nil {
 			logger.AtLog.Logger.Error("h.Usecase.AlgoliaSearchProject", zap.Error(err))
 			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 			return
 		}
 		for _, p := range uProjects {
-			result, err := h.Usecase.GetCollectionMarketplaceStats(p.TokenID)
 			r, err := h.projectToResp(&p)
-			r.BtcFloorPrice = result.FloorPrice
 			if err != nil {
 				logger.AtLog.Logger.Error("copier.Copy", zap.Error(err))
 				h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 				return
 			}
-
 			dataResp = append(dataResp, &response.SearchResponse{ObjectType: "project", Project: r})
 		}
-	case "inscription":
-		if fromNumber > 0 && toNumber > 0 {
-			filter.FromNumber = fromNumber
-			filter.ToNumber = toNumber
-		}
-		dataResp, t, tp, err = h.Usecase.AlgoliaSearchInscription(filter)
-		if err != nil {
-			logger.AtLog.Logger.Error("h.Usecase.AlgoliaSearchInscription", zap.Error(err))
-			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
-			return
-		}
+		//Disabled by request
+		//case "inscription":
+	//	if fromNumber > 0 && toNumber > 0 {
+	//		filter.FromNumber = fromNumber
+	//		filter.ToNumber = toNumber
+	//	}
+	//	dataResp, t, tp, err = h.Usecase.AlgoliaSearchInscription(filter)
+	//	if err != nil {
+	//		logger.AtLog.Logger.Error("h.Usecase.AlgoliaSearchInscription", zap.Error(err))
+	//		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+	//		return
+	//	}
 	case "artist":
 		var users []*response.ArtistResponse
-		users, t, tp, err = h.Usecase.AlgoliaSearchArtist(filter)
+		users, t, tp, err = h.Usecase.DBSearchArtists(filter)
 		if err != nil {
 			logger.AtLog.Logger.Error("h.Usecase.AlgoliaSearchArtist", zap.Error(err))
 			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
@@ -197,46 +195,47 @@ func (h *httpDelivery) search(w http.ResponseWriter, r *http.Request) {
 		for _, user := range users {
 			dataResp = append(dataResp, &response.SearchResponse{ObjectType: "artist", Artist: user})
 		}
-	case "token":
-		var uTokens []entity.TokenUri
-		uTokens, t, tp, err = h.Usecase.AlgoliaSearchTokenUri(filter)
-		if err != nil {
-			logger.AtLog.Logger.Error("h.Usecase.AlgoliaSearchTokenUri", zap.Error(err))
-			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
-			return
-		}
-		for _, token := range uTokens {
-			r, err := h.tokenToResp(&token)
-			if err != nil {
-				logger.AtLog.Logger.Error("copier.Copy", zap.Error(err))
-				h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
-				return
-			}
-
-			listingInfo, err := h.Usecase.Repo.GetDexBTCListingOrderPendingByInscriptionID(token.TokenID)
-			if err == nil && listingInfo.CancelTx == "" {
-				r.Buyable = true
-				r.PriceBTC = fmt.Sprintf("%v", listingInfo.Amount)
-				r.OrderID = listingInfo.UUID
-				r.SellVerified = listingInfo.Verified
-				if r.SellVerified {
-					btcRate, ethRate, err := h.Usecase.GetBTCToETHRate()
-					if err != nil {
-						logger.AtLog.Logger.Error("GenBuyETHOrder GetBTCToETHRate", zap.Error(err))
-					}
-					amountBTCRequired := uint64(listingInfo.Amount) + 1000
-					amountBTCRequired += (amountBTCRequired / 10000) * 15 // + 0,15%
-					// amountBTCRequired += btc.EstimateTxFee(3, 2, uint(15)) + btc.EstimateTxFee(1, 2, uint(15))
-
-					amountETH, _, _, err := h.Usecase.ConvertBTCToETHWithPriceEthBtc(fmt.Sprintf("%f", float64(amountBTCRequired)/1e8), btcRate, ethRate)
-					if err != nil {
-						logger.AtLog.Logger.Error("GenBuyETHOrder convertBTCToETH", zap.Error(err))
-					}
-					r.PriceETH = amountETH
-				}
-			}
-			dataResp = append(dataResp, &response.SearchResponse{ObjectType: "token", TokenUri: r})
-		}
+		//Disabled by request
+		//case "token":
+		//	var uTokens []entity.TokenUri
+		//	uTokens, t, tp, err = h.Usecase.AlgoliaSearchTokenUri(filter)
+		//	if err != nil {
+		//		logger.AtLog.Logger.Error("h.Usecase.AlgoliaSearchTokenUri", zap.Error(err))
+		//		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		//		return
+		//	}
+		//	for _, token := range uTokens {
+		//		r, err := h.tokenToResp(&token)
+		//		if err != nil {
+		//			logger.AtLog.Logger.Error("copier.Copy", zap.Error(err))
+		//			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		//			return
+		//		}
+		//
+		//		listingInfo, err := h.Usecase.Repo.GetDexBTCListingOrderPendingByInscriptionID(token.TokenID)
+		//		if err == nil && listingInfo.CancelTx == "" {
+		//			r.Buyable = true
+		//			r.PriceBTC = fmt.Sprintf("%v", listingInfo.Amount)
+		//			r.OrderID = listingInfo.UUID
+		//			r.SellVerified = listingInfo.Verified
+		//			if r.SellVerified {
+		//				btcRate, ethRate, err := h.Usecase.GetBTCToETHRate()
+		//				if err != nil {
+		//					logger.AtLog.Logger.Error("GenBuyETHOrder GetBTCToETHRate", zap.Error(err))
+		//				}
+		//				amountBTCRequired := uint64(listingInfo.Amount) + 1000
+		//				amountBTCRequired += (amountBTCRequired / 10000) * 15 // + 0,15%
+		//				// amountBTCRequired += btc.EstimateTxFee(3, 2, uint(15)) + btc.EstimateTxFee(1, 2, uint(15))
+		//
+		//				amountETH, _, _, err := h.Usecase.ConvertBTCToETHWithPriceEthBtc(fmt.Sprintf("%f", float64(amountBTCRequired)/1e8), btcRate, ethRate)
+		//				if err != nil {
+		//					logger.AtLog.Logger.Error("GenBuyETHOrder convertBTCToETH", zap.Error(err))
+		//				}
+		//				r.PriceETH = amountETH
+		//			}
+		//		}
+		//		dataResp = append(dataResp, &response.SearchResponse{ObjectType: "token", TokenUri: r})
+		//	}
 	}
 
 	result.Result = dataResp

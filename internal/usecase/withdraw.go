@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
 
 	"github.com/jinzhu/copier"
 	"go.uber.org/zap"
@@ -34,6 +35,16 @@ func (u Usecase) CreateWithdrawProject(walletAddress string, wr structure.WithDr
 	widthDrawAmount := 0.0
 	refAmount := 0.0
 
+	project, err := u.Repo.FindProjectByTokenIDOrGenNFTAddr(wr.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	if strings.ToLower(project.CreatorAddrr) != strings.ToLower(walletAddress) {
+		err := errors.New(fmt.Sprintf("Yout don't have permission to make withdraw to this collection"))
+		return nil, err
+	}
+
 	requestEarnings, err := strconv.ParseFloat(wr.Amount, 10)
 	if err != nil {
 		requestEarnings = 0
@@ -46,8 +57,8 @@ func (u Usecase) CreateWithdrawProject(walletAddress string, wr structure.WithDr
 
 	//totalEarning := (refAmount + refAmount) - widthDrawAmount
 	// (refAmount + refAmount) is pushed into volumn by crontab
-	//TODO - calculate refAmount
-	wdType := string(entity.WithDrawReferal)
+
+	wdType := string(entity.WithDrawProject)
 	wdf := &entity.FilterWithdraw{
 		WalletAddress:  &walletAddress,
 		WithdrawItemID: &wr.ID,
@@ -311,7 +322,7 @@ func (u Usecase) FilterWidthdraw(data structure.FilterWithdraw) (*entity.Paginat
 }
 
 func (u Usecase) UpdateWithdraw(UUID string, status int) error {
-	logger.AtLog.Logger.Info("UpdateWithdraw", zap.String("UUID", UUID), zap.Int("status",  status))
+	logger.AtLog.Logger.Info("UpdateWithdraw", zap.String("UUID", UUID), zap.Int("status", status))
 	err := u.Repo.UpdateWithDrawStatus(UUID, status)
 	if err != nil {
 		logger.AtLog.Logger.Error("UpdateWithdraw", zap.String("UUID", UUID), zap.Int("status", status), zap.Error(err))

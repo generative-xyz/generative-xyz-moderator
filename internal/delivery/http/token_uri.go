@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"math/big"
 	"net/http"
 	"strconv"
 	"strings"
@@ -96,6 +97,13 @@ func (h *httpDelivery) tokenTrait(w http.ResponseWriter, r *http.Request) {
 		captureInt = captureInt / 1000
 	}
 
+	tokenIDIntB, _ := new(big.Int).SetString(tokenID, 10)
+	if projectId, ok := utils.ExceptionProjectContract[strings.ToLower(contractAddress)]; ok {
+		projectIdInt, _ := new(big.Int).SetString(projectId, 10)
+		projectIdInt = new(big.Int).Mul(projectIdInt, big.NewInt(1000000))
+		tokenID = projectIdInt.Add(projectIdInt, tokenIDIntB).String()
+	}
+
 	message, err := h.Usecase.GetToken(structure.GetTokenMessageReq{
 		ContractAddress: contractAddress,
 		TokenID:         tokenID,
@@ -112,7 +120,7 @@ func (h *httpDelivery) tokenTrait(w http.ResponseWriter, r *http.Request) {
 		logger.AtLog.Logger.Info("resp.message", zap.Any("message", message))
 		h.Response.RespondWithoutContainer(w, http.StatusOK, message.ParsedAttributes)
 	} else {
-		if len(message.Thumbnail) > 0 {
+		if len(message.Thumbnail) > 0 && !strings.Contains(message.Thumbnail, "trait") {
 			resp, e := http.Get(message.Thumbnail)
 			if e != nil {
 				log.Fatal(e)
@@ -169,12 +177,16 @@ func (h *httpDelivery) tokenURIWithResp(w http.ResponseWriter, r *http.Request) 
 	logger.AtLog.Logger.Info("h.Usecase.GetToken", zap.Any("token.TokenID", token.TokenID))
 
 	resp, err := h.tokenToResp(token)
+	if _, ok := utils.ExceptionProjectContract[strings.ToLower(resp.Project.GenNFTAddr)]; ok {
+		temp, _ := new(big.Int).SetString(resp.TokenID, 10)
+		resp.TokenIDData = fmt.Sprintf("%d", temp.Int64()%1000000)
+	}
 	if helpers.IsOrdinalProjectToken(token.TokenID) {
 		filter := &algolia.AlgoliaFilter{SearchStr: token.TokenID}
 		aresp, _, _, err := h.Usecase.AlgoliaSearchInscription(filter)
 		if err != nil {
-			logger.AtLog.Logger.Error("h.Usecase.AlgoliaSearchInscription", zap.Error(err))
-			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+			//logger.AtLog.Logger.Error("h.Usecase.AlgoliaSearchInscription", zap.Error(err))
+			//h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		} else {
 			for _, i := range aresp {
 				if i.Inscription != nil && i.Inscription.ObjectId == token.TokenID {
@@ -196,8 +208,6 @@ func (h *httpDelivery) tokenURIWithResp(w http.ResponseWriter, r *http.Request) 
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
-
-	fmt.Println("resp, err====>", resp, err)
 
 	if resp != nil {
 		// get nft listing detail to check buyable (contact Phuong):
@@ -668,6 +678,11 @@ func (h *httpDelivery) getTokensNew(f structure.FilterTokens) (*response.Paginat
 
 		item.PriceETH = amountETH
 
+		if _, ok := utils.ExceptionProjectContract[strings.ToLower(item.GenNFTAddr)]; ok {
+			temp, _ := new(big.Int).SetString(item.TokenID, 10)
+			item.TokenIDData = fmt.Sprintf("%d", temp.Int64()%1000000)
+		}
+
 		if strings.HasSuffix(item.AnimationURL, ".html") {
 			client := http.Client{
 				CheckRedirect: func(r *http.Request, via []*http.Request) error {
@@ -1013,4 +1028,26 @@ func (h *httpDelivery) getVolumnByWallet(w http.ResponseWriter, r *http.Request)
 	}
 
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, uProjects, "")
+}
+
+// UserCredits godoc
+// @Summary get token minting info
+// @Description get token minting info
+// @Tags TokenUri
+// @Param tokenID path string true "token ID"
+// @Accept  json
+// @Produce  json
+// @Success 200 {object} response.JsonResponse{}
+// @Router /tokens/{tokenID}/minting-info [GET]
+func (h *httpDelivery) tokenMintingInfo(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	tokenID := vars["tokenID"]
+	resp, err := h.Usecase.GetTokenMintingInfo(tokenID)
+	if err != nil {
+		logger.AtLog.Logger.Error("h.Usecase.GetTokenMintingInfo", zap.Error(err))
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
+
 }

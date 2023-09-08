@@ -9,3 +9,13 @@ type AISchoolJobProgress struct {
 	CreatedAt   int64  `json:"created_at"`
 	ModelName   string `json:"model_name"`
 }
+
+type AISchoolPresetDataset struct {
+	Name        string `json:"name"`
+	Thumbnail   string `json:"thumbnail"`
+	UUID        string `json:"uuid"`
+	Creator     string `json:"creator"`
+	IsPrivate   bool   `json:"is_private"`
+	Size        int    `json:"size"`
+	NumOfAssets int    `json:"num_of_assets"`
+}

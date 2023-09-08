@@ -4,6 +4,7 @@ import (
 	"archive/zip"
 	"bufio"
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -16,9 +17,14 @@ import (
 	"strings"
 	"time"
 
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.uber.org/zap"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
 	"rederinghub.io/utils/googlecloud"
+	"rederinghub.io/utils/logger"
 )
 
 type JobProgress struct {
@@ -34,7 +40,7 @@ type AIJobInstance struct {
 	progCh       chan JobProgress
 }
 
-var currentAIJobs map[string]AIJobInstance
+var currentAIJobs map[string]*AIJobInstance
 
 func (u Usecase) JobAIS_WatchPending() error {
 	jobList, err := u.Repo.GetAISchoolJobByStatus([]string{"running", "waiting"})
@@ -43,15 +49,25 @@ func (u Usecase) JobAIS_WatchPending() error {
 	}
 
 	if currentAIJobs == nil {
-		currentAIJobs = make(map[string]AIJobInstance)
+		currentAIJobs = make(map[string]*AIJobInstance)
 	}
 	for jobID, job := range currentAIJobs {
 		if job.IsCompleted {
 			delete(currentAIJobs, jobID)
 		}
 	}
-	if len(currentAIJobs) >= 10 {
+	if len(currentAIJobs) >= 2 {
+		log.Println("too many jobs running", len(currentAIJobs))
 		return nil
+	}
+	if len(currentAIJobs) == 0 {
+		disableCleanup := os.Getenv("DISABLE_CLEANUP")
+		if disableCleanup == "" || disableCleanup == "false" {
+			err := removeContents("./ai-school-work")
+			if err != nil {
+				return err
+			}
+		}
 	}
 	for _, job := range jobList {
 		if job.Status == "waiting" {
@@ -66,7 +82,7 @@ func (u Usecase) JobAIS_WatchPending() error {
 				u:   u,
 				job: &job,
 			}
-			currentAIJobs[job.JobID] = newJob
+			currentAIJobs[job.JobID] = &newJob
 			job.Status = "running"
 			job.ExecutedAt = time.Now().Unix()
 			err = u.Repo.UpdateAISchoolJob(&job)
@@ -79,7 +95,7 @@ func (u Usecase) JobAIS_WatchPending() error {
 		if job.Status == "running" {
 			if _, exist := currentAIJobs[job.JobID]; !exist {
 				job.Status = "waiting"
-				job.ExecutedAt = 0
+				// job.ExecutedAt = 0
 				job.Progress = 0
 				err = u.Repo.UpdateAISchoolJob(&job)
 				if err != nil {
@@ -105,7 +121,7 @@ func createAISchoolWorkFolder(jobID string, params structure.AISchoolModelParams
 	return nil
 }
 
-func prepAISchoolWorkFolder(jobID string, params structure.AISchoolModelParams, datasetGCPath string, gcs googlecloud.IGcstorage) error {
+func prepAISchoolWorkFolder(jobID string, params structure.AISchoolModelParams, datasetsGCPath map[string]string, gcs googlecloud.IGcstorage) error {
 	err := createAISchoolWorkFolder(jobID, params)
 	if err != nil {
 		return err
@@ -118,31 +134,39 @@ func prepAISchoolWorkFolder(jobID string, params structure.AISchoolModelParams, 
 	log.Println("Writing params to file: ", basePath+jobID+"/params.json")
 	err = ioutil.WriteFile(basePath+jobID+"/params.json", content, 0644)
 	if err != nil {
-		log.Fatal(err)
-	}
-
-	log.Println("Unzipping dataset: ", datasetGCPath)
-	dataseBytes, err := gcs.ReadFileFromBucketAbs(datasetGCPath)
-	if err != nil {
 		return err
 	}
-	log.Println("Dataset size: ", len(dataseBytes))
-	br := bytes.NewReader(dataseBytes)
-
-	zr, err := zip.NewReader(br, int64(len(dataseBytes)))
-	if err != nil {
-		return err
-	}
-	destination, err := filepath.Abs(basePath + jobID + "/dataset")
-	if err != nil {
-		return err
-	}
-
-	for _, f := range zr.File {
-		log.Println("Unzipping", f.Name)
-		err := unzipFile(f, destination)
+	for datasetName, datasetGCPath := range datasetsGCPath {
+		gcPathParts := strings.Split(datasetGCPath, "/")
+		filenameParts := strings.Split(gcPathParts[len(gcPathParts)-1], ".")
+		// datasetNameStr := strings.ReplaceAll(datasetName, " ", "_")
+		_ = datasetName
+		log.Println("Unzipping dataset: ", datasetGCPath)
+		dataseBytes, err := gcs.ReadFileFromBucketAbs(datasetGCPath)
 		if err != nil {
 			return err
+		}
+		log.Println("Dataset size: ", len(dataseBytes))
+		br := bytes.NewReader(dataseBytes)
+
+		zr, err := zip.NewReader(br, int64(len(dataseBytes)))
+		if err != nil {
+			return err
+		}
+		destination, err := filepath.Abs(basePath + jobID + "/dataset/" + filenameParts[0])
+		if err != nil {
+			return err
+		}
+
+		for _, f := range zr.File {
+			if strings.Contains(f.Name, "__MACOSX") {
+				continue
+			}
+			log.Println("Unzipping", f.Name)
+			err := unzipFile(f, destination)
+			if err != nil {
+				return err
+			}
 		}
 	}
 
@@ -163,7 +187,10 @@ func (job *AIJobInstance) Start() {
 	defer func() {
 		job.IsCompleted = true
 		close(progCh)
-		clearAISchoolWorkFolder(jobID)
+		disableCleanup := os.Getenv("DISABLE_CLEANUP")
+		if disableCleanup == "" || disableCleanup == "false" {
+			clearAISchoolWorkFolder(jobID)
+		}
 	}()
 	log.Println("Starting job: ", jobID)
 	err := clearAISchoolWorkFolder(jobID)
@@ -189,10 +216,26 @@ func (job *AIJobInstance) Start() {
 		}
 		return
 	}
-
-	dataset, err := job.u.Repo.GetFileByUUID(job.job.DatasetUUID)
-	if err != nil {
-		job.job.Errors = err.Error()
+	// datasetsPath := []string{}
+	datasetsPathMap := make(map[string]string)
+	if len(job.job.Datasets) > 0 {
+		for _, datasetUUID := range job.job.Datasets {
+			dataset, err := job.u.Repo.GetPresetDatasetByID(datasetUUID)
+			if err != nil {
+				job.job.Errors = err.Error()
+				job.job.Status = "error"
+				err = job.u.Repo.UpdateAISchoolJob(job.job)
+				if err != nil {
+					// go u.Slack.SendMessageToSlackWithChannel("Error", "Error while updating job status: "+err.Error(), "error")
+					return
+				}
+				return
+			}
+			datasetsPathMap[dataset.Name] = dataset.DatasetURI
+			// datasetsPath = append(datasetsPath, dataset.DatasetURI)
+		}
+	} else {
+		job.job.Errors = "No dataset provided"
 		job.job.Status = "error"
 		err = job.u.Repo.UpdateAISchoolJob(job.job)
 		if err != nil {
@@ -202,7 +245,7 @@ func (job *AIJobInstance) Start() {
 		return
 	}
 
-	err = prepAISchoolWorkFolder(jobID, params, dataset.FileName, job.u.GCS)
+	err = prepAISchoolWorkFolder(jobID, params, datasetsPathMap, job.u.GCS)
 	if err != nil {
 		job.job.Errors = err.Error()
 		job.job.Status = "error"
@@ -264,6 +307,7 @@ func (job *AIJobInstance) Start() {
 		}
 		return
 	}
+	job.job.Progress = params.Epoch
 
 	cdnURL := fmt.Sprintf("%s/%s", os.Getenv("GCS_DOMAIN"), uploaded.Name)
 	fileModel := &entity.Files{
@@ -293,6 +337,7 @@ func (job *AIJobInstance) Start() {
 		// go u.Slack.SendMessageToSlackWithChannel("Error", "Error while updating job status: "+err.Error(), "error")
 		return
 	}
+	return
 }
 func executeAISchoolJob(scriptPath string, params string, dataset string, output string, progCh chan JobProgress) (string, string, error) {
 	// 1. Get params
@@ -303,7 +348,6 @@ func executeAISchoolJob(scriptPath string, params string, dataset string, output
 	jobErrLog := ""
 	args := fmt.Sprintf("%v -c %v -d %v -o %v", scriptPath, params, dataset, output)
 	cmd := exec.Command("python3", strings.Split(args, " ")...)
-	// cmd := exec.Command("ls", "-a")
 	stderr, err := cmd.StderrPipe()
 	if err != nil {
 		return jobLog, jobErrLog, err
@@ -328,11 +372,11 @@ func executeAISchoolJob(scriptPath string, params string, dataset string, output
 		m := scanner2.Text()
 		jobLog += fmt.Sprintln(m)
 		if strings.Contains(strings.ToLower(m), "epoch") {
-			epochStr := strings.Split(m, "Epoch ")
+			epochStr := strings.Split(m, "epoch ")
 			if len(epochStr) < 2 {
 				continue
 			}
-			epochs := strings.Split(epochStr[1], "/")
+			epochs := strings.Split(epochStr[1], ":")
 			currentEpoch := epochs[0]
 			currentEpochInt, err := strconv.ParseInt(currentEpoch, 10, 64)
 			if err != nil {
@@ -344,11 +388,111 @@ func executeAISchoolJob(scriptPath string, params string, dataset string, output
 			}
 		}
 	}
-
 	cmd.Wait()
 	if len(errStr) > 0 {
 		return jobLog, jobErrLog, errors.New(errStr)
 	}
-	time.Sleep(100 * time.Millisecond)
+	// err := cmd.Run()
+	// if err != nil {
+	// 	return jobLog, jobErrLog, err
+	// }
 	return jobLog, jobErrLog, nil
+}
+
+func (u *Usecase) CreateDataset(fileUUID, fileURI, name, creator string, size int, numOfAssets int, isPrivate bool) (*entity.AISchoolPresetDataset, error) {
+	creator = strings.ToLower(creator)
+	newDataset := &entity.AISchoolPresetDataset{
+		Name:        name,
+		Creator:     creator,
+		IsPrivate:   isPrivate,
+		FileUUID:    fileUUID,
+		DatasetURI:  fileURI,
+		Size:        size,
+		NumOfAssets: numOfAssets,
+	}
+	err := u.Repo.InsertOne(newDataset.TableName(), newDataset)
+	if err != nil {
+		return nil, err
+	}
+	return newDataset, nil
+}
+
+func (u *Usecase) DeleteDataset(address, uuid string) error {
+	address = strings.ToLower(address)
+	datasets := []entity.AISchoolPresetDataset{}
+	filter := bson.M{
+		"deleted_at": primitive.Null{},
+		"creator":    address,
+		"uuid":       uuid,
+	}
+	err := u.Repo.Find(context.Background(), entity.AISchoolPresetDataset{}.TableName(), filter, &datasets)
+	if err != nil {
+		return err
+	}
+	if len(datasets) == 0 {
+		return errors.New("Dataset not found")
+	}
+	dataset := datasets[0]
+	_, err = u.Repo.SoftDelete(&dataset)
+	if err != nil {
+		logger.AtLog.Logger.Error("DeleteFile", zap.Error(err))
+		return err
+	}
+	err = u.DeleteFile(dataset.FileUUID)
+	return err
+}
+
+func (u *Usecase) ListDataset(address string, limit, offset int64) ([]entity.AISchoolPresetDataset, error) {
+	address = strings.ToLower(address)
+	datasets := []entity.AISchoolPresetDataset{}
+	filter := bson.M{
+		"deleted_at": nil,
+		"creator":    address,
+	}
+	err := u.Repo.Find(context.Background(), entity.AISchoolPresetDataset{}.TableName(), filter, &datasets, options.Find().SetSkip(offset).SetLimit(limit))
+	if err != nil {
+		return nil, err
+	}
+	return datasets, nil
+}
+
+func (u *Usecase) GetUserDatasetQuota(address string) (int, error) {
+	address = strings.ToLower(address)
+	datasets := []entity.AISchoolPresetDataset{}
+	filter := bson.M{
+		"deleted_at": nil,
+		"creator":    address,
+	}
+	err := u.Repo.Find(context.Background(), entity.AISchoolPresetDataset{}.TableName(), filter, &datasets)
+	if err != nil {
+		return 0, err
+	}
+	totalSize := 0
+	for _, dataset := range datasets {
+		totalSize += dataset.Size
+	}
+	return totalSize, nil
+}
+
+func removeContents(dir string) error {
+	jobPathAbs, err := filepath.Abs(dir)
+	if err != nil {
+		return err
+	}
+	d, err := os.Open(jobPathAbs)
+	if err != nil {
+		return nil
+	}
+	defer d.Close()
+	names, err := d.Readdirnames(-1)
+	if err != nil {
+		return err
+	}
+	for _, name := range names {
+		err = os.RemoveAll(filepath.Join(dir, name))
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }

@@ -73,6 +73,24 @@ func (r Repository) FindProjectByTokenID(tokenID string) (*entity.Projects, erro
 	return resp, nil
 }
 
+func (r Repository) FindProjectByTokenIDOrGenNFTAddr(key string) (*entity.Projects, error) {
+	resp := &entity.Projects{}
+	f := bson.D{{"$or", bson.A{
+		bson.M{"tokenid": key},
+		bson.M{"genNFTAddr": key},
+	}}}
+	usr, err := r.FilterOne(entity.Projects{}.TableName(), f)
+	if err != nil {
+		return nil, err
+	}
+
+	err = helpers.Transform(usr, resp)
+	if err != nil {
+		return nil, err
+	}
+	return resp, nil
+}
+
 func (r Repository) FindProjectByTokenIDCustomField(tokenID string, fields []string) (*entity.Projects, error) {
 	projectField := bson.D{
 		{"_id", 1},
@@ -117,8 +135,11 @@ func (r Repository) FindProjectByTokenIDs(tokenIds []string) ([]*entity.Projects
 	return resp, nil
 }
 
-func (r Repository) FindProjectByTxHash(txHash string) (*entity.Projects, error) {
+func (r Repository) FindProjectByTxHash(txHash string, projection bson.D) (*entity.Projects, error) {
 	resp := &entity.Projects{}
+
+	opts := options.FindOne()
+	opts.Projection = projection
 	usr, err := r.FilterOne(entity.Projects{}.TableName(), bson.D{{"txhash", txHash}})
 	if err != nil {
 		return nil, err
@@ -369,10 +390,52 @@ func (r Repository) GetProjects(filter entity.FilterProjects) (*entity.Paginatio
 	return resp, nil
 }
 
+func (r Repository) GetProjectsPerPage(page, limit int) ([]entity.Projects, error) {
+	var result []entity.Projects
+
+	options := options.Find()
+	options.SetSkip(int64((page - 1) * limit))
+	options.SetLimit(int64(limit))
+
+	cursor, err := r.DB.Collection(utils.COLLECTION_PROJECTS).Find(context.Background(), bson.M{}, options)
+	if err != nil {
+		return nil, err
+	}
+	if cursor.All(context.Background(), &result); err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
 func (r Repository) GetAllProjects(filter entity.FilterProjects) ([]entity.Projects, error) {
 	projects := []entity.Projects{}
 	f := r.FilterProjects(filter)
 	cursor, err := r.DB.Collection(utils.COLLECTION_PROJECTS).Find(context.TODO(), f)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = cursor.All(context.TODO(), &projects); err != nil {
+		return nil, err
+	}
+
+	return projects, nil
+}
+
+func (r Repository) GetTCProject(excludeIDs []string) ([]entity.Projects, error) {
+	//filter := bson.M{"genNFTAddr": "0xb957f1a4a019decd4b75b2bfce01d4b7df358145"}
+	filter := bson.M{"tokenIDInt": bson.M{"$lt": 1000000}}
+
+	if len(excludeIDs) > 0 {
+		filter["genNFTAddr"] = bson.M{"$nin": excludeIDs}
+	}
+
+	var projects []entity.Projects
+	opts := &options.FindOptions{}
+	opts.Projection = bson.D{
+		{"genNFTAddr", 1},
+	}
+	cursor, err := r.DB.Collection(utils.COLLECTION_PROJECTS).Find(context.TODO(), filter, opts)
 	if err != nil {
 		return nil, err
 	}

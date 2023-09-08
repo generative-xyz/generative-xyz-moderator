@@ -24,42 +24,40 @@ import (
 	"rederinghub.io/utils/logger"
 )
 
-
-
-func (u *Usecase) GetOrdinalTemplate() (*os.File, error)  {
-	_, err :=  helpers.FileExists("project.zip")
+func (u *Usecase) GetOrdinalTemplate() (*os.File, error) {
+	_, err := helpers.FileExists("project.zip")
 	if err == nil {
-		f, err  := os.Open("project.zip")
+		f, err := os.Open("project.zip")
 		if err == nil {
 			return f, nil
 		}
 	}
 
 	metaJson := structure.OrdinalCollectionMeta{
-		Name: "name",
+		Name:            "name",
 		InscriptionIcon: "inscription_icon",
-		Supply: "1",
-		Slug: "slug",
-		Description: "description",
-		TwitterLink: "twitter_link",
-		DiscordLink: "discord_link",
-		WebsiteLink: "website_link",
-		WalletAddress: "wallet_address",
-		Royalty: "0",
+		Supply:          "1",
+		Slug:            "slug",
+		Description:     "description",
+		TwitterLink:     "twitter_link",
+		DiscordLink:     "discord_link",
+		WebsiteLink:     "website_link",
+		WalletAddress:   "wallet_address",
+		Royalty:         "0",
 	}
 	metaName := `meta.json`
 	inscriptionName := `inscriptions.json`
 	helpers.CreateFile(metaName, metaJson)
-	iMeta :=  make(map[string]string)
+	iMeta := make(map[string]string)
 	iMeta["name"] = "name"
 	inscriptionsJson := structure.OrdinalInscriptionMeta{
-		ID: "inscription_id",
+		ID:   "inscription_id",
 		Meta: iMeta,
 	}
 	inscriptionList := []structure.OrdinalInscriptionMeta{}
 	inscriptionList = append(inscriptionList, inscriptionsJson)
 	helpers.CreateFile(inscriptionName, inscriptionList)
-	
+
 	zipFile, err := helpers.ZipFiles("project", metaName, inscriptionName)
 	if err != nil {
 		return nil, err
@@ -67,22 +65,22 @@ func (u *Usecase) GetOrdinalTemplate() (*os.File, error)  {
 	return zipFile, nil
 }
 
-func (u *Usecase) UploadOrdinalTemplate(r *http.Request) (*googlecloud.GcsUploadedObject, error)  {
-	
+func (u *Usecase) UploadOrdinalTemplate(r *http.Request) (*googlecloud.GcsUploadedObject, error) {
+
 	projectName := ""
-	zippedBytes, folderName , err := u.uploadAndReadFile(r, "file")
+	zippedBytes, folderName, err := u.uploadAndReadFile(r, "file")
 	if err != nil {
 		return nil, err
 	}
 
 	reader := bytes.NewReader(zippedBytes)
-    zipReader, err := zip.NewReader(reader, int64(len(zippedBytes)))
-    if err != nil {
-        return nil, err
-    }
+	zipReader, err := zip.NewReader(reader, int64(len(zippedBytes)))
+	if err != nil {
+		return nil, err
+	}
 
-	metaCollection  := &structure.OrdinalCollectionMeta{}
-	metaInscriptions  := []structure.OrdinalInscriptionMeta{}
+	metaCollection := &structure.OrdinalCollectionMeta{}
+	metaInscriptions := []structure.OrdinalInscriptionMeta{}
 	for _, file := range zipReader.File {
 		if file.FileInfo().IsDir() {
 			continue
@@ -106,14 +104,13 @@ func (u *Usecase) UploadOrdinalTemplate(r *http.Request) (*googlecloud.GcsUpload
 			return nil, err
 		}
 
-		
 		if strings.Index(file.Name, "meta") != -1 {
 			err = json.Unmarshal(content, metaCollection)
 			if err != nil {
 				return nil, err
 			}
 		}
-		
+
 		if strings.Index(file.Name, "inscriptions") != -1 {
 			err = json.Unmarshal(content, &metaInscriptions)
 			if err != nil {
@@ -142,7 +139,7 @@ func (u *Usecase) UploadOrdinalTemplate(r *http.Request) (*googlecloud.GcsUpload
 
 		token, err := u.Repo.FindTokenByTokenID(inscription.ID)
 		if err == nil && token != nil {
-			err = fmt.Errorf("Inscription %s at line %d is existed",inscription.ID, i+1)
+			err = fmt.Errorf("Inscription %s at line %d is existed", inscription.ID, i+1)
 			return nil, err
 		}
 
@@ -158,7 +155,7 @@ func (u *Usecase) UploadOrdinalTemplate(r *http.Request) (*googlecloud.GcsUpload
 		return nil, err
 	}
 
-	logger.AtLog.Infof("collection %s ",projectName)
+	logger.AtLog.Infof("collection %s ", projectName)
 	return folderName, err
 }
 
@@ -170,7 +167,6 @@ func (u Usecase) uploadAndReadFile(r *http.Request, fileName string) ([]byte, *g
 		Path:       &key,
 	}
 
-	
 	uploaded, err := u.GCS.FileUploadToBucket(gf)
 	if err != nil {
 		logger.AtLog.Error("UploadTokenTraits", zap.String("projectID", key), err.Error())
@@ -180,46 +176,49 @@ func (u Usecase) uploadAndReadFile(r *http.Request, fileName string) ([]byte, *g
 	content, err := u.GCS.ReadFile(uploaded.Name)
 	if err != nil {
 		logger.AtLog.Error("UploadTokenTraits", zap.String("projectID", key), err.Error())
-		return nil,nil, err
+		return nil, nil, err
 	}
 
 	// folerNames := strings.Split(uploaded.Name, "/")
 	// folerName := folerNames[len(folerNames) - 1]
-	
+
 	return content, uploaded, nil
 }
 
-func (u Usecase) pushToGithub(folderName string, metaCollection structure.OrdinalCollectionMeta, inscription []structure.OrdinalInscriptionMeta) error   {
-	source := "https://github.com/generative-xyz/ordinals-collections.git"
+func (u Usecase) pushToGithub(folderName string, metaCollection structure.OrdinalCollectionMeta, inscription []structure.OrdinalInscriptionMeta) error {
+	source := os.Getenv("GENERATIVE_COLLECTION_REPOSITORY")
+	if source == "" {
+		source = "https://github.com/generative-xyz/ordinals-collections.git"
+	}
 	uuid := uuid.New().String()
-	
+
 	//timeUtc := time.Now().UTC().Nanosecond()
 	//folderName = fmt.Sprintf("%s-%d",folderName, timeUtc)
 	folder_path := fmt.Sprintf("/tmp/ordinals-collection-%s", uuid)
-	collectionPath := fmt.Sprintf("%s/collections/%s",folder_path, folderName)
+	collectionPath := fmt.Sprintf("%s/collections/%s", folder_path, folderName)
 	repo, err := git.PlainClone(folder_path, false, &git.CloneOptions{
-		URL:      source,
+		URL: source,
 		//Progress: os.Stdout,
 	})
 
 	if err != nil {
-		return  err
+		return err
 	}
 	collectionFoldersPath := fmt.Sprintf("%s/collections", folder_path)
 	collectionFolders, err := ioutil.ReadDir(collectionFoldersPath)
 	if err != nil {
-		return  err
+		return err
 	}
 
 	//create new branch and checkout it
 	w, err := repo.Worktree()
 	if err != nil {
-		return  err
+		return err
 	}
 
 	headRef, err := repo.Head()
 	if err != nil {
-		return  err
+		return err
 	}
 
 	branch := os.Getenv("GITHUB_ORDINAL_COLLECTOR_BRANCH")
@@ -227,25 +226,25 @@ func (u Usecase) pushToGithub(folderName string, metaCollection structure.Ordina
 	err = repo.Storer.SetReference(ref)
 	if err != nil {
 		err = fmt.Errorf("Cannot create branch %s", branch)
-		return  err
+		return err
 	}
 
 	//spew.Dump(collectionPath)
-	branchName :=  plumbing.NewBranchReferenceName(branch)
+	branchName := plumbing.NewBranchReferenceName(branch)
 	err = w.Checkout(&git.CheckoutOptions{
 		Branch: branchName,
 	})
 	if err != nil {
 		err = fmt.Errorf("Cannot switch to branch %s", branch)
-		return  err
+		return err
 	}
 
 	err = w.Pull(&git.PullOptions{
-			RemoteName: `origin`,
-			ReferenceName: plumbing.NewBranchReferenceName(branch),
-		},
+		RemoteName:    `origin`,
+		ReferenceName: plumbing.NewBranchReferenceName(branch),
+	},
 	)
-	
+
 	//_ = ref
 	_ = collectionFolders
 	//spew.Dump(collectionPath)
@@ -261,36 +260,36 @@ func (u Usecase) pushToGithub(folderName string, metaCollection structure.Ordina
 	err = os.Mkdir(collectionPath, os.ModePerm)
 	if err != nil {
 		err = fmt.Errorf("Folder %s existed", folderName)
-		return  err
+		return err
 	}
 
-	err = helpers.CreateFile(fmt.Sprintf("%s/meta.json",collectionPath), metaCollection)
+	err = helpers.CreateFile(fmt.Sprintf("%s/meta.json", collectionPath), metaCollection)
 	if err != nil {
 		err = fmt.Errorf("Cannot create %s", "meta.json")
-		return  err
+		return err
 	}
-	
-	err = helpers.CreateFile(fmt.Sprintf("%s/inscriptions.json",collectionPath), inscription)
+
+	err = helpers.CreateFile(fmt.Sprintf("%s/inscriptions.json", collectionPath), inscription)
 	if err != nil {
 		err = fmt.Errorf("Cannot create %s", "inscriptions.json")
-		return  err
+		return err
 	}
 
 	//add . and commmit them
 	_, err = w.Add(".")
 	if err != nil {
-		err = fmt.Errorf("Cannot add %s, %s to git", "meta.json",  "inscriptions.json")
-		return  err
+		err = fmt.Errorf("Cannot add %s, %s to git", "meta.json", "inscriptions.json")
+		return err
 	}
 
 	status, err := w.Status()
 	if err != nil {
 		err = fmt.Errorf("Cannot check git status")
-		return  err
+		return err
 	}
 
 	// commit and push
-	commit, err := w.Commit(fmt.Sprintf("Collection %s is created",folderName), &git.CommitOptions{
+	commit, err := w.Commit(fmt.Sprintf("Collection %s is created", folderName), &git.CommitOptions{
 		Author: &object.Signature{
 			Name:  "generative",
 			Email: "dev@generative.xyz",
@@ -299,25 +298,25 @@ func (u Usecase) pushToGithub(folderName string, metaCollection structure.Ordina
 	})
 	if err != nil {
 		err = fmt.Errorf("Cannot commit files")
-		return  err
+		return err
 	}
 
 	err = repo.Push(&git.PushOptions{
 		//RemoteName: os.Getenv("GITHUB_ORDINAL_COLLECTOR_REPO"),
 		Auth: &gitHttp.BasicAuth{
-			Username: os.Getenv("GITHUB_ORDINAL_COLLECTOR_OWNER"), 
+			Username: os.Getenv("GITHUB_ORDINAL_COLLECTOR_OWNER"),
 			Password: os.Getenv("GITHUB_ACCESSTOKEN"),
 		},
 		//Force: true,
 	})
 	if err != nil {
 		err = fmt.Errorf("Cannot push files to github")
-		return  err
+		return err
 	}
 
-	logger.AtLog.Info(zap.String("collectionPath", collectionPath), zap.String("branch", branch), zap.Any("commit",commit), zap.Any("status",status))
+	logger.AtLog.Info(zap.String("collectionPath", collectionPath), zap.String("branch", branch), zap.Any("commit", commit), zap.Any("status", status))
 	// spew.Dump(commit)
 	// spew.Dump(status)
 	// spew.Dump(commit)
-	return  nil
+	return nil
 }

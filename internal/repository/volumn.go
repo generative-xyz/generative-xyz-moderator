@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"github.com/davecgh/go-spew/spew"
 	"strings"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -339,5 +340,319 @@ func (r Repository) AggregateBTCVolumn(projectID string) ([]entity.AggregateProj
 		confs = append(confs, tmp)
 	}
 
+	return confs, nil
+}
+
+func (r Repository) AggregateUsersVolumn(walletAddress []string) ([]entity.ReportArtist, error) {
+	//resp := &entity.AggregateWalletAddres{}
+	confs := []entity.ReportArtist{}
+
+	f := bson.A{
+		bson.D{
+			{"$match",
+				bson.D{
+					{"creatorAddress",
+						bson.D{
+							{"$in", walletAddress},
+						},
+					},
+				},
+			},
+		},
+		bson.D{
+			{"$group",
+				bson.D{
+					{"_id",
+						bson.D{
+							{"creatorAddress", "$creatorAddress"},
+							{"payType", "$payType"},
+						},
+					},
+					{"amount", bson.D{{"$sum", bson.D{{"$toDouble", "$amount"}}}}},
+				},
+			},
+		},
+		bson.D{
+			{"$addFields",
+				bson.D{
+					{"payType", "$_id.payType"},
+					{"walletAddress", "$_id.creatorAddress"},
+				},
+			},
+		},
+	}
+
+	c, err := r.DB.Collection(utils.COLLECTION_USER_VOLUMN).Aggregate(context.Background(), f)
+	if err != nil {
+		return nil, err
+	}
+
+	err = c.All(context.Background(), &confs)
+	if err != nil {
+		return nil, err
+	}
+
+	return confs, nil
+}
+
+func (r Repository) AggregateMinterVolumn(walletAddress []string) ([]entity.ReportArtist, error) {
+	//resp := &entity.AggregateWalletAddres{}
+	confs := []entity.ReportArtist{}
+
+	f := bson.A{
+		bson.D{
+			{"$match",
+				bson.D{
+					{"isMinted", true},
+					{"origin_user_address", bson.D{{"$in", walletAddress}}},
+				},
+			},
+		},
+		bson.D{
+			{"$project",
+				bson.D{
+					{"origin_user_address", 1},
+					{"amount", 1},
+					{"payType", 1},
+				},
+			},
+		},
+		bson.D{
+			{"$group",
+				bson.D{
+					{"_id",
+						bson.D{
+							{"wallet_address", "$origin_user_address"},
+							{"payType", "$payType"},
+						},
+					},
+					{"amount", bson.D{{"$sum", bson.D{{"$toDouble", "$amount"}}}}},
+				},
+			},
+		},
+		bson.D{
+			{"$addFields",
+				bson.D{
+					{"walletAddress", "$_id.wallet_address"},
+					{"payType", "$_id.payType"},
+				},
+			},
+		},
+	}
+
+	c, err := r.DB.Collection(utils.MINT_NFT_BTC).Aggregate(context.Background(), f)
+	if err != nil {
+		return nil, err
+	}
+
+	err = c.All(context.Background(), &confs)
+	if err != nil {
+		return nil, err
+	}
+
+	return confs, nil
+}
+
+func (r Repository) AggregateMinterBTCVolumnOld(walletAddress []string) ([]entity.ReportArtist, error) {
+	//resp := &entity.AggregateWalletAddres{}
+	confs := []entity.ReportArtist{}
+
+	f := bson.A{
+		bson.D{{"$match", bson.D{{"mintResponse.inscription", bson.D{{"$ne", ""}}}}}},
+		bson.D{{"$sort", bson.D{{"created_at", 1}}}},
+		bson.D{
+			{"$project",
+				bson.D{
+					{"amount", 1},
+					{"origin_user_address",
+						bson.D{
+							{"$ifNull",
+								bson.A{
+									"$origin_user_address",
+									"$user_address",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		bson.D{
+			{"$addFields",
+				bson.D{
+					{"walletAddress", "$origin_user_address"},
+					{"payType", "btc"},
+				},
+			},
+		},
+		bson.D{{"$match", bson.D{{"walletAddress", bson.D{{"$in", walletAddress}}}}}},
+		bson.D{
+			{"$group",
+				bson.D{
+					{"_id",
+						bson.D{
+							{"walletAddress", "$walletAddress"},
+							{"payType", "$payType"},
+						},
+					},
+					{"amount", bson.D{{"$sum", bson.D{{"$toDouble", "$amount"}}}}},
+				},
+			},
+		},
+		bson.D{
+			{"$addFields",
+				bson.D{
+					{"walletAddress", "$_id.walletAddress"},
+					{"payType", "$_id.payType"},
+				},
+			},
+		},
+		bson.D{{"$project", bson.D{{"_id", 0}}}},
+	}
+
+	c, err := r.DB.Collection(utils.COLLECTION_BTC_WALLET_ADDRESS).Aggregate(context.Background(), f)
+	if err != nil {
+		return nil, err
+	}
+
+	err = c.All(context.Background(), &confs)
+	if err != nil {
+		return nil, err
+	}
+
+	return confs, nil
+}
+
+func (r Repository) AggregateMinterEthVolumnOld(walletAddress []string) ([]entity.ReportArtist, error) {
+	//resp := &entity.AggregateWalletAddres{}
+	confs := []entity.ReportArtist{}
+
+	f := bson.A{
+		bson.D{{"$match", bson.D{{"mintResponse.inscription", bson.D{{"$ne", ""}}}}}},
+		bson.D{{"$sort", bson.D{{"created_at", 1}}}},
+		bson.D{
+			{"$project",
+				bson.D{
+					{"amount", 1},
+					{"origin_user_address",
+						bson.D{
+							{"$ifNull",
+								bson.A{
+									"$origin_user_address",
+									"$user_address",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		bson.D{
+			{"$addFields",
+				bson.D{
+					{"walletAddress", "$origin_user_address"},
+					{"payType", "btc"},
+				},
+			},
+		},
+		bson.D{
+			{"$match",
+				bson.D{
+					{"walletAddress",
+						bson.D{
+							{"$in", walletAddress},
+						},
+					},
+				},
+			},
+		},
+		bson.D{
+			{"$group",
+				bson.D{
+					{"_id",
+						bson.D{
+							{"walletAddress", "$walletAddress"},
+							{"payType", "$payType"},
+						},
+					},
+					{"amount", bson.D{{"$sum", bson.D{{"$toDouble", "$amount"}}}}},
+				},
+			},
+		},
+		bson.D{
+			{"$addFields",
+				bson.D{
+					{"walletAddress", "$_id.walletAddress"},
+					{"payType", "$_id.payType"},
+				},
+			},
+		},
+		bson.D{{"$project", bson.D{{"_id", 0}}}},
+	}
+
+	c, err := r.DB.Collection(utils.COLLECTION_ETH_WALLET_ADDRESS).Aggregate(context.Background(), f)
+	if err != nil {
+		return nil, err
+	}
+
+	err = c.All(context.Background(), &confs)
+	if err != nil {
+		return nil, err
+	}
+
+	return confs, nil
+}
+
+// userType: buyer or seller
+func (r Repository) AggregateBuyer2ndSaleVolumn(walletAddress []string, userType string) ([]*entity.Report2ndSale, error) {
+	//resp := &entity.AggregateWalletAddres{}
+	confs := []*entity.Report2ndSale{}
+
+	f := bson.A{
+		bson.D{
+			{"$match",
+				bson.D{
+					{userType,
+						bson.D{
+							{"$in", walletAddress},
+						},
+					},
+					{"matched", true},
+					{"cancelled", false},
+				},
+			},
+		},
+		bson.D{
+			{"$project",
+				bson.D{
+					{"amount", 1},
+					{userType, 1},
+				},
+			},
+		},
+		bson.D{
+			{"$group",
+				bson.D{
+					{"_id", "$" + userType},
+					{"total_amount", bson.D{{"$sum", "$amount"}}},
+				},
+			},
+		},
+		bson.D{{"$addFields", bson.D{{"walletAddressBtc", "$_id"}}}},
+	}
+
+	c, err := r.DB.Collection(utils.COLLECTION_DEX_BTC_LISTING).Aggregate(context.Background(), f)
+	if err != nil {
+		return nil, err
+	}
+
+	err = c.All(context.Background(), &confs)
+	if err != nil {
+		return nil, err
+	}
+
+	if userType != "buyer" && len(confs) > 0 {
+		spew.Dump(1)
+	}
 	return confs, nil
 }

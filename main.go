@@ -6,6 +6,13 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"rederinghub.io/external/coin_market_cap"
+	"rederinghub.io/external/etherscan"
+	"rederinghub.io/external/mempool_space"
+	"rederinghub.io/external/token_explorer"
+	gm_crontab_sever "rederinghub.io/internal/delivery/gm_crontab_server"
+	"rederinghub.io/internal/delivery/project_protab_crontab_server"
+	"strconv"
 	"time"
 
 	"go.uber.org/zap"
@@ -97,11 +104,11 @@ func init() {
 // @BasePath /rederinghub.io/v1
 func main() {
 
-	defer func() {
-		if r := recover(); r != nil {
-			fmt.Println("Recovered. Error:\n", r)
-		}
-	}()
+	//defer func() {
+	//	if r := recover(); r != nil {
+	//		fmt.Println("Recovered. Error:\n", r)
+	//	}
+	//}()
 
 	// log.Println("init sentry ...")
 	// sentry.InitSentry(conf)
@@ -141,6 +148,14 @@ func startServer() {
 		return
 	}
 
+	// init tc client public
+	tcClientPublicWrap, err := ethclient.Dial(conf.BlockchainConfig.TCPublicEndpoint)
+	if err != nil {
+		_logger.AtLog.Logger.Error("error initializing tcClient public service", zap.Error(err))
+		return
+	}
+	tcClientPublic := eth.NewClient(tcClientPublicWrap)
+
 	// init tc client
 	tcClientWrap, err := ethclient.Dial(conf.BlockchainConfig.TCEndpoint)
 	if err != nil {
@@ -164,6 +179,10 @@ func startServer() {
 		return
 	}
 	ethClientDex := eth.NewClient(ethDexClientWrap)
+	eScan := etherscan.NewEtherscanService(conf, cache)
+	mpService := mempool_space.NewMempoolService(conf, cache)
+	coinMKC := coin_market_cap.NewCoinMarketCap(conf, cache)
+	te := token_explorer.NewTokenExplorer(cache)
 
 	// init blockcypher service:
 	bsClient := btc.NewBlockcypherService(conf.BlockcypherAPI, "", conf.BlockcypherToken, &chaincfg.MainNetParams)
@@ -191,11 +210,15 @@ func startServer() {
 		DelegateService:     delegateService,
 		RedisV9:             redisV9,
 
-		EthClient:    ethClients,   // for eth chain (for mint...)
-		EthClientDex: ethClientDex, // for eth chain (dex)
-		TcClient:     tcClients,    // for tc chain
-		BsClient:     bsClient,     // for btc/blockcypher service
-
+		EthClient:          ethClients,     // for eth chain (for mint...)
+		EthClientDex:       ethClientDex,   // for eth chain (dex)
+		TcClient:           tcClients,      // for tc chain
+		TcClientPublicNode: tcClientPublic, // for tc chain
+		BsClient:           bsClient,       // for btc/blockcypher service
+		EtherscanService:   eScan,
+		MempoolService:     mpService,
+		CoinMarketCap:      coinMKC,
+		TokenExplorer:      te,
 	}
 
 	repo, err := repository.NewRepository(&g)
@@ -236,92 +259,47 @@ func startServer() {
 		Enabled: conf.StartPubsub,
 	}
 
-	// job ORDINAL_COLLECTION_CRONTAB_START: @Dac TODO move all function to Usercase.
+	// job ORDINAL_COLLECTION_CRONTAB_START: @Dac TODO move all function to Usercase and crontab db config.
 	ordinalCron := crontab_ordinal_collections.NewScronOrdinalCollectionHandler(&g, *uc)
 	servers["ordinal_collections_crontab"] = delivery.AddedServer{
 		Server:  ordinalCron,
 		Enabled: conf.Crontab.OrdinalCollectionEnabled,
 	}
 
+	// TODO move all function to Usercase and crontab db config.
 	txConsumer, _ := txserver.NewTxServer(&g, *uc, *conf)
 	servers["txconsumer"] = delivery.AddedServer{
 		Server:  txConsumer,
 		Enabled: conf.TxConsumerConfig.Enabled,
 	}
 
-	// job init:
-	/*
-			txConsumer, _ := txserver.NewTxServer(&g, *uc, *conf)
-			cron := crontab.NewScronHandler(&g, *uc)
-			btcCron := crontab_btc.NewScronBTCHandler(&g, *uc)
-			mkCron := crontab_marketplace.NewScronMarketPlace(&g, *uc)
-			inscribeCron := incribe_btc.NewScronBTCHandler(&g, *uc)
-			mintNftBtcCron := mint_nft_btc.NewCronMintNftBtcHandler(&g, *uc)
-			trendingCron := crontab_trending.NewScronTrendingHandler(&g, *uc)
-			ordinalCron := crontab_ordinal_collections.NewScronOrdinalCollectionHandler(&g, *uc)
-			inscriptionIndexCron := crontab_inscription_info.NewScronInscriptionInfoHandler(&g, *uc)
-			dexBTCCron := dex_btc_cron.NewScronDexBTCHandler(&g, *uc)
-
-		ph := pubsub.NewPubsubHandler(*uc, rPubsub, logger)
-
-			servers["developer_inscribe"] = delivery.AddedServer{
-				Server:  developerInscribeCron,
-				Enabled: conf.Crontab.CrontabDeveloperInscribeEnabled,
-			}
-
-			servers["txconsumer"] = delivery.AddedServer{
-				Server:  txConsumer,
-				Enabled: conf.TxConsumerConfig.Enabled,
-			}
-
-			servers["crontab"] = delivery.AddedServer{
-				Server:  cron,
-				Enabled: conf.Crontab.Enabled,
-			}
-
-			servers["btc_crontab"] = delivery.AddedServer{
-				Server:  btcCron,
-				Enabled: conf.Crontab.BTCEnabled,
-			}
-
-			servers["btc_crontab_v2"] = delivery.AddedServer{
-				Server:  inscribeCron,
-				Enabled: conf.Crontab.BTCV2Enabled,
-			}
-
-			servers["mint_nft_btc"] = delivery.AddedServer{
-				Server:  mintNftBtcCron,
-				Enabled: conf.Crontab.MintNftBtcEnabled,
-			}
-
-			servers["marketplace_crontab"] = delivery.AddedServer{
-				Server:  mkCron,
-				Enabled: conf.Crontab.MarketPlaceEnabled,
-			}
-
-			servers["trending_crontab"] = delivery.AddedServer{
-				Server:  trendingCron,
-				Enabled: conf.Crontab.TrendingEnabled,
-			}
-
-			servers["ordinal_collections_crontab"] = delivery.AddedServer{
-				Server:  ordinalCron,
-				Enabled: conf.Crontab.OrdinalCollectionEnabled,
-			}
-			servers["inscription_index_crontab"] = delivery.AddedServer{
-				Server:  inscriptionIndexCron,
-				Enabled: conf.Crontab.InscriptionIndexEnabled,
-			}
-
-			servers["dex_btc_cron"] = delivery.AddedServer{
-				Server:  dexBTCCron,
-				Enabled: conf.Crontab.DexBTCEnabled,
-			}
-			servers["pubsub"] = delivery.AddedServer{
-			Server:  ph,
-			Enabled: conf.StartPubsub,
+	pProtabBool := false
+	pProtab := os.Getenv("PROJECT_PROTAB_ENABLED")
+	if pProtab != "" {
+		if pProtab == "true" {
+			pProtabBool = true
 		}
-	*/
+	}
+	protab, _ := project_protab_crontab_server.NewProjectProtabCrontabServer(uc)
+	servers["project_protab"] = delivery.AddedServer{
+		Server:  protab,
+		Enabled: pProtabBool,
+	}
+
+	isGmEnabled := false
+	gmEnabled := os.Getenv("START_GM_CRONTAB")
+	if gmEnabled != "" {
+		isGmEnabled, err = strconv.ParseBool(gmEnabled)
+		if err != nil {
+			isGmEnabled = false
+		}
+	}
+
+	gmCrontab, _ := gm_crontab_sever.NewGmCrontabServer(uc)
+	servers["gm_crontab"] = delivery.AddedServer{
+		Server:  gmCrontab,
+		Enabled: isGmEnabled,
+	}
 
 	//var wait time.Duration
 	c := make(chan os.Signal, 1)

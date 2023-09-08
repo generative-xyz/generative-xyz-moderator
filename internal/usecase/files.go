@@ -261,7 +261,7 @@ func (u Usecase) UploadProjectFiles(r *http.Request) (*entity.Files, error) {
 	return fileModel, nil
 }
 
-func (u Usecase) UploadDatasetFile(r *http.Request, requestID string) (*entity.Files, error) {
+func (u Usecase) UploadDatasetFile(r *http.Request, requestID string, datasetName string) (*entity.Files, error) {
 
 	_, handler, err := r.FormFile("file")
 	if err != nil {
@@ -270,6 +270,7 @@ func (u Usecase) UploadDatasetFile(r *http.Request, requestID string) (*entity.F
 	}
 
 	key := fmt.Sprintf("ai-school/%s", requestID)
+	handler.Filename = datasetName + ".zip"
 	gf := googlecloud.GcsFile{
 		FileHeader: handler,
 		Path:       &key,
@@ -338,4 +339,18 @@ func (u Usecase) UploadFileInternal(r *http.Request, path string) (*entity.Files
 
 	logger.AtLog.Logger.Info("inserted.FileModel", zap.Any("fileModel", fileModel))
 	return fileModel, nil
+}
+
+func (u Usecase) DeleteFile(uuid string) error {
+	file, err := u.Repo.GetFileByUUID(uuid)
+	if err != nil {
+		logger.AtLog.Logger.Error("DeleteFile", zap.Error(err))
+		return err
+	}
+	_, err = u.Repo.SoftDelete(file)
+	if err != nil {
+		logger.AtLog.Logger.Error("DeleteFile", zap.Error(err))
+		return err
+	}
+	return nil
 }

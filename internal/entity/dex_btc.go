@@ -39,7 +39,7 @@ type DexBTCListing struct {
 	CreatedMatchedActivity   bool `bson:"created_matched_activity"`
 
 	IsTimeSeriesData bool `json:"is_time_series_data"`
-	
+
 	FromOtherMkp bool `bson:"from_other_mkp"`
 }
 
@@ -150,3 +150,10 @@ const (
 	StatusDEXBTCTracking_Success                                     // 1: successful
 	StatusDEXBTCTracking_Failed                                      // 2: failed
 )
+
+type Report2ndSale struct {
+	Amount           float64 `bson:"total_amount" json:"total_amount"`
+	AmountUSD        float64 `bson:"-" json:"amountUSD"`
+	WalletAddressBTC string  `bson:"walletAddressBtc" json:"walletAddressBtc"`
+	WalletAddress    string  `bson:"-" json:"walletAddress"`
+}

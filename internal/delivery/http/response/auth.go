@@ -26,10 +26,13 @@ type ProfileResponse struct {
 	DisplayName             string        `json:"displayName"`
 	Bio                     string        `json:"bio"`
 	Avatar                  string        `json:"avatar"`
+	Banner                  string        `json:"banner"`
+	IsArtist                bool          `json:"isArtist"`
 	CreatedAt               *time.Time    `json:"createdAt"`
 	ProfileSocial           ProfileSocial `json:"profileSocial"`
 	CanCreateProposal       bool          `json:"canCreateProposal"`
 	Proposal                *DaoArtist    `json:"proposal,omitempty"`
+	Slug                    string        `json:"slug,omitempty"`
 }
 
 type ArtistResponse struct {
@@ -38,7 +41,7 @@ type ArtistResponse struct {
 }
 
 type ProjectBasicInfo struct {
-	Id            string `json:"id"`
+	ID            string `json:"id"`
 	Name          string `json:"name"`
 	WalletAddress string `json:"walletAddress"`
 }

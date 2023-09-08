@@ -1,6 +1,7 @@
 package response
 
 import (
+	"rederinghub.io/internal/entity"
 	"time"
 
 	"rederinghub.io/internal/usecase/structure"
@@ -73,6 +74,9 @@ type InternalTokenURIResp struct {
 	OrderID      string `json:"orderID"`
 
 	ListingDetail *structure.MarketplaceNFTDetail `json:"listingDetail"`
+	PriceBrc20    entity.PriceBRC20Obj            `json:"priceBrc20""`
+
+	TokenIDData string `json:"tokenIDData"`
 }
 
 type OrdinalsData struct {

@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"rederinghub.io/internal/delivery/http/request"
 	"strconv"
 	"strings"
 	"sync"
@@ -42,6 +43,10 @@ func (u Usecase) GetBTCWalletInfo(address string) (*structure.WalletInfo, error)
 	// 		return &result, nil
 	// 	}
 	// }
+	err := preCheckOrdService(u.Config.QuicknodeAPI)
+	if err != nil {
+		return nil, errors.New("ordinals service is not ready yet")
+	}
 	t := time.Now()
 	apiToken := u.Config.BlockcypherToken
 	logger.AtLog.Logger.Info("GetBTCWalletInfo apiToken debug", zap.Any("apiToken", apiToken))
@@ -70,10 +75,42 @@ func (u Usecase) GetBTCWalletInfo(address string) (*structure.WalletInfo, error)
 	}
 	trackT2 := time.Since(t)
 
-	inscriptions, outputInscMap, err := u.InscriptionsByOutputs(outcoins, currentListing)
+	inscriptions := make(map[string][]structure.WalletInscriptionInfo)
+	outputInscMap := make(map[string][]structure.WalletInscriptionByOutput)
+
+	inscriptions, outputInscMap, err = u.InscriptionsByOutputs(outcoins, currentListing)
 	if err != nil {
 		return nil, err
 	}
+
+	// keyInscriptions := fmt.Sprintf("walletinfo.inscriptions.%s", address)
+	// keyOutputInscMap := fmt.Sprintf("walletinfo.outputInscMap.%s", address)
+	// cached, err := u.Cache.Exists(keyInscriptions)
+	// if cached != nil && *cached == false {
+	// 	inscriptions, outputInscMap, err = u.InscriptionsByOutputs(outcoins, currentListing)
+	// 	if err != nil {
+	// 		return nil, err
+	// 	}
+
+	// 	u.Cache.SetDataWithExpireTime(keyInscriptions, inscriptions, 900)   //15 min
+	// 	u.Cache.SetDataWithExpireTime(keyOutputInscMap, outputInscMap, 900) //15 min
+	// }
+
+	// cachedInscriptions, _ := u.Cache.GetData(keyInscriptions)
+	// cachedOutputInscMap, _ := u.Cache.GetData(keyOutputInscMap)
+
+	// byteInscriptions := []byte(*cachedInscriptions)
+	// byteOutputInscMap := []byte(*cachedOutputInscMap)
+
+	// err = json.Unmarshal(byteInscriptions, &inscriptions)
+	// if err != nil {
+	// 	return nil, err
+	// }
+
+	// err = json.Unmarshal(byteOutputInscMap, &outputInscMap)
+	// if err != nil {
+	// 	return nil, err
+	// }
 
 	dupInscMap := make(map[string]struct{})
 	result.InscriptionsByOutputs = outputInscMap
@@ -149,6 +186,7 @@ func (u Usecase) InscriptionsByOutputs(outputs []string, currentListing []entity
 	if err != nil {
 		log.Println("GenBuyETHOrder GetBTCToETHRate", err.Error(), err)
 	}
+	var errOutput error
 	for _, output := range outputs {
 		wg.Add(1)
 		waitChan <- struct{}{}
@@ -166,12 +204,14 @@ func (u Usecase) InscriptionsByOutputs(outputs []string, currentListing []entity
 
 			inscriptions, err := getInscriptionByOutput(ordServer, op)
 			if err != nil {
+				errOutput = errors.New("getInscriptionByOutput error " + err.Error())
 				return
 			}
 			if len(inscriptions.Inscriptions) > 0 {
 				for _, insc := range inscriptions.Inscriptions {
 					data, err := getInscriptionByID(ordServer, insc)
 					if err != nil {
+						errOutput = errors.New("getInscriptionByID error " + err.Error())
 						return
 					}
 					tokenURI, err := u.Repo.FindTokenByTokenID(insc)
@@ -180,6 +220,7 @@ func (u Usecase) InscriptionsByOutputs(outputs []string, currentListing []entity
 					}
 					offset, err := strconv.ParseInt(strings.Split(data.Satpoint, ":")[2], 10, 64)
 					if err != nil {
+						errOutput = err
 						return
 					}
 					inscWalletInfo := structure.WalletInscriptionInfo{
@@ -265,6 +306,9 @@ func (u Usecase) InscriptionsByOutputs(outputs []string, currentListing []entity
 		}(output)
 	}
 	wg.Wait()
+	if errOutput != nil {
+		return nil, nil, errOutput
+	}
 	return result, outputInscMap, nil
 }
 
@@ -441,6 +485,32 @@ func (u Usecase) TrackWalletTx(address string, tx structure.WalletTrackTx) error
 	return u.Repo.CreateTrackTx(&trackTx)
 }
 
+func (u Usecase) TrackWalletTxs(txs request.TrackTxs) error {
+	for key, tx := range txs.TxItems {
+		if tx.Address == "" || tx.Txhash == "" {
+			return errors.New(fmt.Sprintf("item[%d] -  address nor txhash cannot be empty", key))
+		}
+
+		trackTx := entity.WalletTrackTx{
+			Address:               tx.Address,
+			Txhash:                tx.Txhash,
+			Type:                  tx.Type,
+			Amount:                tx.Amount,
+			InscriptionID:         tx.InscriptionID,
+			InscriptionNumber:     tx.InscriptionNumber,
+			InscriptionList:       tx.InscriptionList,
+			InscriptionNumberList: tx.InscriptionNumberList,
+			Receiver:              tx.Receiver,
+		}
+
+		err := u.Repo.CreateTrackTx(&trackTx)
+		if err != nil {
+			return errors.New(fmt.Sprintf("item[%d] -  %s", key, err.Error()))
+		}
+	}
+	return nil
+}
+
 func (u Usecase) GetWalletTrackTxs(address string, limit, offset int64) ([]structure.WalletTrackTx, error) {
 	var result []structure.WalletTrackTx
 	// t := time.Now()
@@ -513,5 +583,67 @@ func (u Usecase) GetWalletTrackTxs(address string, limit, offset int64) ([]struc
 	wg.Wait()
 	// t3 := time.Since(t)
 	// log.Println("t3", t3)
+	return result, nil
+}
+
+func preCheckOrdService(qn string) error {
+	ordServer := os.Getenv("CUSTOM_ORD_SERVER")
+	if ordServer == "" {
+		ordServer = "https://dev-v5.generativeexplorer.com"
+	}
+	ordBlockCount, err := getORDBlockCount(ordServer)
+	if err != nil {
+		return err
+	}
+	quickNode, err := btc.GetBlockCountfromQuickNode(qn)
+	if err != nil {
+		return err
+	}
+	if ordBlockCount < quickNode.Result {
+		if quickNode.Result-ordBlockCount > 0 {
+			return errors.New("ord block count is too far from quicknode")
+		}
+	}
+	return nil
+}
+
+func getORDBlockCount(ordServer string) (uint64, error) {
+	url := fmt.Sprintf("%s/block-count", ordServer)
+	fmt.Println("url", url)
+	var result uint64
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return result, err
+	}
+
+	client := &http.Client{}
+	res, err := client.Do(req)
+
+	if err != nil {
+		return result, err
+	}
+
+	defer func(r *http.Response) {
+		err := r.Body.Close()
+		if err != nil {
+			fmt.Println("Close body failed", err.Error())
+		}
+	}(res)
+
+	fmt.Println("http.StatusOK", http.StatusOK, "res.Body", res.Body)
+
+	if res.StatusCode != http.StatusOK {
+		return result, errors.New("getInscriptionByOutput Response status != 200")
+	}
+
+	body, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		return result, errors.New("Read body failed")
+	}
+
+	result, err = strconv.ParseUint(string(body), 10, 64)
+	if err != nil {
+		return result, err
+	}
 	return result, nil
 }

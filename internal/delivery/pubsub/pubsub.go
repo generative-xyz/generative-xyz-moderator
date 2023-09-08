@@ -2,32 +2,36 @@ package pubsub
 
 import (
 	"fmt"
-
+	redis2 "github.com/go-redis/redis"
+	"go.uber.org/zap"
 	"rederinghub.io/internal/usecase"
 	"rederinghub.io/utils"
 	"rederinghub.io/utils/logger"
 	"rederinghub.io/utils/redis"
+	"sync"
+	"time"
 )
 
-type PubsubHandler struct {
-	usecase usecase.Usecase
+type Handler struct {
+	useCase usecase.Usecase
 	pubsub  redis.IPubSubClient
 	log     logger.Ilogger
 }
 
-func NewPubsubHandler(usecase usecase.Usecase, pubsub redis.IPubSubClient, log logger.Ilogger) *PubsubHandler {
-	return &PubsubHandler{
-		usecase: usecase,
+func NewPubsubHandler(useCase usecase.Usecase, pubsub redis.IPubSubClient, log logger.Ilogger) *Handler {
+	return &Handler{
+		useCase: useCase,
 		pubsub:  pubsub,
 		log:     log,
 	}
 }
 
-func (h PubsubHandler) StartServer() {
+func (h Handler) StartServer() {
 	names := []string{
 		utils.PUBSUB_TOKEN_THUMBNAIL,
 		utils.PUBSUB_PROJECT_UNZIP,
 		utils.PUBSUB_CAPTURE_THUMBNAIL,
+		utils.PUBSUB_ETH_PROJECT_UNZIP,
 	}
 
 	h.pubsub.GetChannelNames(names...)
@@ -39,30 +43,69 @@ func (h PubsubHandler) StartServer() {
 		panic(err)
 	}
 
-	logger.AtLog.Info(fmt.Sprintf("pubsubHandler.SubscribeMessageRoute - Listen on channel name: %s ", names))
-	// Go channel which receives messages.
-	ch := pubsub.Channel()
-	for msg := range ch {
+	errCount := 0
+	var wg sync.WaitGroup
+	processing := 0
+	maxProcessing := 5
 
-		chanName := msg.Channel
-		payload, tracingInjection, err := h.pubsub.Parsepayload(msg.Payload)
+	for {
+		msg, err := pubsub.Receive()
 		if err != nil {
+			if errCount > 0 {
+				time.Sleep(1 * time.Second)
+			}
+			errCount++
 			continue
 		}
 
-		switch chanName {
-		case h.pubsub.GetChannelName(utils.PUBSUB_TOKEN_THUMBNAIL):
-			h.usecase.PubSubCreateTokenThumbnail(tracingInjection, chanName, payload)
-			break
-		case h.pubsub.GetChannelName(utils.PUBSUB_PROJECT_UNZIP):
-			h.usecase.PubSubProjectUnzip(tracingInjection, chanName, payload)
-			break
+		errCount = 0
+		m, ok := msg.(*redis2.Message)
+		if ok {
+			wg.Add(1)
+			processing++
+			go h.worker(&wg, m)
 
-		case h.pubsub.GetChannelName(utils.PUBSUB_CAPTURE_THUMBNAIL):
-			h.usecase.PubSubCaptureThumbnail(tracingInjection, chanName, payload)
-			break
+			if processing > 0 && processing%maxProcessing == 0 {
+				wg.Wait()
+				processing = 0
+			}
+
 		}
 	}
-	<-ch
 	return
+}
+
+func (h Handler) worker(wg *sync.WaitGroup, message *redis2.Message) {
+	defer wg.Done()
+	h.handlerMessage(message)
+
+}
+
+func (h Handler) handlerMessage(msg *redis2.Message) error {
+	defer func() {
+		if rcv := recover(); rcv != nil {
+			logger.AtLog.Logger.Error("handlerMessage", zap.Any("recover", rcv))
+		}
+	}()
+
+	chanName := msg.Channel
+
+	payload, tracingInjection, err := h.pubsub.Parsepayload(msg.Payload)
+	if err != nil {
+		return err
+	}
+
+	logger.AtLog.Logger.Info(fmt.Sprintf("handlerMessage - %s", chanName), zap.String("chanName", chanName), zap.Any("payload", payload))
+
+	switch chanName {
+	case h.pubsub.GetChannelName(utils.PUBSUB_TOKEN_THUMBNAIL):
+		h.useCase.PubSubCreateTokenThumbnail(tracingInjection, chanName, payload)
+	case h.pubsub.GetChannelName(utils.PUBSUB_PROJECT_UNZIP):
+		h.useCase.PubSubProjectUnzip(tracingInjection, chanName, payload)
+	case h.pubsub.GetChannelName(utils.PUBSUB_ETH_PROJECT_UNZIP):
+		h.useCase.PubSubEthProjectUnzip(tracingInjection, chanName, payload)
+	case h.pubsub.GetChannelName(utils.PUBSUB_CAPTURE_THUMBNAIL):
+		h.useCase.PubSubCaptureThumbnail(tracingInjection, chanName, payload)
+	}
+	return nil
 }

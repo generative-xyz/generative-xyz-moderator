@@ -13,7 +13,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/davecgh/go-spew/spew"
+	secretmanager "cloud.google.com/go/secretmanager/apiv1"
+	"cloud.google.com/go/secretmanager/apiv1/secretmanagerpb"
 	"github.com/ethereum/go-ethereum/common"
 	"go.uber.org/zap"
 	"rederinghub.io/external/nfts"
@@ -119,13 +120,13 @@ func (u Usecase) GetLevelFeeInfo(fileSize, customRate, mintPrice int64) (map[str
 
 	fastestFee := feeRateFromChain.FastestFee
 	fasterFee := feeRateFromChain.HalfHourFee
-	ecoFee := feeRateFromChain.EconomyFee // not use HourFee
+	ecoFee := feeRateFromChain.HourFee // use HourFee
 
 	// fmt.Println("fastestFee", fastestFee)
 	// fmt.Println("fasterFee", fasterFee)
 	// fmt.Println("ecoFee", ecoFee)
 
-	min := 4 // todo: move config
+	min := 10 // todo: move config
 
 	// set mint 5 if fee < 5.
 	if fastestFee < min {
@@ -265,9 +266,9 @@ func (u Usecase) IsWhitelistedAddressERC20(ctx context.Context, userAddr string,
 		//bigInt64 := big.
 		tmp := blance.Cmp(confValue)
 
-		spew.Dump(whitelistedThres.Value, whitelistedThres.Decimal)
-		spew.Dump(confValue.String())
-		spew.Dump(blance.String())
+		//spew.Dump(whitelistedThres.Value, whitelistedThres.Decimal)
+		//spew.Dump(confValue.String())
+		//spew.Dump(blance.String())
 		if tmp >= 0 {
 			return true, nil
 		}
@@ -325,4 +326,37 @@ func unzipFile(f *zip.File, destination string) error {
 		return err
 	}
 	return nil
+}
+
+func Commas(s string) string {
+	n := len(s)
+	if n < 4 {
+		return s
+	}
+	return Commas(s[:n-3]) + "," + s[n-3:]
+}
+
+// get google secret:
+func GetGoogleSecretKey(name string) (string, error) {
+
+	// Create the client.
+	ctx := context.Background()
+	client, err := secretmanager.NewClient(ctx)
+	if err != nil {
+		return "", err
+	}
+	defer client.Close()
+
+	// Build the request.
+	req := &secretmanagerpb.AccessSecretVersionRequest{
+		Name: name + "/versions/latest",
+	}
+
+	// Call the API.
+	result, err := client.AccessSecretVersion(ctx, req)
+	if err != nil {
+		return "", err
+	}
+
+	return string(result.Payload.Data), nil
 }

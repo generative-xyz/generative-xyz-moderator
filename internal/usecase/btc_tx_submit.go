@@ -46,6 +46,7 @@ func (u Usecase) SubmitBTCTransaction(list map[string]string) error {
 				Raw:                 raw,
 				RelatedInscriptions: relatedInscriptionArray,
 				Status:              0,
+				Error1:              err.Error(),
 			})
 			continue
 		}
@@ -99,6 +100,12 @@ func (u Usecase) watchPendingBTCTxSubmit() error {
 			err = btc.SendTxBlockStream(tx.Raw)
 			if err != nil {
 				log.Printf("watchPendingBTCTxSubmit SendTxBlockStream err %v\n", err)
+				tx.Status = entity.StatusBTCTransactionSubmit_Failed
+				_, err = u.Repo.UpdateBTCTxSubmitStatus(&tx)
+				if err != nil {
+					log.Printf("watchPendingBTCTxSubmit UpdateBTCTxSubmitStatus err %v\n", err)
+					continue
+				}
 				continue
 			}
 			tx.Status = entity.StatusBTCTransactionSubmit_Pending
@@ -136,7 +143,7 @@ func (u Usecase) watchPendingBTCTxSubmit() error {
 	return nil
 }
 
-func (u Usecase) JobWatchPendingBTCTxSubmit() {
+func (u Usecase) JobWatchPendingBTCTxSubmit() error {
 	var wg sync.WaitGroup
 
 	wg.Add(1)
@@ -150,4 +157,5 @@ func (u Usecase) JobWatchPendingBTCTxSubmit() {
 	}(&wg)
 
 	wg.Wait()
+	return nil
 }
