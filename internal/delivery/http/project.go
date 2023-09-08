@@ -98,8 +98,8 @@ func (h *httpDelivery) updateBTCProject(w http.ResponseWriter, r *http.Request) 
 	iWalletAddress := ctx.Value(utils.SIGNED_WALLET_ADDRESS)
 	walletAddress, ok := iWalletAddress.(string)
 	if !ok {
-		err := errors.New("Wallet address is incorect")
-		logger.AtLog.Logger.Error("ctx.Value.Token", zap.Error(err))
+		err := errors.New("wallet address is incorect")
+		logger.AtLog.Logger.Error("updateBTCProject", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -108,7 +108,7 @@ func (h *httpDelivery) updateBTCProject(w http.ResponseWriter, r *http.Request) 
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&reqBody)
 	if err != nil {
-		logger.AtLog.Logger.Error("decoder.Decode", zap.Error(err))
+		logger.AtLog.Logger.Error("updateBTCProject", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -116,23 +116,24 @@ func (h *httpDelivery) updateBTCProject(w http.ResponseWriter, r *http.Request) 
 	reqUsecase := &structure.UpdateBTCProjectReq{}
 	err = copier.Copy(reqUsecase, reqBody)
 	if err != nil {
-		logger.AtLog.Logger.Error("copier.Copy", zap.Error(err))
+		logger.AtLog.Logger.Error("updateBTCProject", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
+
 	reqUsecase.CreatetorAddress = &walletAddress
 	reqUsecase.ProjectID = &projectID
 	logger.AtLog.Logger.Info("reqUsecase", zap.Any("reqUsecase", reqUsecase))
 	message, err := h.Usecase.UpdateBTCProject(*reqUsecase)
 	if err != nil {
-		logger.AtLog.Logger.Error("h.Usecase.UpdateBTCProject", zap.Error(err))
+		logger.AtLog.Logger.Error("updateBTCProject", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 
 	resp, err := h.projectToResp(message)
 	if err != nil {
-		logger.AtLog.Logger.Error("h.projectToResp", zap.Error(err))
+		logger.AtLog.Logger.Error("updateBTCProject", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}

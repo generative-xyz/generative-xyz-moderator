@@ -22,7 +22,6 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"rederinghub.io/external/ord_service"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/jinzhu/copier"
@@ -691,25 +690,25 @@ func (u Usecase) UpdateBTCProject(req structure.UpdateBTCProjectReq) (*entity.Pr
 
 	if req.ProjectID == nil {
 		err := errors.New("ProjectID is requeried")
-		logger.AtLog.Error("pjID.empty", err.Error(), err)
+		logger.AtLog.Logger.Error("UpdateBTCProject", zap.Error(err), zap.Any("req", req))
 		return nil, err
 	}
 
 	if req.CreatetorAddress == nil {
-		err := errors.New("CreatorAddress is requeried")
-		logger.AtLog.Error("pjID.empty", err.Error(), err)
+		err := errors.New("CreatorAddress is required")
+		logger.AtLog.Logger.Error("UpdateBTCProject", zap.Error(err), zap.Any("req", req))
 		return nil, err
 	}
 
 	p, err := u.Repo.FindProjectByTokenID(*req.ProjectID)
 	if err != nil {
-		logger.AtLog.Error("pjID.empty", err.Error(), err)
+		logger.AtLog.Logger.Error("UpdateBTCProject", zap.Error(err), zap.Any("req", req))
 		return nil, err
 	}
 
 	if strings.ToLower(p.CreatorAddrr) != strings.ToLower(*req.CreatetorAddress) {
 		err := errors.New("Only owner can update this project")
-		logger.AtLog.Error("pjID.empty", err.Error(), err)
+		logger.AtLog.Logger.Error("UpdateBTCProject", zap.Error(err), zap.Any("req", req))
 		return nil, err
 	}
 
@@ -732,7 +731,7 @@ func (u Usecase) UpdateBTCProject(req structure.UpdateBTCProjectReq) (*entity.Pr
 			bytes, err := json.Marshal(nftTokenURI)
 			if err == nil {
 				nftToken := helpers.Base64Encode(bytes)
-				spew.Dump(fmt.Sprintf("data:application/json;base64,%s", nftToken))
+				//spew.Dump(fmt.Sprintf("data:application/json;base64,%s", nftToken))
 				p.NftTokenUri = fmt.Sprintf("data:application/json;base64,%s", nftToken)
 			}
 		}
@@ -743,7 +742,9 @@ func (u Usecase) UpdateBTCProject(req structure.UpdateBTCProjectReq) (*entity.Pr
 	if req.IsHidden != nil && *req.IsHidden != p.IsHidden {
 		if !*req.IsHidden {
 			if u.IsProjectReviewing(context.Background(), p.ID.Hex()) {
-				return nil, errors.New("Collection is reviewing")
+				err := errors.New("Collection is reviewing")
+				logger.AtLog.Logger.Error("UpdateBTCProject", zap.Error(err), zap.Any("req", req))
+				return nil, err
 			}
 		} else {
 			needSetExpireAvailableDaoProject = true
@@ -821,16 +822,25 @@ func (u Usecase) UpdateBTCProject(req structure.UpdateBTCProjectReq) (*entity.Pr
 	if req.Index != nil {
 		p.MintingInfo.Index = *req.Index
 	}
+	if req.IsSupportGMHolder != nil {
+		p.IsSupportGMHolder = *req.IsSupportGMHolder
+	}
 
-	updated, err := u.Repo.UpdateProject(p.UUID, p)
+	if req.MinimumGMSupport != nil {
+		if *req.MinimumGMSupport != "" && strings.ToLower(*req.MinimumGMSupport) != strings.ToLower("nan") {
+			p.MinimumGMSupport = *req.MinimumGMSupport
+		}
+	}
+
+	_, err = u.Repo.UpdateProject(p.UUID, p)
 	if err != nil {
-		logger.AtLog.Error("updated", err.Error(), err)
+		logger.AtLog.Logger.Error("UpdateBTCProject", zap.Error(err), zap.Any("req", req))
 		return nil, err
 	}
 	if needSetExpireAvailableDaoProject {
 		go u.SetExpireAvailableDAOProject(context.TODO(), p.ID)
 	}
-	logger.AtLog.Info("updated", updated)
+
 	return p, nil
 }
 

@@ -98,6 +98,10 @@ type UpdateBTCProjectReq struct {
 	ReserveMintPrice    *string  `json:"reserveMintPrice"`
 	ReserveMintLimit    *int     `json:"reserveMintLimit"`
 	Index               *int64   `json:"index"`
+
+	// GM whitelist holder
+	IsSupportGMHolder *bool   `json:"isSupportGMHolder"`
+	MinimumGMSupport  *string `json:"minimumGMSupport"`
 }
 
 type UpdateBTCProjectCategoriesReq struct {

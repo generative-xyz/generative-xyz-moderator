@@ -117,6 +117,10 @@ type Projects struct {
 	RevealTxHash             string             `bson:"revealTxHash"`
 
 	AuctionWinnerList []AuctionWinnerList `bson:"-" json:"auctionWinnerList"`
+
+	// GM whitelist holder
+	IsSupportGMHolder bool   `json:"isSupportGMHolder" bson:"isSupportGMHolder"`
+	MinimumGMSupport  string `json:"minimumGMSupport" bson:"minimumGMSupport"`
 }
 
 func (p *Projects) IsMintTC() bool {
