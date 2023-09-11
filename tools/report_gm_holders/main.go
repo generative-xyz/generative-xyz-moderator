@@ -24,8 +24,8 @@ func main() {
 
 	uc := tools.StartFactory()
 	if uc != nil {
-		go uc.ReportGMHolders(&wg, level1Domain, "0x2fe8d5a64affc1d703aeca8a566f5e9faee0c003", "level-1")
-		go uc.ReportGMHolders(&wg, level2Domain, "0x0170435186a9a2Af5881C6236CF47211D046cAE6", "level-2")
+		go uc.ReportGMHolders(&wg, level1Domain, "0x2fe8d5a64affc1d703aeca8a566f5e9faee0c003", "l1")
+		go uc.ReportGMHolders(&wg, level2Domain, "0x0170435186a9a2Af5881C6236CF47211D046cAE6", "l2")
 	}
 
 	wg.Wait()

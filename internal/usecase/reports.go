@@ -656,8 +656,8 @@ func (u *Usecase) ReportUserRevenue(btcRate, ethRate float64) {
 	sellerR := u.MergeReportArray(report, dataSeller2ndSale)
 	buyerR := u.MergeReportArray(reportMinter, dataBuyer2ndSale)
 
-	helpers.CreateFile("seller.json", sellerR)
-	helpers.CreateFile("buyer.json", buyerR)
+	helpers.CreateFile("report-seller.json", sellerR)
+	helpers.CreateFile("report-buyer.json", buyerR)
 
 }
 
