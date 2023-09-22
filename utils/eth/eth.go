@@ -6,6 +6,7 @@ import (
 	"crypto/ecdsa"
 	"fmt"
 	"math/big"
+	"strings"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
@@ -391,7 +392,7 @@ func (c *Client) SendMulti(contractAddress, privateKeyStr string, toInfo map[str
 		auth.GasPrice = gasPrice
 	}
 
-	// auth.GasLimit = gasLimit
+	auth.GasLimit = gasLimit
 
 	// Create a new instance of the contract with the given address and ABI
 	contract, err := NewMultisend(common.HexToAddress(contractAddress), c.GetClient())
@@ -402,11 +403,26 @@ func (c *Client) SendMulti(contractAddress, privateKeyStr string, toInfo map[str
 	var listHexAddress []common.Address
 	var listAmount []*big.Int
 
+	var value *big.Int = big.NewInt(0)
+
 	for k, v := range toInfo {
+
+		if !ValidateAddress(k) {
+			return "", errors.Wrap(err, "address invalid"+k)
+		}
+
 		listHexAddress = append(listHexAddress, common.HexToAddress(k))
 		listAmount = append(listAmount, v)
-		auth.Value = auth.Value.Add(auth.Value, v)
+
+		value = big.NewInt(0).Add(value, v)
 	}
+
+	// if totalAmount.String() != value.String() {
+	// 	err = errors.New(fmt.Sprintf("totalAmount != value:  %s != %s", totalAmount.String(), value.String()))
+	// 	return "", errors.Wrap(err, "totalAmountDif")
+	// }
+
+	auth.Value = value
 
 	tx, err := contract.MultiTransferOST(auth, listHexAddress, listAmount)
 
@@ -542,10 +558,12 @@ func (c *Client) GetNftIDFromTx(tx, topic string) (*big.Int, error) {
 	}
 
 	if receipt.Status > 0 {
-		return receipt.Logs[0].Topics[3].Big(), nil
-
+		for _, rLog := range receipt.Logs {
+			if strings.ToLower(rLog.Topics[0].String()) == strings.ToLower(topic) {
+				return rLog.Topics[3].Big(), nil
+			}
+		}
 	}
-
 	return nil, nil
 }
 

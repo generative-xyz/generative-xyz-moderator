@@ -2,10 +2,11 @@ package usecase
 
 import (
 	"fmt"
-	"math/big"
 	"math/rand"
 	"os"
 	"path/filepath"
+	"rederinghub.io/utils"
+	"rederinghub.io/utils/redis"
 	"strings"
 	"time"
 
@@ -26,25 +27,12 @@ func (u Usecase) CreateProject(req structure.CreateProjectReq) (*entity.Projects
 		return nil, err
 	}
 
-	//process ziplink
-	if req.ZipLink != nil && *req.ZipLink != "" {
-		imageLinks, maxSize, err := u.ProcessEthZip(*req.ZipLink)
-		if err != nil {
-			logger.AtLog.Logger.Error(fmt.Sprintf("CreateProject.ProcessEthZip.%s", pe.TokenId), zap.String("zipLink", *req.ZipLink), zap.Error(err))
-			return nil, err
-		}
-		pe.Images = imageLinks
-		pe.IsFullChain = true
-		networkFee := big.NewInt(u.networkFeeBySize(int64(maxSize / 4))) // will update after unzip and check data
-		pe.MaxFileSize = int64(maxSize)
-		pe.NetworkFee = networkFee.String()
-	}
-
 	if req.CaptureImageTime == nil {
 		cap := entity.DEFAULT_CAPTURE_TIME
 		pe.CatureThumbnailDelayTime = &cap
 	}
 
+	pe.IsBigFile = false //wil be updated by pubsub - soon
 	pe.IsHidden = true
 	pe.Status = false
 	pe.IsSynced = false
@@ -63,6 +51,30 @@ func (u Usecase) CreateProject(req structure.CreateProjectReq) (*entity.Projects
 		return nil, err
 	}
 	logger.AtLog.Logger.Info(fmt.Sprintf("CreateProject.%s", pe.TokenId), zap.Any("project", pe))
+
+	//process ziplink
+	if req.ZipLink != nil && *req.ZipLink != "" {
+		//move them to pubsub to prevent 502 error
+		err := u.PubSub.Producer(utils.PUBSUB_ETH_PROJECT_UNZIP,
+			redis.PubSubPayload{
+				Data: structure.ProjectUnzipPayload{
+					ProjectID: pe.TxHash,
+					ZipLink:   *req.ZipLink}},
+		)
+		if err != nil {
+			logger.AtLog.Logger.Error(fmt.Sprintf("CreateProject.%s", pe.TokenId), zap.Error(err))
+			return nil, err
+		}
+		pe.HasZipFile = true
+
+		updatedField := make(map[string]interface{})
+		updatedField["isFullChain"] = true
+		_, err = u.Repo.UpdateProjectFields(pe.UUID, updatedField)
+		if err != nil {
+			logger.AtLog.Logger.Error(fmt.Sprintf("CreateProject.%s", pe.TokenId), zap.Error(err))
+		}
+	}
+
 	return pe, nil
 }
 
@@ -76,11 +88,11 @@ func (u Usecase) ProcessEthZip(zipLink string) ([]string, uint64, error) {
 		if strings.Index(path, "http") != -1 {
 			continue
 		}
-		
+
 		if strings.Index(path, "storage.googleapis.com") != -1 {
 			continue
 		}
-		
+
 		if strings.Index(path, os.Getenv("GCS_BUCKET")) != -1 {
 			continue
 		}

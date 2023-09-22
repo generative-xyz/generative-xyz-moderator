@@ -94,6 +94,11 @@ type ProjectResp struct {
 	TxHex                     string           `json:"txHex"`        // art by generative code or html file
 
 	AuctionWinnerList []entity.AuctionWinnerList `json:"auctionWinnerList"`
+
+	// GM whitelist holder
+	IsSupportGMHolder    bool   `json:"isSupportGMHolder"`
+	MinimumGMSupport     string `json:"minimumGMSupport"`
+	CurrentUserBalanceGM string `json:"currentUserBalanceGM"`
 }
 
 type ReportProject struct {

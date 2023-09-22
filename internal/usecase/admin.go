@@ -1,5 +1,7 @@
 package usecase
 
+import "strings"
+
 func (u Usecase) GetAllRedis() ([]string, error) {
 	//var res *string
 	var err error
@@ -11,7 +13,7 @@ func (u Usecase) GetAllRedis() ([]string, error) {
 	return res, err
 }
 
-func (u Usecase) DeleteAllRedis() ([]string, error) {
+func (u Usecase) DeleteAllRedis(prefix string) ([]string, error) {
 	//var res *string
 	var err error
 
@@ -21,16 +23,25 @@ func (u Usecase) DeleteAllRedis() ([]string, error) {
 	}
 
 	for _, key := range res {
-		err = u.Cache.Delete(key)
-		if err != nil {
-			return nil, err
+		if prefix != "" {
+			if strings.Index(key, prefix) == 0 {
+				err = u.Cache.Delete(key)
+				if err != nil {
+					return nil, err
+				}
+			}
+		} else {
+			err = u.Cache.Delete(key)
+			if err != nil {
+				return nil, err
+			}
 		}
 	}
 
 	return res, err
 }
 
-func (u Usecase) GetRedis( key string) (*string, error) {
+func (u Usecase) GetRedis(key string) (*string, error) {
 	var res *string
 	var err error
 
@@ -39,7 +50,7 @@ func (u Usecase) GetRedis( key string) (*string, error) {
 	return res, err
 }
 
-func (u Usecase) UpsertRedis( key string, value string) (*string, error) {
+func (u Usecase) UpsertRedis(key string, value string) (*string, error) {
 	var res *string
 	var err error
 
@@ -53,7 +64,7 @@ func (u Usecase) UpsertRedis( key string, value string) (*string, error) {
 	return res, err
 }
 
-func (u Usecase) DeleteRedis( key string) error {
+func (u Usecase) DeleteRedis(key string) error {
 	var err error
 	err = u.Cache.Delete(key)
 	return err

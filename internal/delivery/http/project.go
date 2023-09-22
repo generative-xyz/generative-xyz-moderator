@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"math/big"
 	"net/http"
 	"strings"
 
@@ -98,7 +99,7 @@ func (h *httpDelivery) updateBTCProject(w http.ResponseWriter, r *http.Request) 
 	iWalletAddress := ctx.Value(utils.SIGNED_WALLET_ADDRESS)
 	walletAddress, ok := iWalletAddress.(string)
 	if !ok {
-		err := errors.New("Wallet address is incorect")
+		err := errors.New("wallet address is incorect")
 		logger.AtLog.Logger.Error("ctx.Value.Token", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
@@ -214,6 +215,8 @@ func (h *httpDelivery) projectDetail(w http.ResponseWriter, r *http.Request) {
 				logger.AtLog.Logger.Error("GetProjectDetailWithFeeInfo failed", zap.Error(err))
 				return nil, err
 			}
+
+			project.CurrentLoginUserID = vars[utils.SIGNED_USER_ID]
 			resp, err := h.projectToResp(project)
 			if err != nil {
 				return nil, err
@@ -305,7 +308,7 @@ func (h *httpDelivery) projectMarketplaceData(w http.ResponseWriter, r *http.Req
 			result.TotalVolume += additionalAmount
 		}
 
-		h.Cache.SetData(helpers.GenerateMKPDataKey(projectID), result)
+		h.Cache.SetDataWithExpireTime(helpers.GenerateMKPDataKey(projectID), result, 600) // 10 min
 		h.Response.RespondSuccess(w, http.StatusOK, response.Success, result, "")
 		return
 	}
@@ -615,6 +618,23 @@ func (h *httpDelivery) projectToResp(input *entity.Projects) (*response.ProjectR
 	} else {
 		// crawler
 		resp.IsGenerative = false
+	}
+
+	if input.IsSupportGMHolder && input.CurrentLoginUserID != "" {
+		minimumGMSupport, ok := new(big.Int).SetString(input.MinimumGMSupport, 10)
+		if ok && minimumGMSupport.Cmp(new(big.Int).SetUint64(0)) > 0 {
+			currentUser, err := h.Usecase.UserProfile(input.CurrentLoginUserID)
+			if err == nil {
+				gmBalance, err := h.Usecase.GetGMBalance(currentUser.WalletAddress)
+				if err == nil {
+					resp.CurrentUserBalanceGM = gmBalance.String()
+					if gmBalance.Cmp(minimumGMSupport) >= 0 {
+						resp.MintPrice = "0"
+						resp.MintPriceEth = "0"
+					}
+				}
+			}
+		}
 	}
 
 	return resp, nil
@@ -1073,6 +1093,51 @@ func (h *httpDelivery) createProjectAllowList(w http.ResponseWriter, r *http.Req
 }
 
 // UserCredits godoc
+// @Summary Create project's allow list
+// @Description Create project's allow list
+// @Tags Project
+// @Accept  json
+// @Produce  json
+// @Security Authorization
+// @Param contractAddress path string true "contractAddress request"
+// @Param projectID path string true "projectID request"
+// @Param walletAddress path string true "walletAddress request"
+// @Success 200 {object} response.JsonResponse{}
+// @Router /project/{contractAddress}/{projectID}/{walletAddress}/allow-list-gm [POST]
+func (h *httpDelivery) createProjectAllowListGM(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	projectID := vars["projectID"]
+	if projectID != "999998" {
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, errors.New("invalid project"))
+		return
+	}
+	walletAddress := vars["walletAddress"]
+	walletAddress = strings.ToLower(walletAddress)
+	var err error
+	var resp *entity.ProjectAllowList
+
+	defer func() {
+		if err != nil {
+			logger.AtLog.Logger.Error("createProjectAllowList", zap.String("projectID", projectID), zap.Any("walletAddress", walletAddress), zap.Error(err))
+		}
+		logger.AtLog.Logger.Info("createProjectAllowList", zap.String("projectID", projectID), zap.Any("walletAddress", walletAddress), zap.Any("resp", zap.Any("resp)", resp)))
+	}()
+
+	reqUsecase := &structure.CreateProjectAllowListReq{
+		ProjectID:         &projectID,
+		UserWalletAddress: &walletAddress,
+	}
+
+	resp, err = h.Usecase.CreateProjectAllowList(*reqUsecase)
+	if err != nil {
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
+}
+
+// UserCredits godoc
 // @Summary Check project's allow list
 // @Description Check project's allow list
 // @Tags Project
@@ -1131,4 +1196,48 @@ func (h *httpDelivery) getCountingAllowList(w http.ResponseWriter, r *http.Reque
 			AllowList: al,
 		}, "")
 	}
+}
+
+// AnalyticsTokenUriOwner godoc
+// @Summary Calculate Token's Onwers by project
+// @Description  Calculate Token's Onwers by project
+// @Tags Project
+// @Accept  json
+// @Produce  json
+// @Param page query string false "page"
+// @Param limit query int false "limit"
+// @Param search query string false "search"
+// @Param projectID path string true "projectID request"
+// @Param contractAddress path string true "contractAddress request"
+// @Success 200 {object} response.JsonResponse{}
+// @Router /project/{contractAddress}/{projectID}/token-onwers/analytics [GET]
+func (h *httpDelivery) AnalyticsTokenUriOwner(w http.ResponseWriter, r *http.Request) {
+	f := structure.FilterTokens{}
+	err := f.CreateFilter(r)
+	if err != nil {
+		logger.AtLog.Logger.Error("AnalyticsTokenUriOwner", zap.Error(err))
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+
+	vars := mux.Vars(r)
+	projectID := vars["projectID"]
+	f.GenNFTAddr = &projectID
+	bf, err := h.BaseFilters(r)
+	if err != nil {
+		logger.AtLog.Logger.Error("h.Usecase.getProfileNfts.BaseFilters", zap.Error(err))
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+
+	f.BaseFilters = *bf
+	resp, err := h.Usecase.AnalyticsTokenUriOwner(f)
+	if err != nil {
+		logger.AtLog.Logger.Error("h.Usecase.getProfileNfts.getTokens", zap.Error(err))
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+
+	//
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
 }

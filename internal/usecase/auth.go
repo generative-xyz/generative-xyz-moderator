@@ -88,6 +88,7 @@ func (u Usecase) GenerateMessage(data structure.GenerateMessage) (*string, error
 
 func (u Usecase) VerifyMessage(data structure.VerifyMessage) (*structure.VerifyResponse, error) {
 	logger.AtLog.Info("VerifyMessage", zap.Any("data", data))
+	logger.AtLog.Logger.Error("user try trace log data", zap.Any("data", data))
 
 	// validate data
 	if data.ETHSignature == "" || data.Signature == "" ||
@@ -104,7 +105,7 @@ func (u Usecase) VerifyMessage(data structure.VerifyMessage) (*structure.VerifyR
 		logger.AtLog.Error(err)
 		return nil, err
 	}
-	logger.AtLog.Info("user", user)
+	logger.AtLog.Logger.Error("user try trace log user", zap.Any("user", user))
 
 	isVeried, err := u.verifyBTCSegwit(user.Message, data)
 	if err != nil {
@@ -255,7 +256,7 @@ func (u Usecase) verify(signatureHex string, signer string, msgStr string) (bool
 	signerHex := recoveredAddr.Hex()
 	isVerified := strings.ToLower(signer) == strings.ToLower(signerHex)
 
-	logger.AtLog.Info("verify",  zap.Bool("isVerified", isVerified), zap.String("signerHex", signerHex), zap.String("signatureHex", signatureHex), zap.String("signer", signer), zap.String("msgStr", msgStr),  zap.Any("recoveredAddr", recoveredAddr))
+	logger.AtLog.Info("verify", zap.Bool("isVerified", isVerified), zap.String("signerHex", signerHex), zap.String("signatureHex", signatureHex), zap.String("signer", signer), zap.String("msgStr", msgStr), zap.Any("recoveredAddr", recoveredAddr))
 	return isVerified, nil
 }
 
@@ -295,6 +296,18 @@ func (u Usecase) GetUserProfileByBtcAddressTaproot(userAddr string) (*entity.Use
 	return user, nil
 }
 
+func (u Usecase) GetUserProfileBySlug(slug string) (*entity.Users, error) {
+
+	logger.AtLog.Info("GetUserProfileBySlug", zap.String("slug", slug))
+	user, err := u.Repo.FindUserBySlug(slug)
+	if err != nil {
+		logger.AtLog.Error(err)
+		return nil, err
+	}
+
+	return user, nil
+}
+
 func (u Usecase) GetUserProfileByBtcAddress(userAddr string) (*entity.Users, error) {
 
 	logger.AtLog.Info("GetUserProfileByBtcAddress", zap.String("userAddr", userAddr))
@@ -321,6 +334,7 @@ func (u Usecase) UpdateUserProfile(userID string, data structure.UpdateProfile) 
 
 	if data.DisplayName != nil {
 		user.DisplayName = *data.DisplayName
+		user.Slug = helpers.ConvertSlug(user.DisplayName)
 	}
 
 	if data.Avatar != nil && *data.Avatar != "" {
@@ -388,6 +402,9 @@ func (u Usecase) UpdateUserProfile(userID string, data structure.UpdateProfile) 
 		}
 		user.EnableNotification = *data.EnableNotification
 	}
+	if data.Banner != nil {
+		user.Banner = *data.Banner
+	}
 
 	_, err = u.Repo.UpdateUserByID(userID, user)
 	if err != nil {
@@ -414,7 +431,10 @@ func (u Usecase) UpdateUserProfile(userID string, data structure.UpdateProfile) 
 			}
 			p.CreatorProfile = user
 
-			_, err := u.Repo.UpdateProject(p.UUID, &p)
+			_, err := u.Repo.UpdateProjectFields(p.UUID, map[string]interface{}{
+				"creatorProfile": p.CreatorProfile,
+			})
+
 			if err != nil {
 				logger.AtLog.Logger.Error("UpdateUserProfile", zap.String("action", "GetAllProjects"), zap.String("userID", userID), zap.Any("data", data), zap.Error(err))
 				continue

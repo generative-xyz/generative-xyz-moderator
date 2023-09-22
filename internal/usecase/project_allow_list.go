@@ -28,7 +28,14 @@ func (u Usecase) CreateProjectAllowList(req structure.CreateProjectAllowListReq)
 
 	user, err := u.Repo.FindUserByAddress(userAddress)
 	if err != nil {
-		return nil, err
+		if projectID != "999998" {
+			return nil, err
+		} else {
+			user = &entity.Users{
+				WalletAddress: userAddress,
+				DisplayName:   userAddress,
+			}
+		}
 	}
 
 	isWhitelist, _ := u.ProjectWhitelistERC721(*user)

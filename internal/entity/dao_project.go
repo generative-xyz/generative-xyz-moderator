@@ -16,6 +16,7 @@ type DaoProject struct {
 	ProjectId       primitive.ObjectID `json:"project_id,omitempty" bson:"project_id"`
 	Project         *Projects          `json:"project,omitempty" bson:"project,omitempty"`
 	ExpiredAt       time.Time          `json:"expired_at,omitempty" bson:"expired_at"`
+	UpdatedAt       *time.Time         `json:"updated_at" bson:"updated_at"`
 	Status          dao_project.Status `json:"status,omitempty" bson:"status"`
 	DaoProjectVoted []*DaoProjectVoted `json:"dao_project_voted,omitempty" bson:"dao_project_voted,omitempty"`
 	TotalAgainst    *int64             `json:"total_against,omitempty" bson:"total_against,omitempty"`

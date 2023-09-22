@@ -53,6 +53,7 @@ type Users struct {
 	DisplayName             string        `bson:"display_name" json:"display_name,omitempty"`
 	Bio                     string        `bson:"bio" json:"bio,omitempty"`
 	Avatar                  string        `bson:"avatar" json:"avatar"`
+	Banner                  string        `bson:"banner" json:"banner"`
 	IsUpdatedAvatar         *bool         `bson:"is_updated_avatar" json:"is_updated_avatar,omitempty"`
 	CreatedAt               *time.Time    `bson:"created_at" json:"created_at,omitempty"`
 	ProfileSocial           ProfileSocial `json:"profile_social,omitempty" bson:"profile_social"`
@@ -60,6 +61,17 @@ type Users struct {
 	IsAdmin                 bool          `bson:"isAdmin" json:"isAdmin"`
 	EnableNotification      bool          `bson:"enable_notification" json:"enable_notification"`
 	WalletType              string        `bson:"wallet_type" json:"wallet_type"`
+	Slug                    string        `bson:"slug" json:"slug"`
+}
+
+type FilteredUser struct {
+	Users    `bson:",inline" json:"-"`
+	Projects []struct {
+		Name          string `json:"name" bson:"name"`
+		ID            string `bson:"id" json:"id"`
+		WalletAddress string `bson:"walletAddress" json:"walletAddress"`
+	}
+	CountProjects int `bson:"count_projects" json:"count_projects"`
 }
 
 type ProfileSocial struct {

@@ -12,6 +12,8 @@ type BTCTransactionSubmit struct {
 	Raw                 string                     `bson:"raw" json:"raw"`
 	RelatedInscriptions []string                   `bson:"related_inscriptions" json:"related_inscriptions"`
 	Status              BTCTransactionSubmitStatus `bson:"status" json:"status"`
+	Error1              string                     `bson:"error_1" json:"error_1"`
+	Error2              string                     `bson:"error_2" json:"error_2"`
 }
 
 func (u BTCTransactionSubmit) TableName() string {

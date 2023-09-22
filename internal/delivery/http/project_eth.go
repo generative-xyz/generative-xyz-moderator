@@ -7,6 +7,8 @@ import (
 	"strconv"
 	"strings"
 
+	"rederinghub.io/utils"
+
 	"github.com/gorilla/mux"
 	"github.com/jinzhu/copier"
 	"go.uber.org/zap"
@@ -14,7 +16,6 @@ import (
 	"rederinghub.io/internal/delivery/http/response"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
-	"rederinghub.io/utils"
 	"rederinghub.io/utils/logger"
 )
 
@@ -180,7 +181,7 @@ func (h *httpDelivery) getAllProjects(w http.ResponseWriter, r *http.Request) {
 			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 			return
 		}
-	
+
 		pResp = append(pResp, *p)
 	}
 
@@ -214,9 +215,11 @@ func (h *httpDelivery) updateProject(w http.ResponseWriter, r *http.Request) {
 	}
 
 	reqUsecase := &structure.UpdateProjectReq{
-		ContracAddress: contractAddress,
-		TokenID:        projectID,
-		Priority:       reqBody.Priority,
+		TokenID:           projectID,
+		Priority:          reqBody.Priority,
+		IsSupportGMHolder: reqBody.IsSupportGMHolder,
+		MinimumGMSupport:  reqBody.MinimumGMSupport,
+		ContracAddress:    contractAddress,
 	}
 
 	logger.AtLog.Logger.Info("reqUsecase", zap.Any("reqUsecase", reqUsecase))

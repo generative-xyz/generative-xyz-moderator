@@ -1,12 +1,17 @@
 package usecase
 
 import (
+	"bytes"
 	"context"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"math/big"
+	"net/http"
 	"os"
+	"rederinghub.io/utils/request"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -50,7 +55,6 @@ func (u Usecase) RunAndCap(token *entity.TokenUri) (*structure.TokenAnimationURI
 		return nil, errors.New("Token is empty")
 	}
 	resp := &structure.TokenAnimationURI{}
-	logger.AtLog.Logger.Info("RunAndCap", zap.Any("tokenID", token.TokenID))
 	if token.ThumbnailCapturedAt != nil && token.ParsedImage != nil && !strings.HasSuffix(*token.ParsedImage, "i0") {
 		resp = &structure.TokenAnimationURI{
 			ParsedImage: *token.ParsedImage,
@@ -69,14 +73,34 @@ func (u Usecase) RunAndCap(token *entity.TokenUri) (*structure.TokenAnimationURI
 		return nil, err
 	}
 
-	opts := append(chromedp.DefaultExecAllocatorOptions[:],
-		chromedp.ExecPath("google-chrome"),
-		chromedp.Flag("headless", eCH),
-		chromedp.Flag("disable-gpu", false),
-		chromedp.Flag("no-first-run", true),
-	)
+	var contextOpts = []chromedp.ContextOption{}
+	//contextOpts = []chromedp.ContextOption{
+	//	chromedp.WithErrorf(log.Printf),
+	//	chromedp.WithLogf(log.Printf),
+	//	chromedp.WithBrowserOption(),
+	//}
+
+	opts := []chromedp.ExecAllocatorOption{}
+	if os.Getenv("ENV") == "mainnet" {
+		opts = append(chromedp.DefaultExecAllocatorOptions[:],
+			chromedp.ExecPath("google-chrome"),
+			chromedp.Flag("headless", eCH),
+			chromedp.Flag("disable-gpu", false),
+			chromedp.Flag("no-first-run", true),
+		)
+	} else {
+		opts = append(chromedp.DefaultExecAllocatorOptions[:],
+			chromedp.Flag("headless", false),
+			chromedp.Flag("disable-gpu", false),
+			chromedp.Flag("no-first-run", true),
+		)
+	}
+
 	allocCtx, _ := chromedp.NewExecAllocator(context.Background(), opts...)
-	cctx, cancel := chromedp.NewContext(allocCtx)
+	cctx, cancel := chromedp.NewContext(allocCtx, contextOpts...)
+
+	//avoid overlap html
+	ackCtx, cancel := context.WithTimeout(cctx, time.Duration(captureTimeout)*5*time.Second)
 	defer cancel()
 
 	imageURL := token.AnimationURL
@@ -97,26 +121,37 @@ func (u Usecase) RunAndCap(token *entity.TokenUri) (*structure.TokenAnimationURI
 		return resp, nil
 	}
 	if strings.Index(imageURL, "data:text/html;base64,") >= 0 {
-		htmlString := strings.ReplaceAll(token.AnimationURL, "data:text/html;base64,", "")
-		uploaded, err := u.GCS.UploadBaseToBucket(htmlString, fmt.Sprintf("btc-projects/%s/index.html", token.ProjectID))
-		if err == nil {
-			fileURI := fmt.Sprintf("%s/%s?seed=%s", os.Getenv("GCS_DOMAIN"), uploaded.Name, token.TokenID)
-			imageURL = fileURI
+		if token.AnimationHtml != nil && *token.AnimationHtml != "" {
+			imageURL = *token.AnimationHtml
+		} else {
+			htmlString := strings.ReplaceAll(token.AnimationURL, "data:text/html;base64,", "")
+			uploaded, err := u.GCS.UploadBaseToBucket(htmlString, fmt.Sprintf("btc-projects/%s/index.html", token.ProjectID))
+			if err == nil {
+				fileURI := fmt.Sprintf("%s/%s?seed=%s", os.Getenv("GCS_DOMAIN"), uploaded.Name, token.TokenID)
+				imageURL = fileURI
+			}
 		}
-		logger.AtLog.Logger.Info("RunAndCap", zap.Any("token", token), zap.Any("fileURI", imageURL), zap.Any("uploaded", uploaded))
 	}
 
 	traits := make(map[string]interface{})
-	err = chromedp.Run(cctx,
+	err = chromedp.Run(ackCtx,
 		chromedp.EmulateViewport(960, 960),
 		chromedp.Navigate(imageURL),
+		chromedp.WaitReady("body", chromedp.ByQuery),
 		chromedp.Sleep(time.Second*time.Duration(captureTimeout)),
 		chromedp.CaptureScreenshot(&buf),
 		chromedp.EvaluateAsDevTools("window.$generativeTraits", &traits),
 	)
 
 	if err != nil {
-		logger.AtLog.Logger.Error("RunAndCap", zap.Any("tokenID", token.TokenID), zap.Error(err))
+		logger.AtLog.Logger.Error(fmt.Sprintf("RunAndCap - %s - %s", token.ProjectID, token.TokenID),
+			zap.String("tokenID", token.TokenID),
+			zap.String("contractAddress", token.ContractAddress),
+			zap.String("cenNFTAddr", token.GenNFTAddr),
+			zap.String("projectID", token.ProjectID),
+			zap.String("tokenID", token.TokenID),
+			zap.String("fileURI", imageURL),
+			zap.Error(err))
 	}
 
 	for key, item := range traits {
@@ -148,9 +183,10 @@ func (u Usecase) RunAndCap(token *entity.TokenUri) (*structure.TokenAnimationURI
 			if err != nil {
 				logger.AtLog.Logger.Error("RunAndCap", zap.Any("tokenID", token.TokenID), zap.Error(err))
 			} else {
-				logger.AtLog.Logger.Info("RunAndCap", zap.Any("tokenID", token.TokenID), zap.Any("uploaded", uploaded))
 				thumbnail = fmt.Sprintf("%s/%s", os.Getenv("GCS_DOMAIN"), name)
 			}
+
+			_ = uploaded
 		}
 	}
 
@@ -163,7 +199,15 @@ func (u Usecase) RunAndCap(token *entity.TokenUri) (*structure.TokenAnimationURI
 		IsUpdated:   true,
 	}
 
-	logger.AtLog.Logger.Info("RunAndCap", zap.Any("tokenID", token.TokenID), zap.Any("fileURI", imageURL), zap.Any("resp", zap.Any("resp)", resp)))
+	logger.AtLog.Logger.Info(fmt.Sprintf("RunAndCap - %s - %s", token.ProjectID, token.TokenID),
+		zap.String("contractAddress", token.ContractAddress),
+		zap.String("cenNFTAddr", token.GenNFTAddr),
+		zap.String("projectID", token.ProjectID),
+		zap.String("tokenID", token.TokenID),
+		zap.String("fileURI", imageURL),
+		zap.String("uploaded", resp.Thumbnail),
+	)
+
 	return resp, nil
 }
 
@@ -183,6 +227,7 @@ func (u Usecase) GetTokenByTokenID(tokenID string, captureTimeout int) (*entity.
 }
 
 func (u Usecase) GetToken(req structure.GetTokenMessageReq, captureTimeout int) (*entity.TokenUri, error) {
+
 	logger.AtLog.Logger.Info("GetToken", zap.Any("req", zap.Any("req)", req)))
 	tokenID := strings.ToLower(req.TokenID)
 	tokenUri, err := u.Repo.FindTokenByTokenID(tokenID)
@@ -235,30 +280,53 @@ func (u Usecase) GetToken(req structure.GetTokenMessageReq, captureTimeout int) 
 			}
 		}
 	} else {
-		client, err1 := helpers.ChainDialer(os.Getenv("TC_ENDPOINT"))
-		if err1 == nil {
-			logger.AtLog.Logger.Error("getTokenInfo", zap.String("tokenID", tokenID), zap.Any("req", req), zap.String("action", "EthDialer"), zap.Error(err1))
+		//client, err1 := helpers.ChainDialer(os.Getenv("TC_ENDPOINT_PUBLIC"))
+		//if err1 != nil {
+		//	logger.AtLog.Logger.Error("getTokenInfo", zap.String("tokenID", tokenID), zap.Any("req", req), zap.String("action", "EthDialer"), zap.String("dial", os.Getenv("TC_ENDPOINT_PUBLIC")), zap.Error(err1))
+		//} else {
+		//	addr, err2 := u.ownerOf(client, common.HexToAddress(tokenUri.GenNFTAddr), tokenID)
+		//	if err2 != nil {
+		//		logger.AtLog.Logger.Error("getTokenInfo get ownerOf", zap.String("tokenID", tokenID), zap.Any("req", req), zap.String("action", "ownerOf"), zap.Error(err2))
+		//	} else {
+		//		if addr != nil {
+		//			if tokenUri.OwnerAddr != addr.String() {
+		//				tokenUri.Owner = nil
+		//				tokenUri.OwnerAddr = addr.String()
+		//				user, err := u.Repo.FindUserByWalletAddress(addr.String())
+		//				if err == nil && user != nil {
+		//					tokenUri.Owner = user
+		//				}
+		//			}
+		//		}
+		//	}
+		//}
+
+		user, err := u.Repo.FindUserByWalletAddress(tokenUri.OwnerAddr)
+		if err == nil && user != nil {
+			tokenUri.Owner = user
+		}
+
+		mkl, err := u.Repo.FindActivateListingByTokenID(tokenID)
+		if err == nil && mkl != nil {
+			tokenUri.Buyable = true
+			tokenUri.PriceBrc20 = entity.PriceBRC20Obj{
+				Value:      mkl.Price,
+				Address:    mkl.Erc20Token,
+				OfferingID: mkl.OfferingId,
+			}
 		} else {
-			addr, err2 := u.ownerOf(client, common.HexToAddress(tokenUri.GenNFTAddr), tokenID)
-			if err2 != nil {
-				logger.AtLog.Logger.Error("getTokenInfo get ownerOf", zap.String("tokenID", tokenID), zap.Any("req", req), zap.String("action", "ownerOf"), zap.Error(err2))
-			} else {
-				if addr != nil {
-					if tokenUri.OwnerAddr != addr.String() {
-						tokenUri.Owner = nil
-						tokenUri.OwnerAddr = addr.String()
-						user, err := u.Repo.FindUserByBtcAddressTaproot(addr.String())
-						if err == nil && user != nil {
-							tokenUri.Owner = user
-						}
-					}
-				}
+			tokenUri.Buyable = false
+			tokenUri.PriceBrc20 = entity.PriceBRC20Obj{
+				Value:      "",
+				Address:    "",
+				OfferingID: "",
 			}
 		}
+
 	}
 
 	go func() {
-		if tokenUri.Thumbnail == "" {
+		if tokenUri.ThumbnailCapturedAt == nil {
 			payload := redis.PubSubPayload{Data: structure.TokenImagePayload{
 				TokenID:         tokenUri.TokenID,
 				ContractAddress: tokenUri.ContractAddress,
@@ -325,12 +393,7 @@ func (u Usecase) getTokenInfo(req structure.GetTokenMessageReq) (*entity.TokenUr
 	//tokenImageChan := make(chan structure.TokenAnimationURIChan, 1)
 
 	// call to contract to get emotion
-	client, err := helpers.TCDialer()
-	if err != nil {
-		logger.AtLog.Logger.Error("getTokenInfo", zap.Any("req", req), zap.String("action", "EthDialer"), zap.Error(err))
-		return nil, err
-	}
-
+	client := u.TcClientPublicNode.GetClient()
 	tokenID := new(big.Int)
 	tokenID, ok := tokenID.SetString(req.TokenID, 10)
 	if !ok {
@@ -421,7 +484,10 @@ func (u Usecase) getTokenInfo(req structure.GetTokenMessageReq) (*entity.TokenUr
 			imageArr := strings.Split(tokeBFS.Image, ",")
 			if len(imageArr) == 2 {
 				ext := helpers.FileType(imageArr[0])
-				fName := fmt.Sprintf("%s%s", tokenID, ext)
+				now := time.Now().UTC().UnixMicro()
+
+				//fName := fmt.Sprintf("btc-projects/%d/%d-%s%s", projectID, now, tokenID, ext)
+				fName := fmt.Sprintf("thumb/%s-%d%s", tokenID, now, ext)
 				uploaded, err := u.GCS.UploadBaseToBucket(imageArr[1], fName)
 				if err == nil {
 					imageURL = fmt.Sprintf("%s/%s", os.Getenv("GCS_DOMAIN"), uploaded.Name)
@@ -592,6 +658,42 @@ func (u Usecase) getTokenInfo(req structure.GetTokenMessageReq) (*entity.TokenUr
 
 	} else {
 		logger.AtLog.Logger.Error("tokenFChan.Err", zap.String("tokenID", req.TokenID), zap.Error(tokenFChan.Err))
+
+		if project.IsBigFile {
+			dataObject.Thumbnail = project.Thumbnail
+			jsonFile := project.ProcessingImages[0]
+			fileName := strings.ReplaceAll(jsonFile, "https://cdn.generative.xyz/", "")
+			bytes, err := u.GCS.ReadFile(fileName)
+
+			if err == nil {
+				tokeBFS := entity.TokenFromBase64{}
+				err := json.Unmarshal(bytes, &tokeBFS)
+				if err == nil {
+					base64Image := tokeBFS.Image
+					i := strings.Index(base64Image, ",")
+					if i >= 0 {
+						now := time.Now().UTC().Unix()
+						name := fmt.Sprintf("thumb/%s-%d.png", dataObject.TokenID, now)
+						base64Image = base64Image[i+1:]
+						uploaded, err := u.GCS.UploadBaseToBucket(base64Image, name)
+						if err != nil {
+							logger.AtLog.Logger.Error("RunAndCap", zap.Any("tokenID", dataObject.TokenID), zap.Error(err))
+						} else {
+							logger.AtLog.Logger.Info("RunAndCap", zap.Any("tokenID", dataObject.TokenID), zap.Any("uploaded", uploaded))
+							thumbnail := fmt.Sprintf("%s/%s", os.Getenv("GCS_DOMAIN"), name)
+							dataObject.Thumbnail = thumbnail
+							isUpdated = true
+						}
+					}
+
+				} else {
+					logger.AtLog.Logger.Error("json.Unmarshal", zap.Error(err))
+				}
+
+			} else {
+				logger.AtLog.Logger.Error("u.GCS.ReadFile", zap.String("fileName", fileName), zap.Error(err))
+			}
+		}
 	}
 
 	tokIdMini := dataObject.TokenIDInt % 100000
@@ -617,6 +719,15 @@ func (u Usecase) getTokenInfo(req structure.GetTokenMessageReq) (*entity.TokenUr
 	}
 
 	if isUpdated {
+		if project.IsBigFile {
+			dataObject.Thumbnail = project.Thumbnail
+			// TODO:
+			//linkToJson := project.ProcessingImages[0]
+			//_ = linkToJson
+			//tokeBFS := entity.TokenFromBase64{}
+			//err = json.Unmarshal([]byte(linkToJson), &tokeBFS)
+			// store google cloud
+		}
 		updated, err := u.Repo.UpdateOrInsertTokenUri(dataObject.ContractAddress, dataObject.TokenID, dataObject)
 		if err != nil {
 			logger.AtLog.Logger.Error("getTokenInfo", zap.Any("req", req), zap.String("action", "UpdateOrInsertTokenUri"), zap.Error(err))
@@ -625,15 +736,22 @@ func (u Usecase) getTokenInfo(req structure.GetTokenMessageReq) (*entity.TokenUr
 		logger.AtLog.Logger.Info("getTokenInfo", zap.Any("req", req), zap.Any("updated", updated))
 	}
 
-	//capture image
-	payload := redis.PubSubPayload{Data: structure.TokenImagePayload{
-		TokenID:         dataObject.TokenID,
-		ContractAddress: dataObject.ContractAddress,
-	}}
+	if !project.IsBigFile {
+		//capture image
+		payload := redis.PubSubPayload{Data: structure.TokenImagePayload{
+			TokenID:         dataObject.TokenID,
+			ContractAddress: dataObject.ContractAddress,
+		}}
 
-	err = u.PubSub.Producer(utils.PUBSUB_TOKEN_THUMBNAIL, payload)
-	if err != nil {
-		logger.AtLog.Logger.Error("getTokenInfo", zap.Any("req", req), zap.String("action", "u.PubSub.Producer"), zap.Error(err))
+		err = u.PubSub.Producer(utils.PUBSUB_TOKEN_THUMBNAIL, payload)
+		if err != nil {
+			logger.AtLog.Logger.Error("getTokenInfo", zap.Any("req", req), zap.String("action", "u.PubSub.Producer"), zap.Error(err))
+		}
+	} else {
+		u.Repo.CreateFragmentJob(context.TODO(), &entity.TokenFragmentJob{
+			TokenId:  req.TokenID,
+			FilePath: project.ProcessingImages[0],
+		})
 	}
 
 	return dataObject, nil
@@ -799,6 +917,13 @@ func (u Usecase) FilterTokens(filter structure.FilterTokens) (*entity.Pagination
 
 func (u Usecase) FilterTokensNew(filter structure.FilterTokens) (*entity.Pagination, error) {
 	pe := &entity.FilterTokenUris{}
+	p, err := u.Repo.FindProjectByTokenIDOrGenNFTAddr(*filter.GenNFTAddr)
+	if err != nil {
+		logger.AtLog.Error("FilterTokensNew", zap.Any("filter", filter), zap.Error(err))
+		return nil, err
+	}
+
+	isOrdinal := helpers.IsOrdinalProject(p.TokenId)
 
 	//filerAttrs := []structure.TokenUriAttrReq{}
 	if filter.Rarity != nil && *filter.Rarity != "" {
@@ -814,17 +939,14 @@ func (u Usecase) FilterTokensNew(filter structure.FilterTokens) (*entity.Paginat
 		maxInt, _ := strconv.Atoi(max)
 
 		groupTraits := make(map[string][]string)
-		p, err := u.Repo.FindProjectByTokenID(*filter.GenNFTAddr)
-		if err == nil {
-			traits := p.TraitsStat
-			for _, trait := range traits {
-				values := trait.TraitValuesStat
+		traits := p.TraitsStat
+		for _, trait := range traits {
+			values := trait.TraitValuesStat
 
-				for _, value := range values {
-					if value.Rarity >= int32(minInt) && value.Rarity <= int32(maxInt) {
-						groupTraits[trait.TraitName] = append(groupTraits[trait.TraitName], value.Value)
+			for _, value := range values {
+				if value.Rarity >= int32(minInt) && value.Rarity <= int32(maxInt) {
+					groupTraits[trait.TraitName] = append(groupTraits[trait.TraitName], value.Value)
 
-					}
 				}
 			}
 		}
@@ -837,19 +959,29 @@ func (u Usecase) FilterTokensNew(filter structure.FilterTokens) (*entity.Paginat
 		}
 	}
 
-	err := copier.Copy(pe, filter)
+	err = copier.Copy(pe, filter)
 	if err != nil {
+		logger.AtLog.Error("FilterTokensNew", zap.Any("filter", filter), zap.Error(err))
 		return nil, err
 	}
 
-	tokens, err := u.Repo.FilterTokenUriNew(*pe)
-	if err != nil {
-		logger.AtLog.Logger.Error("err", zap.Error(err))
-		return nil, err
+	tokens := &entity.Pagination{}
+	if isOrdinal {
+		tokens, err = u.Repo.FilterTokenUriNew(*pe)
+		if err != nil {
+			logger.AtLog.Error("FilterTokensNew", zap.Any("filter", filter), zap.Error(err))
+			return nil, err
+		}
+	} else {
+		tokens, err = u.Repo.FilterTokenUriTCNew(*pe)
+		if err != nil {
+			logger.AtLog.Error("FilterTokensNew", zap.Any("filter", filter), zap.Error(err))
+			return nil, err
+		}
 	}
 
 	genService := generativeexplorer.NewGenerativeExplorer(u.Cache)
-
+	ctx := context.Background()
 	resp := []entity.TokenUriListingFilter{}
 	for _, item := range tokens.Result.([]entity.TokenUriListingFilter) {
 		if helpers.IsOrdinalProjectToken(item.TokenID) {
@@ -864,6 +996,11 @@ func (u Usecase) FilterTokensNew(filter structure.FilterTokens) (*entity.Paginat
 						Avatar:                  "",
 					}
 				}
+
+				item.Royalty = item.Project.Royalty
+				item.IsMinting = false
+				item.MintingInfo = entity.MintingInfo{Done: 0, All: 0, Pending: 0}
+				item.IsOnChain = true
 			}
 		} else {
 			item.Owner = entity.TokenURIListingOwner{
@@ -872,6 +1009,37 @@ func (u Usecase) FilterTokensNew(filter structure.FilterTokens) (*entity.Paginat
 				DisplayName:             item.OnwerInternal.DisplayName,
 				Avatar:                  item.OnwerInternal.Avatar,
 			}
+
+			item.PriceBRC20Obj = entity.PriceBRC20Obj{
+				Value:      item.PriceBRC20,
+				Address:    item.PriceBRC20Address,
+				OfferingID: item.OfferingID,
+			}
+
+			item.Royalty = item.Project.Royalty
+			item.MintingInfo = entity.MintingInfo{Done: 0, All: 0, Pending: 0}
+			item.IsMinting = false
+
+			mintingInfo, err := u.Repo.AggregateMintingInfo(ctx, item.TokenID)
+			if err == nil {
+				if len(mintingInfo) >= 1 {
+					mtinfo := mintingInfo[0]
+					item.MintingInfo = entity.MintingInfo{
+						All:     mtinfo.All,
+						Done:    mtinfo.Done,
+						Pending: mtinfo.Pending,
+					}
+					if mtinfo.Done < mtinfo.All {
+						item.IsMinting = true
+						item.IsOnChain = false
+					} else {
+						item.IsOnChain = true
+					}
+				}
+			} else {
+				item.IsOnChain = true
+			}
+
 		}
 
 		//spew.Dump(iResp)
@@ -1206,7 +1374,7 @@ func (u Usecase) UpdateTokenThumbnail(req structure.UpdateTokenThumbnailReq) (*e
 // When go to this, you need to make sure that meta's project is created
 func (u Usecase) CreateBTCTokenURIFromCollectionInscription(meta entity.CollectionMeta, inscription entity.CollectionInscription) (*entity.TokenUri, error) {
 	// find project by projectID
-	project, err := u.Repo.FindProjectByInscriptionIcon(meta.InscriptionIcon)
+	project, err := u.Repo.FindProjectByTokenID(meta.ProjectID)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			logger.AtLog.Logger.Error("CanNotFindProjectByInscriptionIcon", zap.Any("inscriptionIcon", meta.InscriptionIcon))
@@ -1217,7 +1385,7 @@ func (u Usecase) CreateBTCTokenURIFromCollectionInscription(meta entity.Collecti
 	}
 
 	tokenUri := entity.TokenUri{}
-	tokenUri.ContractAddress = project.ContractAddress
+	tokenUri.ContractAddress = os.Getenv("GENERATIVE_BTC_PROJECT")
 	tokenUri.TokenID = inscription.ID
 	blockNumberMinted := "31012412"
 	tokenUri.BlockNumberMinted = &blockNumberMinted
@@ -1328,14 +1496,297 @@ func (u Usecase) parseAnimationURL(project entity.Projects) (*string, error) {
 
 }
 
-func (u Usecase) GetTokensMap(tokenIDs []string) (map[string]*entity.TokenUri, error) {
+func (u Usecase) GetTokensMap(tokenIDs []string) (map[string]entity.TokenUri, error) {
 	tokens, err := u.Repo.FindTokenByTokenIds(tokenIDs)
 	if err != nil {
 		return nil, err
 	}
-	tokenIdToToken := map[string]*entity.TokenUri{}
-	for id := range tokens {
-		tokenIdToToken[tokens[id].TokenID] = &(tokens[id])
+
+	tokenIdToToken := map[string]entity.TokenUri{}
+	for id, token := range tokens {
+		tokenIdToToken[tokens[id].TokenID] = token
 	}
 	return tokenIdToToken, nil
+}
+
+func (u Usecase) AnalyticsTokenUriOwner(f structure.FilterTokens) (interface{}, error) {
+	filter := &entity.FilterTokenUris{}
+	err := copier.Copy(filter, f)
+	if err != nil {
+		return nil, err
+	}
+
+	type tokenOwner struct {
+		Address string `json:"address"`
+		Name    string `json:"name"`
+		Avatar  string `json:"avatar"`
+		Count   int    `json:"count"`
+	}
+
+	owners := make(map[string]*tokenOwner)
+	tokenIDs := make(map[string]*string)
+	tokens, err := u.Repo.AnalyticsTokenUriOwner(*filter)
+	if err != nil {
+		return nil, err
+	}
+
+	genService := generativeexplorer.NewGenerativeExplorer(u.Cache)
+	for _, token := range tokens {
+		tokenID := token.TokenID
+		tokenIDs[tokenID] = &token.OwnerAddress
+
+		if helpers.IsOrdinalProject(token.TokenID) {
+			var address, name, avatar string
+
+			iResp, _ := genService.Inscription(tokenID)
+			if iResp != nil {
+				address = iResp.Address
+			} else {
+				if token.Owner.WalletAddressBTCTaproot != "" {
+					user, _ := u.Repo.FindUserByBtcAddressTaproot(token.Owner.WalletAddressBTCTaproot)
+					if user != nil {
+						name = user.DisplayName
+						avatar = user.Avatar
+						address = user.WalletAddressBTCTaproot
+					}
+				} else if token.OwnerAddress != "" {
+					user, _ := u.Repo.FindUserByWalletAddress(token.OwnerAddress)
+					if user != nil {
+						name = user.DisplayName
+						avatar = user.Avatar
+						address = user.WalletAddressBTCTaproot
+					}
+				} else {
+					continue
+				}
+			}
+
+			if _, has := owners[address]; !has {
+				owners[address] = &tokenOwner{
+					Address: address,
+					Name:    name,
+					Avatar:  avatar,
+					Count:   0,
+				}
+			}
+			owners[address].Count++
+		}
+	}
+
+	var result []*tokenOwner
+	for _, v := range owners {
+		result = append(result, v)
+	}
+
+	sort.Slice(result, func(i, j int) bool {
+		return result[i].Count > result[j].Count
+	})
+
+	return result, nil
+}
+
+func (u Usecase) GetTokenMintingInfo(tokenID string) ([]repository.AggregateTokenMintingInfo, error) {
+
+	tokenID = strings.ToLower(tokenID)
+	info, err := u.Repo.AggregateMintingInfo(context.Background(), tokenID)
+	if err != nil {
+		logger.AtLog.Logger.Error("err", zap.Error(err))
+		return nil, err
+	}
+
+	///logger.AtLog.Logger.Info("tokenUri", zap.Any("tokenUri", tokenUri))
+	logger.AtLog.Logger.Info("tokenID", zap.Any("tokenID", tokenID), zap.Any("info", info))
+	return info, nil
+}
+
+func (u Usecase) InsertDataTokenUriFromNFT(jsonFilepath string, projectId string) {
+	// uc.InsertDataTokenUriFromNFT("nfts.json", "999998")
+	jsonFile, err := os.Open(jsonFilepath)
+	// if we os.Open returns an error then handle it
+	if err != nil {
+		fmt.Println(err)
+	}
+	fmt.Println("Successfully Opened users.json")
+	// defer the closing of our jsonFile so that we can parse it later on
+	defer jsonFile.Close()
+
+	nfts := []entity.NFT{}
+	byteValue, _ := ioutil.ReadAll(jsonFile)
+	err = json.Unmarshal(byteValue, &nfts)
+	inputChan := make(chan entity.NFT)
+	outputChan := make(chan *entity.TokenUri)
+
+	workerNumber := 100
+	if err == nil {
+		contractAddress := "0xda00b6a8b521113501bb98fd0a7ffcfe756d9962"
+
+		//init worker
+		for i := 0; i < len(nfts); i++ {
+			go u.InsertDataTokenWoker(inputChan, outputChan, projectId, contractAddress)
+			if i > 0 && i%workerNumber == 0 {
+				time.Sleep(time.Millisecond * 500)
+			}
+		}
+
+		for i := 0; i < len(nfts); i++ {
+			inputChan <- nfts[i]
+		}
+
+		for i := 0; i < len(nfts); i++ {
+			item := <-outputChan
+			u.Repo.UpdateOrInsertTokenUri(contractAddress, item.TokenID, item)
+		}
+	}
+}
+
+func (u Usecase) InsertDataTokenWoker(nftInput chan entity.NFT, outputChan chan *entity.TokenUri, projectId string, contractAddress string) {
+	animationURL := ""
+	isPubsub := false
+	nft := <-nftInput
+	if nft.Metadata != nil {
+		if nft.Metadata.AnimationURL != nil {
+			animationURL = *nft.Metadata.AnimationURL
+			isPubsub = true
+		}
+	} else {
+		filename := fmt.Sprintf("metadata-%s-%s.txt", nft.CollectionAddress, nft.TokenId)
+		data, err := helpers.Openfile(filename)
+		if err != nil {
+			url := fmt.Sprintf("https://api-nft-explorer.trustless.computer/api/v1/collection/%s/nft/%s/tokenuri", nft.CollectionAddress, nft.TokenId)
+
+			statusCode, body, err := request.GetRequest(url)
+			if err != nil {
+				logger.AtLog.Error("PubSubCreateTokenThumbnail - GetRequest", zap.String("url", url), zap.Error(err))
+				return
+			}
+
+			if statusCode != 200 {
+				err := errors.New(fmt.Sprintf("Status code: %s", statusCode))
+				logger.AtLog.Error("PubSubCreateTokenThumbnail - statusCode", zap.String("url", url), zap.Error(err))
+				return
+			}
+
+			metadata := &entity.NFTMetadata{}
+			err = json.Unmarshal(body, metadata)
+			if err != nil {
+				logger.AtLog.Error("PubSubCreateTokenThumbnail - Unmarshal", zap.String("url", url), zap.Error(err))
+				return
+			}
+			if metadata.AnimationURL != nil && *metadata.AnimationURL != "" {
+				animationURL = *metadata.AnimationURL
+				isPubsub = true
+
+				err = helpers.CreateFile(filename, *metadata.AnimationURL)
+				if err != nil {
+					logger.AtLog.Error("PubSubCreateTokenThumbnail - CreateFile", zap.String("url", url), zap.Error(err))
+					return
+				}
+			}
+		}
+
+		data, err = helpers.Openfile(filename)
+		if err != nil {
+			logger.AtLog.Error("PubSubCreateTokenThumbnail - Unmarshal", zap.String("filename", filename), zap.Error(err))
+			return
+		}
+		//reopen file
+		base64str := bytes.NewBuffer(data).String()
+		base64str = strings.ReplaceAll(base64str, "data:text/html;base64,", "")
+		base64str = strings.ReplaceAll(base64str, `"`, ``)
+		bytesData, err := helpers.Base64Decode(base64str)
+		if err == nil {
+			html := bytes.NewBuffer(bytesData).String()
+			html = strings.ReplaceAll(html, `Web3.givenProvider`, `"https://tc-node.trustless.computer"`)
+			html = strings.ReplaceAll(html, `isFakeData=!1`, `isFakeData=1`)
+			html = strings.ReplaceAll(html, `document.getElementById("btn-close").style.display="none",console.log(window.ethereum),window.ethereum`, `document.getElementById("btn-close").style.display="none",console.log(window.ethereum),window.ethereum || isFakeData`)
+			bytesData := []byte(html)
+			err := helpers.CreateTxtFile(fmt.Sprintf("index-%s-%s.html", nft.CollectionAddress, nft.TokenId), bytesData)
+			if err == nil {
+				now := time.Now().UTC().UnixNano()
+				encoded := helpers.Base64Encode(bytesData)
+				uploaded, err := u.GCS.UploadBaseToBucket(encoded, fmt.Sprintf("index-%d-%s-%s.html", now, nft.CollectionAddress, nft.TokenId))
+
+				if err == nil {
+					fileURI := fmt.Sprintf("%s/%s?seed=%s", os.Getenv("GCS_DOMAIN"), uploaded.Name, nft.TokenId)
+
+					animationURL = fileURI
+					isPubsub = true
+				}
+
+			}
+		}
+	}
+
+	fmt.Sprintf("Inserting %s", nft.Name)
+	owner, _ := u.Repo.FindUserByAddress(nft.Owner)
+	project, _ := u.Repo.FindProjectByTokenID(projectId)
+	item := &entity.TokenUri{
+		ContractAddress:     contractAddress,
+		GenNFTAddr:          nft.CollectionAddress,
+		OwnerAddr:           nft.Owner,
+		MinterAddress:       &nft.Owner,
+		Owner:               owner,
+		ProjectID:           projectId,
+		Project:             project,
+		ParsedAttributesStr: nft.Attributes,
+		//Name:                nft.Name
+	}
+
+	tempProjectId, _ := new(big.Int).SetString(projectId, 10)
+	item.ProjectIDInt = tempProjectId.Int64()
+	tempTokenId, _ := new(big.Int).SetString(nft.TokenId, 10)
+	fakeTokenId := item.ProjectIDInt*1000000 + tempTokenId.Int64()
+	item.TokenIDInt = int(fakeTokenId)
+	item.TokenID = fmt.Sprintf("%d", fakeTokenId)
+
+	if !isPubsub {
+		var buf []byte
+		resp, _ := http.Get(nft.TokenUri)
+		buf, _ = ioutil.ReadAll(resp.Body)
+		image := helpers.Base64Encode(buf)
+		image = fmt.Sprintf("%s,%s", "data:image/svg+xml;base64", image)
+
+		thumbnail := ""
+		if image != "" {
+			base64Image := image
+			i := strings.Index(base64Image, ",")
+			if i >= 0 {
+				now := time.Now().UTC().Unix()
+
+				name := fmt.Sprintf("thumb/%d-%d.svg", fakeTokenId, now)
+				base64Image = base64Image[i+1:]
+				uploaded, err := u.GCS.UploadBaseToBucket(base64Image, name)
+				if err != nil {
+					logger.AtLog.Logger.Error("InsertDataTokenUriFromNFT", zap.Any("tokenID", fakeTokenId), zap.Error(err))
+				} else {
+					logger.AtLog.Logger.Info("InsertDataTokenUriFromNFT", zap.Any("tokenID", fakeTokenId), zap.Any("uploaded", uploaded))
+					thumbnail = fmt.Sprintf("%s/%s", os.Getenv("GCS_DOMAIN"), name)
+				}
+			}
+		}
+		item.ParsedImage = &thumbnail
+		item.Thumbnail = thumbnail
+		item.Image = thumbnail
+
+	} else {
+		item.AnimationURL = animationURL
+
+		//open chrome and capture image
+		resp, err := u.RunAndCap(item)
+		if err != nil {
+			logger.AtLog.Error("PubSubCreateTokenThumbnai", zap.Any("RunAndCap", zap.Error(err)))
+			return
+		}
+
+		if resp.IsUpdated {
+			item.ParsedImage = &resp.ParsedImage
+			item.Thumbnail = resp.Thumbnail
+			item.ParsedAttributes = resp.Traits
+			item.ParsedAttributesStr = resp.TraitsStr
+			item.ThumbnailCapturedAt = resp.CapturedAt
+		}
+	}
+
+	outputChan <- item
+
 }
