@@ -16,6 +16,154 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/action/project/{projectID}/dislike": {
+            "post": {
+                "security": [
+                    {
+                        "Authorization": []
+                    }
+                ],
+                "description": "dislike project",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Like \u0026 dislike"
+                ],
+                "summary": "dislike project",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "projectID",
+                        "name": "projectID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.JsonResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/action/project/{projectID}/like": {
+            "post": {
+                "security": [
+                    {
+                        "Authorization": []
+                    }
+                ],
+                "description": "like project",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Like \u0026 dislike"
+                ],
+                "summary": "like project",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "projectID",
+                        "name": "projectID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.JsonResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/action/tokens/{tokenID}/dislike": {
+            "post": {
+                "security": [
+                    {
+                        "Authorization": []
+                    }
+                ],
+                "description": "dislike token",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Like \u0026 dislike"
+                ],
+                "summary": "dislike token",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "token ID",
+                        "name": "tokenID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.JsonResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/action/tokens/{tokenID}/like": {
+            "post": {
+                "security": [
+                    {
+                        "Authorization": []
+                    }
+                ],
+                "description": "like token",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Like \u0026 dislike"
+                ],
+                "summary": "like token",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "token ID",
+                        "name": "tokenID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.JsonResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/admin-test": {
             "get": {
                 "description": "Get Redis",
@@ -679,7 +827,7 @@ const docTemplate = `{
         },
         "/charts/collections/{projectID}/charts": {
             "get": {
-                "description": "get list CollectionListing",
+                "description": "GM deposit analytics",
                 "consumes": [
                     "application/json"
                 ],
@@ -688,6 +836,29 @@ const docTemplate = `{
                 ],
                 "tags": [
                     "CollectionListing"
+                ],
+                "summary": "GM deposit analytics",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.JsonResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/charts/gm-collections/deposit": {
+            "get": {
+                "description": "get list CollectionListing",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Charts"
                 ],
                 "summary": "CollectionListing",
                 "parameters": [
@@ -702,6 +873,37 @@ const docTemplate = `{
                         "description": "dateRange",
                         "name": "dateRange",
                         "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.JsonResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/charts/gm-collections/extra/{address}/deposit": {
+            "get": {
+                "description": "get list CollectionListing",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Charts"
+                ],
+                "summary": "CollectionListing",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "address",
+                        "name": "address",
+                        "in": "path"
                     }
                 ],
                 "responses": {
@@ -2796,6 +2998,12 @@ const docTemplate = `{
                         "name": "genNFTAddr",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "ignore cache",
+                        "name": "refresh",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -2901,6 +3109,18 @@ const docTemplate = `{
                         "type": "string",
                         "description": "If is_nft_owner == true, get offer that offer to walletAddress's nft",
                         "name": "is_nft_owner",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Is closed, default all",
+                        "name": "closed",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Is finished, default all",
+                        "name": "finished",
                         "in": "query"
                     },
                     {
@@ -3166,6 +3386,210 @@ const docTemplate = `{
                                     "properties": {
                                         "data": {
                                             "$ref": "#/definitions/response.CategoryResp"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/photo/capture": {
+            "post": {
+                "security": [
+                    {
+                        "Authorization": []
+                    }
+                ],
+                "description": "captures url content as image",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Photographer"
+                ],
+                "summary": "captures url content as image",
+                "parameters": [
+                    {
+                        "description": "capture request",
+                        "name": "json",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.CaptureRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.JsonResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/response.CaptureResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/photo/open-url": {
+            "post": {
+                "security": [
+                    {
+                        "Authorization": []
+                    }
+                ],
+                "description": "open url",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Photographer"
+                ],
+                "summary": "open url",
+                "parameters": [
+                    {
+                        "description": "capture request",
+                        "name": "json",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.ParseSvgRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.JsonResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/response.CaptureResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/photo/pare-html": {
+            "post": {
+                "security": [
+                    {
+                        "Authorization": []
+                    }
+                ],
+                "description": "parse html",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Photographer"
+                ],
+                "summary": "parse html",
+                "parameters": [
+                    {
+                        "description": "capture request",
+                        "name": "json",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.ParseSvgRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.JsonResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/response.CaptureResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/photo/pare-svg": {
+            "post": {
+                "security": [
+                    {
+                        "Authorization": []
+                    }
+                ],
+                "description": "captures svg and response png",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Photographer"
+                ],
+                "summary": "captures svg",
+                "parameters": [
+                    {
+                        "description": "capture request",
+                        "name": "json",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.ParseSvgRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.JsonResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/response.CaptureResponse"
                                         }
                                     }
                                 }
@@ -4674,6 +5098,114 @@ const docTemplate = `{
                 }
             }
         },
+        "/project/{contractAddress}/{projectID}/token-onwers/analytics": {
+            "get": {
+                "description": "Calculate Token's Onwers by project",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Project"
+                ],
+                "summary": "Calculate Token's Onwers by project",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "page",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "limit",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "search",
+                        "name": "search",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "projectID request",
+                        "name": "projectID",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "contractAddress request",
+                        "name": "contractAddress",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.JsonResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/project/{contractAddress}/{projectID}/{walletAddress}/allow-list-gm": {
+            "post": {
+                "security": [
+                    {
+                        "Authorization": []
+                    }
+                ],
+                "description": "Create project's allow list",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Project"
+                ],
+                "summary": "Create project's allow list",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "contractAddress request",
+                        "name": "contractAddress",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "projectID request",
+                        "name": "projectID",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "walletAddress request",
+                        "name": "walletAddress",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.JsonResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/project/{genNFTAddr}/tokens": {
             "get": {
                 "description": "get tokens by project address",
@@ -4976,6 +5508,229 @@ const docTemplate = `{
                         "in": "query"
                     }
                 ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.JsonResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/soralis/tokens": {
+            "get": {
+                "security": [
+                    {
+                        "Authorization": []
+                    }
+                ],
+                "description": "Get all tokens",
+                "tags": [
+                    "Soralis"
+                ],
+                "summary": "Get all tokens",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.JsonResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/soralis/tokens/{tokenAddress}/balance/{walletAddress}": {
+            "get": {
+                "security": [
+                    {
+                        "Authorization": []
+                    }
+                ],
+                "description": "Get token's detail",
+                "tags": [
+                    "Soralis"
+                ],
+                "summary": "Get token's detail",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "token address",
+                        "name": "tokenAddress",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "wallet address",
+                        "name": "walletAddress",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.JsonResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "Authorization": []
+                    }
+                ],
+                "description": "Get token's detail",
+                "tags": [
+                    "Soralis"
+                ],
+                "summary": "Get token's detail",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "token address",
+                        "name": "tokenAddress",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "wallet address",
+                        "name": "walletAddress",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.JsonResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/soralis/tokens/{tokenAddress}/balance/{walletAddress}/time-travel": {
+            "get": {
+                "security": [
+                    {
+                        "Authorization": []
+                    }
+                ],
+                "description": "Get token's detail",
+                "tags": [
+                    "Soralis"
+                ],
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "token address",
+                        "name": "tokenAddress",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "wallet address",
+                        "name": "walletAddress",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.JsonResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/soralis/tokens/{tokenAddress}/price/current": {
+            "get": {
+                "security": [
+                    {
+                        "Authorization": []
+                    }
+                ],
+                "description": "Get token's current price",
+                "tags": [
+                    "Soralis"
+                ],
+                "summary": "Get token's current price",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "token address",
+                        "name": "tokenAddress",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.JsonResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/soralis/tokens/{tokenAddress}/price/min-max": {
+            "get": {
+                "security": [
+                    {
+                        "Authorization": []
+                    }
+                ],
+                "description": "Get token's min-max price",
+                "tags": [
+                    "Soralis"
+                ],
+                "summary": "Get token's min-max price",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "token address",
+                        "name": "tokenAddress",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "default: hour",
+                        "name": "chartType",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.JsonResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/soralis/tokens/{tokenAddress}/time-travel": {
+            "get": {
+                "security": [
+                    {
+                        "Authorization": []
+                    }
+                ],
+                "description": "Get token's time-travel",
+                "tags": [
+                    "Soralis"
+                ],
+                "summary": "Get token's time-travel",
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -5476,6 +6231,38 @@ const docTemplate = `{
                 }
             }
         },
+        "/tokens/{tokenID}/minting-info": {
+            "get": {
+                "description": "get token minting info",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "TokenUri"
+                ],
+                "summary": "get token minting info",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "token ID",
+                        "name": "tokenID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.JsonResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/tokens/{tokenID}/thumbnail": {
             "post": {
                 "description": "Update token's thumbnail",
@@ -5708,6 +6495,23 @@ const docTemplate = `{
                 "Voted"
             ]
         },
+        "entity.AuctionWinnerList": {
+            "type": "object",
+            "properties": {
+                "address": {
+                    "type": "string"
+                },
+                "ethAddress": {
+                    "type": "string"
+                },
+                "mintPrice": {
+                    "type": "integer"
+                },
+                "quantity": {
+                    "type": "integer"
+                }
+            }
+        },
         "entity.BaseEntity": {
             "type": "object",
             "properties": {
@@ -5913,6 +6717,20 @@ const docTemplate = `{
                 }
             }
         },
+        "entity.PriceBRC20Obj": {
+            "type": "object",
+            "properties": {
+                "address": {
+                    "type": "string"
+                },
+                "offering_id": {
+                    "type": "string"
+                },
+                "value": {
+                    "type": "string"
+                }
+            }
+        },
         "entity.ProfileSocial": {
             "type": "object",
             "properties": {
@@ -5986,6 +6804,12 @@ const docTemplate = `{
                 "animationHtml": {
                     "type": "string"
                 },
+                "auctionWinnerList": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/entity.AuctionWinnerList"
+                    }
+                },
                 "block_number_minted": {
                     "type": "string"
                 },
@@ -6034,6 +6858,9 @@ const docTemplate = `{
                 "genNFTAddr": {
                     "type": "string"
                 },
+                "hasZipFile": {
+                    "type": "boolean"
+                },
                 "hash": {
                     "type": "string"
                 },
@@ -6053,10 +6880,17 @@ const docTemplate = `{
                 "inscriptionIcon": {
                     "type": "string"
                 },
+                "isBigFile": {
+                    "type": "boolean"
+                },
                 "isFullChain": {
                     "type": "boolean"
                 },
                 "isHidden": {
+                    "type": "boolean"
+                },
+                "isSupportGMHolder": {
+                    "description": "GM whitelist holder",
                     "type": "boolean"
                 },
                 "isSynced": {
@@ -6076,6 +6910,9 @@ const docTemplate = `{
                 },
                 "maxSupply": {
                     "type": "integer"
+                },
+                "minimumGMSupport": {
+                    "type": "string"
                 },
                 "mintFee": {
                     "type": "integer"
@@ -6329,11 +7166,15 @@ const docTemplate = `{
             "type": "string",
             "enum": [
                 "eth",
-                "btc"
+                "btc",
+                "pepe",
+                "turbo"
             ],
             "x-enum-varnames": [
                 "ETH",
-                "BIT"
+                "BIT",
+                "PEPE",
+                "TURBO"
             ]
         },
         "entity.TokenStats": {
@@ -6358,6 +7199,9 @@ const docTemplate = `{
                 },
                 "block_number_minted": {
                     "type": "string"
+                },
+                "buyable": {
+                    "type": "boolean"
                 },
                 "contract_address": {
                     "type": "string"
@@ -6447,6 +7291,9 @@ const docTemplate = `{
                 },
                 "parsed_image": {
                     "type": "string"
+                },
+                "priceBrc20": {
+                    "$ref": "#/definitions/entity.PriceBRC20Obj"
                 },
                 "priority": {
                     "type": "integer"
@@ -6566,6 +7413,9 @@ const docTemplate = `{
                 "avatar": {
                     "type": "string"
                 },
+                "banner": {
+                    "type": "string"
+                },
                 "bio": {
                     "type": "string"
                 },
@@ -6592,6 +7442,9 @@ const docTemplate = `{
                 },
                 "profile_social": {
                     "$ref": "#/definitions/entity.ProfileSocial"
+                },
+                "slug": {
+                    "type": "string"
                 },
                 "stats": {
                     "$ref": "#/definitions/entity.UserStats"
@@ -6707,6 +7560,17 @@ const docTemplate = `{
                 "traits": {}
             }
         },
+        "request.CaptureRequest": {
+            "type": "object",
+            "properties": {
+                "device_id": {
+                    "type": "string"
+                },
+                "display_url": {
+                    "type": "string"
+                }
+            }
+        },
         "request.CheckBalanceAddressReq": {
             "type": "object",
             "properties": {
@@ -6762,6 +7626,10 @@ const docTemplate = `{
                 "isFullChain": {
                     "type": "boolean"
                 },
+                "isSupportGMHolder": {
+                    "description": "GM whitelist holder",
+                    "type": "boolean"
+                },
                 "license": {
                     "type": "string"
                 },
@@ -6773,6 +7641,9 @@ const docTemplate = `{
                 },
                 "maxSupply": {
                     "type": "integer"
+                },
+                "minimumGMSupport": {
+                    "type": "string"
                 },
                 "mintPrice": {
                     "type": "string"
@@ -6943,6 +7814,10 @@ const docTemplate = `{
                 "isFullChain": {
                     "type": "boolean"
                 },
+                "isSupportGMHolder": {
+                    "description": "GM whitelist holder",
+                    "type": "boolean"
+                },
                 "license": {
                     "type": "string"
                 },
@@ -6954,6 +7829,9 @@ const docTemplate = `{
                 },
                 "maxSupply": {
                     "type": "integer"
+                },
+                "minimumGMSupport": {
+                    "type": "string"
                 },
                 "mintPrice": {
                     "type": "string"
@@ -7244,6 +8122,20 @@ const docTemplate = `{
                 }
             }
         },
+        "request.ParseSvgRequest": {
+            "type": "object",
+            "properties": {
+                "app_id": {
+                    "type": "string"
+                },
+                "delay_time": {
+                    "type": "integer"
+                },
+                "display_url": {
+                    "type": "string"
+                }
+            }
+        },
         "request.ProfileSocial": {
             "type": "object",
             "properties": {
@@ -7281,6 +8173,12 @@ const docTemplate = `{
                 "bid_price": {
                     "type": "number"
                 },
+                "collector_redirect_to": {
+                    "type": "string"
+                },
+                "quantity": {
+                    "type": "integer"
+                },
                 "wallet_address": {
                     "type": "string"
                 }
@@ -7315,11 +8213,18 @@ const docTemplate = `{
                 "isHidden": {
                     "type": "boolean"
                 },
+                "isSupportGMHolder": {
+                    "description": "GM whitelist holder",
+                    "type": "boolean"
+                },
                 "limitMintPerProcess": {
                     "type": "integer"
                 },
                 "maxSupply": {
                     "type": "integer"
+                },
+                "minimumGMSupport": {
+                    "type": "string"
                 },
                 "mintPrice": {
                     "type": "string"
@@ -7356,6 +8261,9 @@ const docTemplate = `{
                 "avatar": {
                     "type": "string"
                 },
+                "banner": {
+                    "type": "string"
+                },
                 "bio": {
                     "type": "string"
                 },
@@ -7379,6 +8287,13 @@ const docTemplate = `{
         "request.UpdateProjectReq": {
             "type": "object",
             "properties": {
+                "isSupportGMHolder": {
+                    "description": "GM whitelist holder",
+                    "type": "boolean"
+                },
+                "minimumGMSupport": {
+                    "type": "string"
+                },
                 "priority": {
                     "type": "integer"
                 }
@@ -7485,6 +8400,14 @@ const docTemplate = `{
             "properties": {
                 "can_vote": {
                     "type": "boolean"
+                }
+            }
+        },
+        "response.CaptureResponse": {
+            "type": "object",
+            "properties": {
+                "image_url": {
+                    "type": "string"
                 }
             }
         },
@@ -7864,6 +8787,9 @@ const docTemplate = `{
                 "priceBTC": {
                     "type": "string"
                 },
+                "priceBrc20": {
+                    "$ref": "#/definitions/entity.PriceBRC20Obj"
+                },
                 "priceETH": {
                     "type": "string"
                 },
@@ -7886,6 +8812,9 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "tokenID": {
+                    "type": "string"
+                },
+                "tokenIDData": {
                     "type": "string"
                 }
             }
@@ -7955,6 +8884,9 @@ const docTemplate = `{
                 "avatar": {
                     "type": "string"
                 },
+                "banner": {
+                    "type": "string"
+                },
                 "bio": {
                     "type": "string"
                 },
@@ -7970,11 +8902,17 @@ const docTemplate = `{
                 "id": {
                     "type": "string"
                 },
+                "isArtist": {
+                    "type": "boolean"
+                },
                 "profileSocial": {
                     "$ref": "#/definitions/response.ProfileSocial"
                 },
                 "proposal": {
                     "$ref": "#/definitions/response.DaoArtist"
+                },
+                "slug": {
+                    "type": "string"
                 },
                 "walletAddress": {
                     "type": "string"
@@ -8083,6 +9021,12 @@ const docTemplate = `{
                 "animationHtml": {
                     "type": "string"
                 },
+                "auctionWinnerList": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/entity.AuctionWinnerList"
+                    }
+                },
                 "blockNumberMinted": {
                     "type": "string"
                 },
@@ -8118,6 +9062,9 @@ const docTemplate = `{
                 },
                 "creatorProfile": {
                     "$ref": "#/definitions/response.ProfileResponse"
+                },
+                "currentUserBalanceGM": {
+                    "type": "string"
                 },
                 "desc": {
                     "type": "string"
@@ -8159,6 +9106,10 @@ const docTemplate = `{
                 "isReviewing": {
                     "type": "boolean"
                 },
+                "isSupportGMHolder": {
+                    "description": "GM whitelist holder",
+                    "type": "boolean"
+                },
                 "isSynced": {
                     "type": "boolean"
                 },
@@ -8179,6 +9130,9 @@ const docTemplate = `{
                 },
                 "maxSupply": {
                     "type": "integer"
+                },
+                "minimumGMSupport": {
+                    "type": "string"
                 },
                 "mintPrice": {
                     "type": "string"

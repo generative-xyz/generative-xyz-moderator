@@ -95,3 +95,32 @@ func (h *httpDelivery) ParseHtml(w http.ResponseWriter, r *http.Request) {
 		},
 	).ServeHTTP(w, r)
 }
+
+// Capture
+// @Summary open url
+// @Description open url
+// @Tags Photographer
+// @Accept  json
+// @Produce  json
+// @Param json body request.ParseSvgRequest true "capture request"
+// @Security Authorization
+// @Success 200 {object} response.JsonResponse{data=response.CaptureResponse}
+// @Router /photo/open-url [POST]
+func (h *httpDelivery) OpenUrl(w http.ResponseWriter, r *http.Request) {
+	response.NewRESTHandlerTemplate(
+		func(ctx context.Context, r *http.Request, vars map[string]string) (interface{}, error) {
+			var req request.ParseSvgRequest
+			err := _req.BindJson(r, &req)
+			if err != nil {
+				return nil, err
+			}
+			image, err := h.Usecase.OpenUrl(req)
+			if err != nil {
+				return nil, err
+			}
+
+			return image, nil
+
+		},
+	).ServeHTTP(w, r)
+}

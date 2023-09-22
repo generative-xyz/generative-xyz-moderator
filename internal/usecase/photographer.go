@@ -3,6 +3,7 @@ package usecase
 import (
 	"context"
 	"fmt"
+	"github.com/chromedp/cdproto/dom"
 	"go.uber.org/zap"
 	"log"
 	"os"
@@ -119,6 +120,10 @@ type ParsedHtml struct {
 	Traits map[string]string `json:"traits"`
 }
 
+type ParsedRedirectHtml struct {
+	Html string `json:"html"`
+}
+
 func (u Usecase) CaptureHtmlContent(req request.ParseSvgRequest) (*ParsedHtml, error) {
 	id := req.ID
 	url := req.Url
@@ -187,4 +192,63 @@ func (u Usecase) CaptureHtmlContent(req request.ParseSvgRequest) (*ParsedHtml, e
 	err = fmt.Errorf("capture error")
 	logger.AtLog.Logger.Error("CaptureHtmlContent - UploadBaseToBucket", zap.Any("req", req), zap.Error(err))
 	return nil, err
+}
+
+func (u Usecase) OpenUrl(req request.ParseSvgRequest) (*ParsedRedirectHtml, error) {
+	id := req.ID
+	url := req.Url
+	duration := req.DelayTime
+
+	eCH, err := strconv.ParseBool(os.Getenv("ENABLED_CHROME_HEADLESS"))
+	if err != nil {
+		logger.AtLog.Logger.Error("OpenUrl",
+			zap.Any("req", req),
+			zap.Error(err),
+			zap.String("app", id),
+		)
+		return nil, err
+	}
+	opts := append(chromedp.DefaultExecAllocatorOptions[:],
+		//chromedp.ExecPath("google-chrome"),
+		chromedp.Flag("headless", eCH),
+		chromedp.Flag("disable-gpu", false),
+		chromedp.Flag("no-first-run", true),
+	)
+	allocCtx, _ := chromedp.NewExecAllocator(context.Background(), opts...)
+	cctx, cancel := chromedp.NewContext(allocCtx)
+
+	//avoid overlap html
+	ackCtx, cancel := context.WithTimeout(cctx, time.Duration(duration)*5*time.Second)
+	defer cancel()
+	var body string
+
+	err = chromedp.Run(ackCtx,
+		chromedp.Navigate(url),
+		chromedp.Sleep(time.Second*time.Duration(duration)),
+		chromedp.ActionFunc(func(ctx context.Context) error {
+			node, err := dom.GetDocument().Do(ctx)
+			if err != nil {
+				return fmt.Errorf("could not get doc: %w", err)
+			}
+
+			body, err = dom.GetOuterHTML().WithNodeID(node.NodeID).Do(ctx)
+			if err != nil {
+				return fmt.Errorf("could not get html: %w", err)
+			}
+			return nil
+		}),
+	)
+
+	if err != nil {
+		logger.AtLog.Logger.Error("OpenUrl",
+			zap.Any("req", req),
+			zap.Error(err),
+			zap.String("app", id),
+		)
+		return nil, err
+	}
+
+	return &ParsedRedirectHtml{
+		Html: body,
+	}, err
 }

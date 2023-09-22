@@ -34,6 +34,17 @@ definitions:
     x-enum-varnames:
     - Against
     - Voted
+  entity.AuctionWinnerList:
+    properties:
+      address:
+        type: string
+      ethAddress:
+        type: string
+      mintPrice:
+        type: integer
+      quantity:
+        type: integer
+    type: object
   entity.BaseEntity:
     properties:
       created_at:
@@ -171,6 +182,15 @@ definitions:
       totalPage:
         type: integer
     type: object
+  entity.PriceBRC20Obj:
+    properties:
+      address:
+        type: string
+      offering_id:
+        type: string
+      value:
+        type: string
+    type: object
   entity.ProfileSocial:
     properties:
       discord:
@@ -219,6 +239,10 @@ definitions:
     properties:
       animationHtml:
         type: string
+      auctionWinnerList:
+        items:
+          $ref: '#/definitions/entity.AuctionWinnerList'
+        type: array
       block_number_minted:
         type: string
       categories:
@@ -251,6 +275,8 @@ definitions:
         type: boolean
       genNFTAddr:
         type: string
+      hasZipFile:
+        type: boolean
       hash:
         type: string
       htmlFile:
@@ -264,9 +290,14 @@ definitions:
         type: string
       inscriptionIcon:
         type: string
+      isBigFile:
+        type: boolean
       isFullChain:
         type: boolean
       isHidden:
+        type: boolean
+      isSupportGMHolder:
+        description: GM whitelist holder
         type: boolean
       isSynced:
         type: boolean
@@ -280,6 +311,8 @@ definitions:
         type: integer
       maxSupply:
         type: integer
+      minimumGMSupport:
+        type: string
       mintFee:
         type: integer
       mintPrice:
@@ -465,10 +498,14 @@ definitions:
     enum:
     - eth
     - btc
+    - pepe
+    - turbo
     type: string
     x-enum-varnames:
     - ETH
     - BIT
+    - PEPE
+    - TURBO
   entity.TokenStats:
     properties:
       price_int:
@@ -484,6 +521,8 @@ definitions:
         type: string
       block_number_minted:
         type: string
+      buyable:
+        type: boolean
       contract_address:
         type: string
       created_at:
@@ -542,6 +581,8 @@ definitions:
         type: array
       parsed_image:
         type: string
+      priceBrc20:
+        $ref: '#/definitions/entity.PriceBRC20Obj'
       priority:
         type: integer
       project:
@@ -619,6 +660,8 @@ definitions:
     properties:
       avatar:
         type: string
+      banner:
+        type: string
       bio:
         type: string
       created_at:
@@ -637,6 +680,8 @@ definitions:
         type: string
       profile_social:
         $ref: '#/definitions/entity.ProfileSocial'
+      slug:
+        type: string
       stats:
         $ref: '#/definitions/entity.UserStats'
       verifiedAt:
@@ -712,6 +757,13 @@ definitions:
         type: string
       traits: {}
     type: object
+  request.CaptureRequest:
+    properties:
+      device_id:
+        type: string
+      display_url:
+        type: string
+    type: object
   request.CheckBalanceAddressReq:
     properties:
       address:
@@ -748,6 +800,9 @@ definitions:
         type: string
       isFullChain:
         type: boolean
+      isSupportGMHolder:
+        description: GM whitelist holder
+        type: boolean
       license:
         type: string
       limitMintPerProcess:
@@ -756,6 +811,8 @@ definitions:
         type: integer
       maxSupply:
         type: integer
+      minimumGMSupport:
+        type: string
       mintPrice:
         type: string
       name:
@@ -867,6 +924,9 @@ definitions:
         type: string
       isFullChain:
         type: boolean
+      isSupportGMHolder:
+        description: GM whitelist holder
+        type: boolean
       license:
         type: string
       limitMintPerProcess:
@@ -875,6 +935,8 @@ definitions:
         type: integer
       maxSupply:
         type: integer
+      minimumGMSupport:
+        type: string
       mintPrice:
         type: string
       name:
@@ -1064,6 +1126,15 @@ definitions:
       seller_ord_address:
         type: string
     type: object
+  request.ParseSvgRequest:
+    properties:
+      app_id:
+        type: string
+      delay_time:
+        type: integer
+      display_url:
+        type: string
+    type: object
   request.ProfileSocial:
     properties:
       discord:
@@ -1088,6 +1159,10 @@ definitions:
     properties:
       bid_price:
         type: number
+      collector_redirect_to:
+        type: string
+      quantity:
+        type: integer
       wallet_address:
         type: string
     type: object
@@ -1110,10 +1185,15 @@ definitions:
         type: string
       isHidden:
         type: boolean
+      isSupportGMHolder:
+        description: GM whitelist holder
+        type: boolean
       limitMintPerProcess:
         type: integer
       maxSupply:
         type: integer
+      minimumGMSupport:
+        type: string
       mintPrice:
         type: string
       name:
@@ -1137,6 +1217,8 @@ definitions:
     properties:
       avatar:
         type: string
+      banner:
+        type: string
       bio:
         type: string
       displayName:
@@ -1152,6 +1234,11 @@ definitions:
     type: object
   request.UpdateProjectReq:
     properties:
+      isSupportGMHolder:
+        description: GM whitelist holder
+        type: boolean
+      minimumGMSupport:
+        type: string
       priority:
         type: integer
     type: object
@@ -1221,6 +1308,11 @@ definitions:
     properties:
       can_vote:
         type: boolean
+    type: object
+  response.CaptureResponse:
+    properties:
+      image_url:
+        type: string
     type: object
   response.CategoryResp:
     properties:
@@ -1473,6 +1565,8 @@ definitions:
         type: string
       priceBTC:
         type: string
+      priceBrc20:
+        $ref: '#/definitions/entity.PriceBRC20Obj'
       priceETH:
         type: string
       priority:
@@ -1488,6 +1582,8 @@ definitions:
       thumbnail:
         type: string
       tokenID:
+        type: string
+      tokenIDData:
         type: string
     type: object
   response.JsonResponse:
@@ -1532,6 +1628,8 @@ definitions:
     properties:
       avatar:
         type: string
+      banner:
+        type: string
       bio:
         type: string
       canCreateProposal:
@@ -1542,10 +1640,14 @@ definitions:
         type: string
       id:
         type: string
+      isArtist:
+        type: boolean
       profileSocial:
         $ref: '#/definitions/response.ProfileSocial'
       proposal:
         $ref: '#/definitions/response.DaoArtist'
+      slug:
+        type: string
       walletAddress:
         type: string
       walletAddressBtc:
@@ -1616,6 +1718,10 @@ definitions:
     properties:
       animationHtml:
         type: string
+      auctionWinnerList:
+        items:
+          $ref: '#/definitions/entity.AuctionWinnerList'
+        type: array
       blockNumberMinted:
         type: string
       btcFloorPrice:
@@ -1640,6 +1746,8 @@ definitions:
         type: string
       creatorProfile:
         $ref: '#/definitions/response.ProfileResponse'
+      currentUserBalanceGM:
+        type: string
       desc:
         type: string
       editableIsHidden:
@@ -1667,6 +1775,9 @@ definitions:
         type: boolean
       isReviewing:
         type: boolean
+      isSupportGMHolder:
+        description: GM whitelist holder
+        type: boolean
       isSynced:
         type: boolean
       itemDesc:
@@ -1681,6 +1792,8 @@ definitions:
         type: integer
       maxSupply:
         type: integer
+      minimumGMSupport:
+        type: string
       mintPrice:
         type: string
       mintPriceAddr:
@@ -1971,6 +2084,98 @@ info:
   title: Generative.xyz APIs
   version: 1.0.0
 paths:
+  /action/project/{projectID}/dislike:
+    post:
+      consumes:
+      - application/json
+      description: dislike project
+      parameters:
+      - description: projectID
+        in: path
+        name: projectID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.JsonResponse'
+      security:
+      - Authorization: []
+      summary: dislike project
+      tags:
+      - Like & dislike
+  /action/project/{projectID}/like:
+    post:
+      consumes:
+      - application/json
+      description: like project
+      parameters:
+      - description: projectID
+        in: path
+        name: projectID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.JsonResponse'
+      security:
+      - Authorization: []
+      summary: like project
+      tags:
+      - Like & dislike
+  /action/tokens/{tokenID}/dislike:
+    post:
+      consumes:
+      - application/json
+      description: dislike token
+      parameters:
+      - description: token ID
+        in: path
+        name: tokenID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.JsonResponse'
+      security:
+      - Authorization: []
+      summary: dislike token
+      tags:
+      - Like & dislike
+  /action/tokens/{tokenID}/like:
+    post:
+      consumes:
+      - application/json
+      description: like token
+      parameters:
+      - description: token ID
+        in: path
+        name: tokenID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.JsonResponse'
+      security:
+      - Authorization: []
+      summary: like token
+      tags:
+      - Like & dislike
   /admin-test:
     get:
       consumes:
@@ -2368,6 +2573,21 @@ paths:
     get:
       consumes:
       - application/json
+      description: GM deposit analytics
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.JsonResponse'
+      summary: GM deposit analytics
+      tags:
+      - CollectionListing
+  /charts/gm-collections/deposit:
+    get:
+      consumes:
+      - application/json
       description: get list CollectionListing
       parameters:
       - description: projectID
@@ -2387,7 +2607,27 @@ paths:
             $ref: '#/definitions/response.JsonResponse'
       summary: CollectionListing
       tags:
-      - CollectionListing
+      - Charts
+  /charts/gm-collections/extra/{address}/deposit:
+    get:
+      consumes:
+      - application/json
+      description: get list CollectionListing
+      parameters:
+      - description: address
+        in: path
+        name: address
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.JsonResponse'
+      summary: CollectionListing
+      tags:
+      - Charts
   /charts/tokens/{tokenID}/charts:
     get:
       consumes:
@@ -3683,6 +3923,10 @@ paths:
         name: genNFTAddr
         required: true
         type: string
+      - description: ignore cache
+        in: query
+        name: refresh
+        type: string
       produces:
       - application/json
       responses:
@@ -3751,6 +3995,14 @@ paths:
         in: query
         name: is_nft_owner
         type: string
+      - description: Is closed, default all
+        in: query
+        name: closed
+        type: boolean
+      - description: Is finished, default all
+        in: query
+        name: finished
+        type: boolean
       - description: sort by field
         in: query
         name: sort_by
@@ -3924,6 +4176,122 @@ paths:
       summary: get ordinal template
       tags:
       - Ordinal collection
+  /photo/capture:
+    post:
+      consumes:
+      - application/json
+      description: captures url content as image
+      parameters:
+      - description: capture request
+        in: body
+        name: json
+        required: true
+        schema:
+          $ref: '#/definitions/request.CaptureRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.JsonResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.CaptureResponse'
+              type: object
+      security:
+      - Authorization: []
+      summary: captures url content as image
+      tags:
+      - Photographer
+  /photo/open-url:
+    post:
+      consumes:
+      - application/json
+      description: open url
+      parameters:
+      - description: capture request
+        in: body
+        name: json
+        required: true
+        schema:
+          $ref: '#/definitions/request.ParseSvgRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.JsonResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.CaptureResponse'
+              type: object
+      security:
+      - Authorization: []
+      summary: open url
+      tags:
+      - Photographer
+  /photo/pare-html:
+    post:
+      consumes:
+      - application/json
+      description: parse html
+      parameters:
+      - description: capture request
+        in: body
+        name: json
+        required: true
+        schema:
+          $ref: '#/definitions/request.ParseSvgRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.JsonResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.CaptureResponse'
+              type: object
+      security:
+      - Authorization: []
+      summary: parse html
+      tags:
+      - Photographer
+  /photo/pare-svg:
+    post:
+      consumes:
+      - application/json
+      description: captures svg and response png
+      parameters:
+      - description: capture request
+        in: body
+        name: json
+        required: true
+        schema:
+          $ref: '#/definitions/request.ParseSvgRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.JsonResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.CaptureResponse'
+              type: object
+      security:
+      - Authorization: []
+      summary: captures svg
+      tags:
+      - Photographer
   /profile:
     get:
       consumes:
@@ -4331,6 +4699,39 @@ paths:
       summary: Update project
       tags:
       - Project
+  /project/{contractAddress}/{projectID}/{walletAddress}/allow-list-gm:
+    post:
+      consumes:
+      - application/json
+      description: Create project's allow list
+      parameters:
+      - description: contractAddress request
+        in: path
+        name: contractAddress
+        required: true
+        type: string
+      - description: projectID request
+        in: path
+        name: projectID
+        required: true
+        type: string
+      - description: walletAddress request
+        in: path
+        name: walletAddress
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.JsonResponse'
+      security:
+      - Authorization: []
+      summary: Create project's allow list
+      tags:
+      - Project
   /project/{contractAddress}/{projectID}/allow-list:
     get:
       consumes:
@@ -4456,6 +4857,44 @@ paths:
       summary: Search Token
       tags:
       - Search
+  /project/{contractAddress}/{projectID}/token-onwers/analytics:
+    get:
+      consumes:
+      - application/json
+      description: Calculate Token's Onwers by project
+      parameters:
+      - description: page
+        in: query
+        name: page
+        type: string
+      - description: limit
+        in: query
+        name: limit
+        type: integer
+      - description: search
+        in: query
+        name: search
+        type: string
+      - description: projectID request
+        in: path
+        name: projectID
+        required: true
+        type: string
+      - description: contractAddress request
+        in: path
+        name: contractAddress
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.JsonResponse'
+      summary: Calculate Token's Onwers by project
+      tags:
+      - Project
   /project/{contractAddress}/tokens/{projectID}:
     get:
       consumes:
@@ -5087,6 +5526,144 @@ paths:
       summary: Search
       tags:
       - Search
+  /soralis/tokens:
+    get:
+      description: Get all tokens
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.JsonResponse'
+      security:
+      - Authorization: []
+      summary: Get all tokens
+      tags:
+      - Soralis
+  /soralis/tokens/{tokenAddress}/balance/{walletAddress}:
+    get:
+      description: Get token's detail
+      parameters:
+      - description: token address
+        in: path
+        name: tokenAddress
+        required: true
+        type: string
+      - description: wallet address
+        in: path
+        name: walletAddress
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.JsonResponse'
+      security:
+      - Authorization: []
+      summary: Get token's detail
+      tags:
+      - Soralis
+    post:
+      description: Get token's detail
+      parameters:
+      - description: token address
+        in: path
+        name: tokenAddress
+        required: true
+        type: string
+      - description: wallet address
+        in: path
+        name: walletAddress
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.JsonResponse'
+      security:
+      - Authorization: []
+      summary: Get token's detail
+      tags:
+      - Soralis
+  /soralis/tokens/{tokenAddress}/balance/{walletAddress}/time-travel:
+    get:
+      description: Get token's detail
+      parameters:
+      - description: token address
+        in: path
+        name: tokenAddress
+        required: true
+        type: string
+      - description: wallet address
+        in: path
+        name: walletAddress
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.JsonResponse'
+      security:
+      - Authorization: []
+      tags:
+      - Soralis
+  /soralis/tokens/{tokenAddress}/price/current:
+    get:
+      description: Get token's current price
+      parameters:
+      - description: token address
+        in: path
+        name: tokenAddress
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.JsonResponse'
+      security:
+      - Authorization: []
+      summary: Get token's current price
+      tags:
+      - Soralis
+  /soralis/tokens/{tokenAddress}/price/min-max:
+    get:
+      description: Get token's min-max price
+      parameters:
+      - description: token address
+        in: path
+        name: tokenAddress
+        required: true
+        type: string
+      - description: 'default: hour'
+        in: query
+        name: chartType
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.JsonResponse'
+      security:
+      - Authorization: []
+      summary: Get token's min-max price
+      tags:
+      - Soralis
+  /soralis/tokens/{tokenAddress}/time-travel:
+    get:
+      description: Get token's time-travel
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.JsonResponse'
+      security:
+      - Authorization: []
+      summary: Get token's time-travel
+      tags:
+      - Soralis
   /token-activities:
     get:
       consumes:
@@ -5367,6 +5944,27 @@ paths:
       summary: get token uri data
       tags:
       - Tokens
+  /tokens/{tokenID}/minting-info:
+    get:
+      consumes:
+      - application/json
+      description: get token minting info
+      parameters:
+      - description: token ID
+        in: path
+        name: tokenID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.JsonResponse'
+      summary: get token minting info
+      tags:
+      - TokenUri
   /tokens/{tokenID}/thumbnail:
     post:
       consumes:
