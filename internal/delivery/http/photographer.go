@@ -143,7 +143,7 @@ func (h *httpDelivery) ParseHtmlV2(w http.ResponseWriter, r *http.Request) {
 			if err != nil {
 				return nil, err
 			}
-			image, err := h.Usecase.CaptureHtmlContent(req)
+			image, err := h.Usecase.CaptureHtmlContentv2(req)
 			if err != nil {
 				return nil, err
 			}

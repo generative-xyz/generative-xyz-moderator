@@ -9,4 +9,5 @@ type ParseSvgRequest struct {
 	Url       string `json:"display_url"`
 	ID        string `json:"app_id"`
 	DelayTime int    `json:"delay_time"`
+	ViewID    string `json:"view_id"`
 }
