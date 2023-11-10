@@ -140,7 +140,9 @@ func (u Usecase) CaptureHtmlContent(req request.ParseSvgRequest) (*ParsedHtml, e
 		chromedp.Flag("disable-gpu", false),
 		chromedp.Flag("no-first-run", true),
 	)
-	allocCtx, _ := chromedp.NewExecAllocator(context.Background(), opts...)
+
+	ctx := context.Background()
+	allocCtx, _ := chromedp.NewExecAllocator(ctx, opts...)
 	cctx, cancel := chromedp.NewContext(allocCtx)
 
 	//avoid overlap html
@@ -154,7 +156,6 @@ func (u Usecase) CaptureHtmlContent(req request.ParseSvgRequest) (*ParsedHtml, e
 		chromedp.Navigate(url),
 		chromedp.Sleep(time.Second*time.Duration(duration)),
 		chromedp.CaptureScreenshot(&buf),
-		chromedp.EvaluateAsDevTools("window.$generativeTraits", &traits),
 	)
 	if err != nil {
 		logger.AtLog.Logger.Error("CaptureHtmlContent - chromedp.Run", zap.Any("req", req), zap.Error(err))
