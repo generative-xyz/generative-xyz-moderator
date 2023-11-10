@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/chromedp/cdproto/dom"
+	"github.com/chromedp/cdproto/page"
 	"go.uber.org/zap"
 	"log"
 	"os"
@@ -198,8 +199,37 @@ func (u Usecase) CaptureHtmlContent(req request.ParseSvgRequest) (*ParsedHtml, e
 
 func (u Usecase) elementScreenshot(sel string, res *[]byte) chromedp.Tasks {
 	return chromedp.Tasks{
-		chromedp.Screenshot(sel, res, chromedp.NodeVisible),
+		chromedp.Screenshot(sel, res, chromedp.NodeReady),
 	}
+}
+
+func (u Usecase) loadHTMLFromStringActionFunc(content string) chromedp.ActionFunc {
+	return chromedp.ActionFunc(func(ctx context.Context) error {
+		ch := make(chan bool, 1)
+		defer close(ch)
+
+		go chromedp.ListenTarget(ctx, func(ev interface{}) {
+			if _, ok := ev.(*page.EventLoadEventFired); ok {
+				ch <- true
+			}
+		})
+
+		frameTree, err := page.GetFrameTree().Do(ctx)
+		if err != nil {
+			return err
+		}
+
+		if err := page.SetDocumentContent(frameTree.Frame.ID, content).Do(ctx); err != nil {
+			return err
+		}
+
+		select {
+		case <-ch:
+			return nil
+		case <-ctx.Done():
+			return context.DeadlineExceeded
+		}
+	})
 }
 
 func (u Usecase) CaptureHtmlContentv2(req request.ParseSvgRequest) (*ParsedHtml, error) {
@@ -221,26 +251,33 @@ func (u Usecase) CaptureHtmlContentv2(req request.ParseSvgRequest) (*ParsedHtml,
 
 	ctx := context.Background()
 	allocCtx, _ := chromedp.NewExecAllocator(ctx, opts...)
-	cctx, cancel := chromedp.NewContext(allocCtx)
+	cctx, cancel1 := chromedp.NewContext(allocCtx)
+	defer cancel1()
 
 	//avoid overlap html
-	ackCtx, cancel := context.WithTimeout(cctx, time.Duration(duration)*5*time.Second)
-	defer cancel()
+	ackCtx, cancel2 := context.WithTimeout(cctx, time.Duration(duration)*50*time.Second)
+	defer cancel2()
 
 	var buf []byte
 	traits := make(map[string]interface{})
 
-	actions := []chromedp.Action{
-		chromedp.EmulateViewport(960, 960),
-		chromedp.Navigate(url),
-		chromedp.Sleep(time.Second * time.Duration(duration)),
+	w := 650
+	h := 500
+	if req.Width != 0 {
+		w = req.Width
 	}
 
-	if req.ViewID != "" {
-		actions = append(actions, u.elementScreenshot(req.ViewID, &buf))
-	} else {
-		actions = append(actions, chromedp.CaptureScreenshot(&buf))
+	if req.Height != 0 {
+		h = req.Height
 	}
+
+	actions := []chromedp.Action{
+		chromedp.EmulateViewport(int64(w), int64(h)),
+	}
+
+	actions = append(actions, chromedp.Navigate(url))
+	actions = append(actions, chromedp.Sleep(time.Second*time.Duration(duration)))
+	actions = append(actions, chromedp.CaptureScreenshot(&buf))
 
 	err = chromedp.Run(ackCtx, actions...)
 	if err != nil {
