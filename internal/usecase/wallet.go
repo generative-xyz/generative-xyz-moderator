@@ -8,16 +8,18 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"rederinghub.io/internal/delivery/http/request"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
 
+	"rederinghub.io/internal/delivery/http/request"
+
 	"go.uber.org/zap"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
 	"rederinghub.io/utils/btc"
+	"rederinghub.io/utils/hiro"
 	"rederinghub.io/utils/logger"
 )
 
@@ -313,6 +315,7 @@ func (u Usecase) InscriptionsByOutputs(outputs []string, currentListing []entity
 }
 
 func getInscriptionByOutput(ordServer, output string) (*structure.InscriptionOrdInfoByOutput, error) {
+
 	url := fmt.Sprintf("%s/api/output/%s", ordServer, output)
 	fmt.Println("url", url)
 	var result structure.InscriptionOrdInfoByOutput
@@ -354,9 +357,38 @@ func getInscriptionByOutput(ordServer, output string) (*structure.InscriptionOrd
 }
 
 func getInscriptionByID(ordServer, id string) (*structure.InscriptionOrdInfoByID, error) {
+	var result structure.InscriptionOrdInfoByID
+	hiroInsc, err := hiro.GetInscriptionByID(id)
+	if err == nil {
+		timestamp := time.Unix(hiroInsc.GenesisTimestamp, 0).UTC().Format(time.DateTime)
+		result = structure.InscriptionOrdInfoByID{
+			InscriptionID: hiroInsc.ID,
+			Number:        hiroInsc.Number,
+			ContentType:   hiroInsc.ContentType,
+			Satpoint:      hiroInsc.Location,
+			Sat:           0,
+			Chain:         "hiro",
+			Timestamp:     timestamp,
+			GenesisHeight: hiroInsc.GenesisBlockHeight,
+		}
+		v, err := strconv.ParseInt(hiroInsc.Value, 10, 64)
+		if err != nil {
+			return nil, err
+		}
+		result.Output.Value = int(v)
+
+		fee, err := strconv.ParseInt(hiroInsc.GenesisFee, 10, 64)
+		if err != nil {
+			return nil, err
+		}
+		result.GenesisFee = int(fee)
+
+		return &result, nil
+	}
+
 	url := fmt.Sprintf("%s/api/inscription/%s", ordServer, id)
 	// fmt.Println("url", url)
-	var result structure.InscriptionOrdInfoByID
+	// var result structure.InscriptionOrdInfoByID
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return nil, err
