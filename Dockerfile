@@ -1,4 +1,4 @@
-FROM golang:1.18-buster as deps
+FROM golang:1.21.0-bullseye as deps
 
 RUN apt-get -y update && apt-get -y upgrade && \
     apt-get -y install git && \
