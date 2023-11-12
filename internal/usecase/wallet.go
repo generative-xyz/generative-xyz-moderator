@@ -640,7 +640,7 @@ func preCheckOrdService(qn string) error {
 }
 
 func getORDBlockCount(ordServer string) (uint64, error) {
-	url := fmt.Sprintf("%s/blockcount", ordServer)
+	url := fmt.Sprintf("%s/block-count", ordServer)
 	fmt.Println("url", url)
 	var result uint64
 	req, err := http.NewRequest("GET", url, nil)
