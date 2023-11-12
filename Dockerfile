@@ -29,8 +29,8 @@ RUN apt-get -y install  software-properties-common && \
     apt-get -y install wget && \
     DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC apt-get -y install tzdata
 
-RUN wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
-RUN apt-get -y install ./google-chrome-stable_current_amd64.deb
+# RUN wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+# RUN apt-get -y install ./google-chrome-stable_current_amd64.deb
 
 WORKDIR /app
 
