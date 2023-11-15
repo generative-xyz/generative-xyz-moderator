@@ -366,6 +366,7 @@ func getInscriptionByID(ordServer, id string) (*structure.InscriptionOrdInfoByID
 			Number:        hiroInsc.Number,
 			ContentType:   hiroInsc.ContentType,
 			Satpoint:      hiroInsc.Location,
+			Address:       hiroInsc.Address,
 			Sat:           0,
 			Chain:         "hiro",
 			Timestamp:     timestamp,
