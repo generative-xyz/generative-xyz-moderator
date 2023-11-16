@@ -153,3 +153,32 @@ func (h *httpDelivery) ParseHtmlV2(w http.ResponseWriter, r *http.Request) {
 		},
 	).ServeHTTP(w, r)
 }
+
+// Capture
+// @Summary parse html
+// @Description parse html
+// @Tags Photographer
+// @Accept  json
+// @Produce  json
+// @Param json body request.ParseSvgRequest true "capture request"
+// @Security Authorization
+// @Success 200 {object} response.JsonResponse{data=response.CaptureResponse}
+// @Router /photo/pare-html-v3 [POST]
+func (h *httpDelivery) ParseHtmlV3(w http.ResponseWriter, r *http.Request) {
+	response.NewRESTHandlerTemplate(
+		func(ctx context.Context, r *http.Request, vars map[string]string) (interface{}, error) {
+			var req request.ParseSvgRequest
+			err := _req.BindJson(r, &req)
+			if err != nil {
+				return nil, err
+			}
+			image, err := h.Usecase.CaptureHtmlContentV3(req)
+			if err != nil {
+				return nil, err
+			}
+
+			return image, nil
+
+		},
+	).ServeHTTP(w, r)
+}

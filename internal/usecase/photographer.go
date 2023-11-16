@@ -376,3 +376,61 @@ func (u Usecase) OpenUrl(req request.ParseSvgRequest) (*ParsedRedirectHtml, erro
 		Html: body,
 	}, err
 }
+
+func (u Usecase) CaptureHtmlContentV3(req request.ParseSvgRequest) (*ParsedHtml, error) {
+	//id := req.ID
+	url := req.Url
+	duration := req.DelayTime
+
+	eCH, err := strconv.ParseBool(os.Getenv("ENABLED_CHROME_HEADLESS"))
+	if err != nil {
+		logger.AtLog.Logger.Error("CaptureHtmlContent", zap.Any("req", req), zap.Error(err))
+		return nil, err
+	}
+	opts := append(chromedp.DefaultExecAllocatorOptions[:],
+		//chromedp.ExecPath("google-chrome"),
+		chromedp.Flag("headless", eCH),
+		chromedp.Flag("disable-gpu", false),
+		chromedp.Flag("no-first-run", true),
+	)
+
+	ctx := context.Background()
+	allocCtx, _ := chromedp.NewExecAllocator(ctx, opts...)
+	cctx, cancel := chromedp.NewContext(allocCtx)
+
+	//avoid overlap html
+	ackCtx, cancel := context.WithTimeout(cctx, time.Duration(duration)*5*time.Second)
+	defer cancel()
+
+	var buf []byte
+	traits := make(map[string]interface{})
+	err = chromedp.Run(ackCtx,
+		chromedp.EmulateViewport(960, 960),
+		chromedp.Navigate(url),
+		chromedp.Sleep(time.Second*time.Duration(duration)),
+		chromedp.CaptureScreenshot(&buf),
+		chromedp.EvaluateAsDevTools("window.$generativeTraits", &traits),
+	)
+	if err != nil {
+		logger.AtLog.Logger.Error("CaptureHtmlContent - chromedp.Run", zap.Any("req", req), zap.Error(err))
+		return nil, err
+	}
+
+	image := helpers.Base64Encode(buf)
+	base64Image := fmt.Sprintf("%s,%s", "data:image/png;base64", image)
+	if image != "" {
+		traitsResp := make(map[string]string)
+		for key, item := range traits {
+			traitsResp[key] = fmt.Sprintf("%v", item)
+		}
+
+		return &ParsedHtml{
+			Image:  base64Image,
+			Traits: traitsResp,
+		}, nil
+	}
+
+	err = fmt.Errorf("capture error")
+	logger.AtLog.Logger.Error("CaptureHtmlContent - UploadBaseToBucket", zap.Any("req", req), zap.Error(err))
+	return nil, err
+}
