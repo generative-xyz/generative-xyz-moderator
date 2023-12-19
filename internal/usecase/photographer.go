@@ -434,3 +434,99 @@ func (u Usecase) CaptureHtmlContentV3(req request.ParseSvgRequest) (*ParsedHtml,
 	logger.AtLog.Logger.Error("CaptureHtmlContent - UploadBaseToBucket", zap.Any("req", req), zap.Error(err))
 	return nil, err
 }
+
+func (u Usecase) CaptureHtmlContentV4(req request.ParseSvgRequest) (*ParsedHtml, error) {
+	//id := req.ID
+	html := req.HtmlContent
+	duration := req.DelayTime
+
+	if req.Width == 0 {
+		req.Width = 960
+	}
+
+	if req.Height == 0 {
+		req.Height = 960
+	}
+
+	eCH, err := strconv.ParseBool(os.Getenv("ENABLED_CHROME_HEADLESS"))
+	if err != nil {
+		logger.AtLog.Logger.Error("CaptureHtmlContent", zap.Any("req", req), zap.Error(err))
+		return nil, err
+	}
+	opts := append(chromedp.DefaultExecAllocatorOptions[:],
+		//chromedp.ExecPath("google-chrome"),
+		chromedp.Flag("headless", eCH),
+		chromedp.Flag("disable-gpu", false),
+		chromedp.Flag("no-first-run", true),
+	)
+
+	ctx := context.Background()
+	allocCtx, _ := chromedp.NewExecAllocator(ctx, opts...)
+	cctx, cancel := chromedp.NewContext(allocCtx)
+
+	//avoid overlap html
+	ackCtx, cancel := context.WithTimeout(cctx, time.Duration(duration)*5*time.Second)
+	defer cancel()
+
+	var buf []byte
+	traits := make(map[string]interface{})
+	err = chromedp.Run(ackCtx,
+		chromedp.EmulateViewport(int64(req.Width), int64(req.Height)),
+		chromedp.Navigate("about:blank"),
+		loadHTMLFromStringActionFunc(html),
+		chromedp.Sleep(time.Second*time.Duration(duration)),
+		chromedp.CaptureScreenshot(&buf),
+		chromedp.EvaluateAsDevTools("window.$generativeTraits", &traits),
+	)
+	if err != nil {
+		logger.AtLog.Logger.Error("CaptureHtmlContent - chromedp.Run", zap.Any("req", req), zap.Error(err))
+		return nil, err
+	}
+
+	image := helpers.Base64Encode(buf)
+	base64Image := fmt.Sprintf("%s,%s", "data:image/png;base64", image)
+	if image != "" {
+		traitsResp := make(map[string]string)
+		for key, item := range traits {
+			traitsResp[key] = fmt.Sprintf("%v", item)
+		}
+
+		return &ParsedHtml{
+			Image:  base64Image,
+			Traits: traitsResp,
+		}, nil
+	}
+
+	err = fmt.Errorf("capture error")
+	logger.AtLog.Logger.Error("CaptureHtmlContent - UploadBaseToBucket", zap.Any("req", req), zap.Error(err))
+	return nil, err
+}
+
+func loadHTMLFromStringActionFunc(content string) chromedp.ActionFunc {
+	return chromedp.ActionFunc(func(ctx context.Context) error {
+		ch := make(chan bool, 1)
+		defer close(ch)
+
+		go chromedp.ListenTarget(ctx, func(ev interface{}) {
+			if _, ok := ev.(*page.EventLoadEventFired); ok {
+				ch <- true
+			}
+		})
+
+		frameTree, err := page.GetFrameTree().Do(ctx)
+		if err != nil {
+			return err
+		}
+
+		if err := page.SetDocumentContent(frameTree.Frame.ID, content).Do(ctx); err != nil {
+			return err
+		}
+
+		select {
+		case <-ch:
+			return nil
+		case <-ctx.Done():
+			return context.DeadlineExceeded
+		}
+	})
+}
