@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/chromedp/cdproto/dom"
 	"github.com/chromedp/cdproto/page"
@@ -470,36 +471,61 @@ func (u Usecase) CaptureHtmlContentV4(req request.ParseSvgRequest) (*ParsedHtml,
 
 	var buf []byte
 	traits := make(map[string]interface{})
-	err = chromedp.Run(ackCtx,
-		chromedp.EmulateViewport(int64(req.Width), int64(req.Height)),
-		chromedp.Navigate("about:blank"),
-		loadHTMLFromStringActionFunc(html),
-		chromedp.Sleep(time.Second*time.Duration(duration)),
-		chromedp.CaptureScreenshot(&buf),
-		chromedp.EvaluateAsDevTools("window.$generativeTraits", &traits),
-	)
+
+	actions := []chromedp.Action{}
+	actions = append(actions, chromedp.EmulateViewport(int64(req.Width), int64(req.Height)))
+
+	if html != "" {
+		actions = append(actions, chromedp.Navigate("about:blank"))
+		actions = append(actions, loadHTMLFromStringActionFunc(html))
+	} else {
+		url := req.Url
+		actions = append(actions, chromedp.Navigate(url))
+	}
+
+	actions = append(actions, chromedp.Sleep(time.Second*time.Duration(duration)))
+	//actions = append(actions, chromedp.CaptureScreenshot(&buf))
+
+	if req.CaptureElement != "" {
+		actions = append(actions, u.elementScreenshot(req.CaptureElement, &buf))
+	} else {
+		actions = append(actions, chromedp.CaptureScreenshot(&buf))
+	}
+
+	actions = append(actions, chromedp.EvaluateAsDevTools("window.$generativeTraits", &traits))
+
+	err = chromedp.Run(ackCtx, actions...)
 	if err != nil {
 		logger.AtLog.Logger.Error("CaptureHtmlContent - chromedp.Run", zap.Any("req", req), zap.Error(err))
 		return nil, err
 	}
 
 	image := helpers.Base64Encode(buf)
-	base64Image := fmt.Sprintf("%s,%s", "data:image/png;base64", image)
-	if image != "" {
-		traitsResp := make(map[string]string)
-		for key, item := range traits {
-			traitsResp[key] = fmt.Sprintf("%v", item)
-		}
-
-		return &ParsedHtml{
-			Image:  base64Image,
-			Traits: traitsResp,
-		}, nil
+	//base64Image := fmt.Sprintf("%s,%s", "data:image/png;base64", image)
+	if image == "" {
+		err := errors.New("cannot capture image")
+		logger.AtLog.Logger.Error("CaptureHtmlContent - UploadBaseToBucket", zap.Any("req", req), zap.Error(err))
+		return nil, err
 	}
 
-	err = fmt.Errorf("capture error")
-	logger.AtLog.Logger.Error("CaptureHtmlContent - UploadBaseToBucket", zap.Any("req", req), zap.Error(err))
-	return nil, err
+	now := time.Now().UTC().Unix()
+	name := fmt.Sprintf("capture/%s-%d.png", req.ID, now)
+	uploaded, err := u.GCS.UploadBaseToBucket(image, name)
+	if err != nil {
+		logger.AtLog.Logger.Error("CaptureHtmlContent - UploadBaseToBucket", zap.Any("req", req), zap.Error(err))
+		return nil, err
+	}
+
+	traitsResp := make(map[string]string)
+	for key, item := range traits {
+		traitsResp[key] = fmt.Sprintf("%v", item)
+	}
+
+	imageURL := fmt.Sprintf("%s/%s", os.Getenv("GCS_DOMAIN"), uploaded.Name)
+	return &ParsedHtml{
+		Image:  imageURL,
+		Traits: traitsResp,
+	}, nil
 }
 
 func loadHTMLFromStringActionFunc(content string) chromedp.ActionFunc {
