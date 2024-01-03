@@ -28,7 +28,7 @@ func (u Usecase) SubmitBTCTransaction(list map[string]string) error {
 
 		listingOrder, err := u.Repo.GetDexBTCListingOrderPendingByInputs(outPointList)
 		if err != nil {
-			return fmt.Errorf("can't parse transaction")
+			return fmt.Errorf("GetDexBTCListingOrderPendingByInputs err %v", err)
 		}
 
 		for _, listing := range listingOrder {
