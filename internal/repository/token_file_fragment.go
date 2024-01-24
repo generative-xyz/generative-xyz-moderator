@@ -264,3 +264,29 @@ func (r Repository) AggregateMintingInfo(ctx context.Context, tokenID string) ([
 
 	return aggregation, nil
 }
+
+func (r Repository) AggregateModularInscriptions(ctx context.Context, projectID string, offset, limit int) ([]entity.TokenUri, error) {
+	f := bson.A{
+		bson.D{{"$match", bson.D{{"project_id", projectID}}}},
+		bson.D{{"$sort", bson.D{{"_id", -1}}}},
+		bson.D{{"$project", bson.D{
+			{"_id", 1},
+			{"token_id", 1},
+			{"owner_addrress", 1},
+		}}},
+		bson.D{{"$skip", offset}},
+		bson.D{{"$limit", limit}},
+	}
+
+	cursor, err := r.DB.Collection(entity.TokenUri{}.TableName()).Aggregate(ctx, f)
+	if err != nil {
+		return nil, err
+	}
+
+	aggregation := []entity.TokenUri{}
+	if err = cursor.All(ctx, &aggregation); err != nil {
+		return nil, err
+	}
+
+	return aggregation, nil
+}

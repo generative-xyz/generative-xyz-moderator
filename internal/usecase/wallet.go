@@ -360,7 +360,7 @@ func getInscriptionByID(ordServer, id string) (*structure.InscriptionOrdInfoByID
 	var result structure.InscriptionOrdInfoByID
 	hiroInsc, err := hiro.GetInscriptionByID(id)
 	if err == nil {
-		timestamp := time.Unix(hiroInsc.GenesisTimestamp, 0).UTC().Format(time.DateTime)
+		timestamp := time.Unix(hiroInsc.GenesisTimestamp, 0).UTC().Format(time.RFC3339)
 		result = structure.InscriptionOrdInfoByID{
 			InscriptionID: hiroInsc.ID,
 			Number:        hiroInsc.Number,

@@ -413,6 +413,9 @@ func (h *httpDelivery) RegisterV1Routes() {
 	action.HandleFunc("/tokens/{tokenID}/like", h.LikeTokenURI).Methods("POST")
 	action.HandleFunc("/tokens/{tokenID}/dislike", h.DisLikeTokenURI).Methods("POST")
 
+	modular := api.PathPrefix("/modular").Subrouter()
+	modular.HandleFunc("/inscriptions", h.ModularInscriptions).Methods("GET")
+
 }
 
 func (h *httpDelivery) RegisterDocumentRoutes() {
