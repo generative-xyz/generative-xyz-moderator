@@ -3,8 +3,13 @@ package usecase
 import (
 	"context"
 	"fmt"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.uber.org/zap"
 	"os"
 	"rederinghub.io/internal/usecase/structure"
+	"rederinghub.io/utils"
+	"rederinghub.io/utils/logger"
 	"strings"
 )
 
@@ -60,6 +65,10 @@ func (u Usecase) CrontabUpdateModularInscOwners(ctx context.Context) error {
 			if outFChan.IsUpdated {
 				//TODO - update owner
 				fmt.Println(fmt.Sprintf("[ins] %s-%s-%v", outFChan.InscriptionID, outFChan.OwnerAddress, outFChan.IsUpdated))
+				_, err := u.UpdateModularInscOwner(outFChan.InscriptionID, outFChan.OwnerAddress)
+				if err != nil {
+					logger.AtLog.Logger.Error("CrontabUpdateModularInscOwners", zap.Error(err), zap.String("token_id", outFChan.InscriptionID), zap.String("owner_address", outFChan.OwnerAddress))
+				}
 			}
 		}
 
@@ -92,4 +101,30 @@ func (u Usecase) FindModularInscOwner(in chan Ins, out chan InsOwner) {
 	}
 
 	addr = info.Address
+}
+
+func (u Usecase) UpdateModularInscOwner(insID string, ownerAddress string) (*mongo.UpdateResult, error) {
+	f := bson.D{
+		{"token_id", insID},
+		{"project_id", os.Getenv("MODULAR_PROJECT_ID")},
+	}
+
+	uupdate := bson.D{
+		{"owner_addrress", ownerAddress},
+	}
+
+	update := bson.D{{"$set", uupdate}}
+
+	//prevent update from local
+	if os.Getenv("ENV") != "mainnet" {
+		return nil, nil
+	}
+
+	result, err := u.Repo.DB.Collection(utils.COLLECTION_TOKEN_URI).UpdateOne(context.TODO(), f, update)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
+
 }
