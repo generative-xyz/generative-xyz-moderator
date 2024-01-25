@@ -6,6 +6,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"math"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
 	"rederinghub.io/utils"
@@ -293,14 +294,14 @@ func (r Repository) AggregateModularInscriptions(ctx context.Context, projectID 
 }
 
 func (r Repository) AggregateListModularInscriptions(ctx context.Context, filter structure.FilterTokens) (*entity.Pagination, error) {
-	match := bson.D{}
+	_match := bson.D{}
 
 	if filter.OwnerAddr != nil && *filter.OwnerAddr != "" {
-		match = append(match, bson.E{"owner_addrress", filter.OwnerAddr})
+		_match = append(_match, bson.E{"owner_addrress", filter.OwnerAddr})
 	}
 
 	if filter.GenNFTAddr != nil && *filter.GenNFTAddr != "" {
-		match = append(match, bson.E{"project_id", filter.GenNFTAddr})
+		_match = append(_match, bson.E{"project_id", filter.GenNFTAddr})
 	}
 
 	limit := int64(20)
@@ -316,7 +317,7 @@ func (r Repository) AggregateListModularInscriptions(ctx context.Context, filter
 
 	offset := (page - 1) * limit
 	f := bson.A{
-		bson.D{{"$match", match}},
+		bson.D{{"$match", _match}},
 		bson.D{{"$sort", bson.D{{"_id", -1}}}},
 		//bson.D{{"$project", bson.D{
 		//	{"_id", 1},
@@ -375,7 +376,7 @@ func (r Repository) AggregateListModularInscriptions(ctx context.Context, filter
 	}
 
 	countF := bson.A{
-		bson.D{{"$match", match}},
+		bson.D{{"$match", _match}},
 		bson.D{
 			{"$group",
 				bson.D{
@@ -400,10 +401,11 @@ func (r Repository) AggregateListModularInscriptions(ctx context.Context, filter
 		ap = aggregation1[0]
 	}
 	p := entity.Pagination{
-		Page:     page,
-		Total:    ap.Total,
-		PageSize: limit,
-		Result:   aggregation,
+		Page:      page,
+		Total:     ap.Total,
+		TotalPage: int64(math.Ceil(float64(ap.Total) / float64(limit))),
+		PageSize:  limit,
+		Result:    aggregation,
 	}
 	return &p, nil
 }

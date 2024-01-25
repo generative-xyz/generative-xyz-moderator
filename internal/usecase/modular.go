@@ -37,6 +37,7 @@ func (u Usecase) ListModulars(ctx context.Context, f structure.FilterTokens) (*e
 	return inscriptions, nil
 }
 
+// Crontab update owner of modular inscriptions
 func (u Usecase) CrontabUpdateModularInscOwners(ctx context.Context) error {
 
 	page := 1
@@ -139,4 +140,11 @@ func (u Usecase) UpdateModularInscOwner(insID string, ownerAddress string) (*mon
 
 	return result, nil
 
+}
+
+// Crontab add modular inscriptions
+func (u Usecase) CrontabAddModularInscs(ctx context.Context) error {
+	//TODO - implement me
+
+	return nil
 }
