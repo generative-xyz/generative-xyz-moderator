@@ -73,30 +73,6 @@ type TokenStats struct {
 	PriceInt *int64 `bson:"price_int,omitempty" json:"price_int,omitempty"`
 }
 
-type Total struct {
-	Total int64 `json:"total" bson:"total"`
-}
-
-type ModularTokenUri struct {
-	BaseEntityNoID      `bson:",inline"`
-	TokenID             string            `bson:"token_id" json:"token_id"`
-	Name                string            `bson:"name" json:"name"`
-	Description         string            `bson:"description" json:"description"`
-	Image               string            `bson:"image" json:"image"`
-	ParsedImage         *string           `bson:"parsed_image" json:"parsed_image"`
-	AnimationURL        string            `bson:"animation_url" json:"animation_url"`
-	ParsedAttributesStr []TokenUriAttrStr `bson:"parsed_attributes_str" json:"attributes"`
-	ProjectID           string            `bson:"project_id" json:"project_id"`
-	BlockNumberMinted   *string           `bson:"block_number_minted" json:"block_number_minted"`
-	MintedTime          *time.Time        `bson:"minted_time" json:"minted_time"`
-	Thumbnail           string            `bson:"thumbnail" json:"thumbnail"`
-
-	OwnerAddr string `bson:"owner_addrress" json:"owner_address"`
-	//accept duplicated data to query more faster
-	Owner   *Users    `bson:"owner" json:"owner"`
-	Project *Projects `bson:"project" json:"project"`
-}
-
 type TokenUri struct {
 	BaseEntityNoID      `bson:",inline"`
 	TokenID             string            `bson:"token_id" json:"token_id"`
