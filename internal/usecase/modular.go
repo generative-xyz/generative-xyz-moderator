@@ -3,6 +3,7 @@ package usecase
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -10,6 +11,7 @@ import (
 	"net/url"
 	"os"
 	"rederinghub.io/internal/entity"
+	"rederinghub.io/internal/repository"
 	"rederinghub.io/internal/usecase/structure"
 	"rederinghub.io/utils"
 	"rederinghub.io/utils/btc"
@@ -17,7 +19,13 @@ import (
 	"rederinghub.io/utils/logger"
 	"strconv"
 	"strings"
+	"time"
 )
+
+type CreatedTokenChan struct {
+	Token *entity.TokenUri
+	Err   error
+}
 
 type InsOwner struct {
 	InscriptionID string
@@ -42,7 +50,7 @@ type Inscription struct {
 	BlockHeight uint64
 }
 
-func (u Usecase) ListModulars(ctx context.Context, f structure.FilterTokens) (*entity.Pagination, error) {
+func (u *Usecase) ListModulars(ctx context.Context, f structure.FilterTokens) (*entity.Pagination, error) {
 	genNFTAddr := os.Getenv("MODULAR_PROJECT_ID")
 	f.GenNFTAddr = &genNFTAddr
 	inscriptions, err := u.Repo.AggregateListModularInscriptions(ctx, f)
@@ -53,8 +61,8 @@ func (u Usecase) ListModulars(ctx context.Context, f structure.FilterTokens) (*e
 	return inscriptions, nil
 }
 
-// Crontab update owner of modular inscriptions
-func (u Usecase) CrontabUpdateModularInscOwners(ctx context.Context) error {
+// 3. Crontab update owner of modular inscriptions
+func (u *Usecase) CrontabUpdateModularInscOwners(ctx context.Context) error {
 
 	page := 1
 	limit := 100
@@ -107,7 +115,7 @@ func (u Usecase) CrontabUpdateModularInscOwners(ctx context.Context) error {
 	return nil
 }
 
-func (u Usecase) FindModularInscOwner(in chan Ins, out chan InsOwner) {
+func (u *Usecase) FindModularInscOwner(in chan Ins, out chan InsOwner) {
 	var err error
 	addr := ""
 	inscID := <-in
@@ -132,7 +140,7 @@ func (u Usecase) FindModularInscOwner(in chan Ins, out chan InsOwner) {
 	addr = info.Address
 }
 
-func (u Usecase) UpdateModularInscOwner(insID string, ownerAddress string) (*mongo.UpdateResult, error) {
+func (u *Usecase) UpdateModularInscOwner(insID string, ownerAddress string) (*mongo.UpdateResult, error) {
 	f := bson.D{
 		{"token_id", insID},
 		{"project_id", os.Getenv("MODULAR_PROJECT_ID")},
@@ -145,9 +153,9 @@ func (u Usecase) UpdateModularInscOwner(insID string, ownerAddress string) (*mon
 	update := bson.D{{"$set", uupdate}}
 
 	//prevent update from local
-	if os.Getenv("ENV") != "mainnet" {
-		return nil, nil
-	}
+	//if os.Getenv("ENV") != "mainnet" {
+	//	return nil, nil
+	//}
 
 	result, err := u.Repo.DB.Collection(utils.COLLECTION_TOKEN_URI).UpdateOne(context.TODO(), f, update)
 	if err != nil {
@@ -158,8 +166,8 @@ func (u Usecase) UpdateModularInscOwner(insID string, ownerAddress string) (*mon
 
 }
 
-// Crontab add modular inscriptions
-func (u Usecase) CrontabAddModularInscs(ctx context.Context) error {
+// 1. Crontab add modular inscriptions
+func (u *Usecase) CrontabAddModularInscs(ctx context.Context) error {
 	fBlockKey := "from_ord_block"
 	toBlockKey := "to_ord_block"
 	processedBlockKey := "processed_ord_block"
@@ -266,4 +274,140 @@ func (u Usecase) CrontabAddModularInscs(ctx context.Context) error {
 	u.Cache.SetData(fBlockKey, fBlock)
 	u.Cache.SetData(toBlockKey, toBlock)
 	return nil
+}
+
+// 2. Crontab Create token from modular inscriptions
+func (u *Usecase) CrontabCreateTokenFromInscriptions(ctx context.Context) error {
+	page := 1
+	limit := 5
+
+	for {
+
+		offset := (page - 1) * limit
+		inscriptions, err := u.Repo.UnCreatedModularInscriptions(ctx, offset, limit)
+		if err != nil {
+			return err
+		}
+
+		if len(inscriptions) == 0 {
+			break
+		}
+
+		for _, i := range inscriptions {
+			token, err := u.CreateTokenFromInscription(i)
+			if err != nil {
+				continue
+			}
+
+			u.Repo.SetCreatedTokenStatus(token.TokenID, true)
+		}
+
+		page++
+	}
+
+	return nil
+}
+
+func (u *Usecase) CreateTokenFromInscription(input entity.ModularInscription) (*entity.TokenUri, error) {
+
+	var err error
+	token := &entity.TokenUri{}
+
+	meta := entity.CollectionMeta{
+		ProjectID: os.Getenv("MODULAR_PROJECT_ID"),
+	}
+
+	inscription := entity.CollectionInscription{
+		ID: input.InscriptionID,
+	}
+
+	token, err = u.CreateBTCTokenURIFromModularCollectionInscription(meta, inscription, input.BlockHeight)
+	if err != nil {
+		return nil, err
+	}
+
+	return token, nil
+}
+
+func (u Usecase) CreateBTCTokenURIFromModularCollectionInscription(meta entity.CollectionMeta, inscription entity.CollectionInscription, blockHeight uint64) (*entity.TokenUri, error) {
+	// find project by projectID
+	project, err := u.Repo.FindProjectByTokenID(meta.ProjectID)
+	if err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			logger.AtLog.Logger.Error("CanNotFindProjectByInscriptionIcon", zap.Any("inscriptionIcon", meta.InscriptionIcon))
+			return nil, repository.ErrNoProjectsFound
+		} else {
+			return nil, err
+		}
+	}
+
+	tokenUri := entity.TokenUri{}
+	tokenUri.ContractAddress = os.Getenv("GENERATIVE_BTC_PROJECT")
+	tokenUri.TokenID = inscription.ID
+	blockNumberMinted := fmt.Sprintf("%d", blockHeight)
+	tokenUri.BlockNumberMinted = &blockNumberMinted
+	tokenUri.Creator = &project.CreatorProfile
+	tokenUri.CreatorAddr = project.CreatorAddrr
+	tokenUri.Description = project.Description
+	tokenUri.GenNFTAddr = project.GenNFTAddr
+
+	mintedTime := time.Now()
+	tokenUri.MintedTime = &mintedTime
+	tokenUri.Name = inscription.Meta.Name
+	tokenUri.Project = project
+	tokenUri.ProjectID = project.TokenID
+	tokenUri.ProjectIDInt = project.TokenIDInt
+	tokenUri.IsOnchain = false
+	tokenUri.CreatedByCollectionInscription = true
+	count, err := u.Repo.CountTokenUriByProjectId(tokenUri.ProjectID)
+	if err == nil && count != nil {
+		tokenUri.OrderInscriptionIndex = int(*count + 1)
+	}
+
+	nftTokenUri := project.NftTokenUri
+	logger.AtLog.Logger.Info("nftTokenUri", zap.Any("nftTokenUri", nftTokenUri))
+
+	imageURI := fmt.Sprintf("https://generativeexplorer.com/content/%s", inscription.ID)
+
+	//resp := &entity.InscriptionDetail{}
+	//_, err = resty.New().R().
+	//	SetResult(&resp).
+	//	Get(fmt.Sprintf("%s/inscription/%s", u.Config.GenerativeExplorerApi, inscription.ID))
+	//if err != nil {
+	//	logger.AtLog.Logger.Error("err", zap.Error(err))
+	//	return nil, err
+	//}
+
+	tokenUri.AnimationURL = imageURI
+	tokenUri.Thumbnail = ""
+	tokenUri.Image = imageURI
+	tokenUri.ParsedImage = &imageURI
+	tokenUri.Source = inscription.Source
+	logger.AtLog.Logger.Info("mintedURL", zap.Any("imageURI", imageURI))
+
+	_, err = u.Repo.UpdateOrInsertTokenUri(tokenUri.ContractAddress, tokenUri.TokenID, &tokenUri)
+	if err != nil {
+		logger.AtLog.Logger.Error("err", zap.Error(err))
+		return nil, err
+	}
+
+	pTokenUri, err := u.Repo.FindTokenBy(tokenUri.ContractAddress, tokenUri.TokenID)
+	if err != nil {
+		return nil, err
+	}
+
+	// update project index and max supply
+	index := project.MintingInfo.Index + 1
+	maxSupply := project.MaxSupply
+	if index > maxSupply {
+		maxSupply = index
+	}
+	err = u.Repo.UpdateProjectIndexAndMaxSupply(project.TokenID, maxSupply, index)
+	if err != nil {
+		return nil, err
+	}
+
+	go u.TriggerPubsubTokenThumbnail(pTokenUri.TokenID)
+
+	return pTokenUri, nil
 }

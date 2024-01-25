@@ -37,3 +37,24 @@ func (r Repository) SetCreatedTokenStatus(inscriptionID string, status bool) (*m
 
 	return inserted, nil
 }
+
+func (r Repository) UnCreatedModularInscriptions(ctx context.Context, offset, limit int) ([]entity.ModularInscription, error) {
+	f := bson.A{
+		bson.D{{"$match", bson.D{{"is_created_token", false}}}},
+		bson.D{{"$sort", bson.D{{"_id", 1}}}}, //first int first out
+		bson.D{{"$skip", offset}},
+		bson.D{{"$limit", limit}},
+	}
+
+	cursor, err := r.DB.Collection(utils.COLLECTION_MODULAR_INSCRIPTION).Aggregate(ctx, f)
+	if err != nil {
+		return nil, err
+	}
+
+	aggregation := []entity.ModularInscription{}
+	if err = cursor.All(ctx, &aggregation); err != nil {
+		return nil, err
+	}
+
+	return aggregation, nil
+}

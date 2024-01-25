@@ -270,7 +270,6 @@ func (r Repository) AggregateMintingInfo(ctx context.Context, tokenID string) ([
 func (r Repository) AggregateModularInscriptions(ctx context.Context, projectID string, offset, limit int) ([]entity.TokenUri, error) {
 	f := bson.A{
 		bson.D{{"$match", bson.D{{"project_id", projectID}}}},
-		bson.D{{"$sort", bson.D{{"_id", -1}}}},
 		bson.D{{"$project", bson.D{
 			{"_id", 1},
 			{"token_id", 1},
