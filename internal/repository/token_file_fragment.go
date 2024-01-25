@@ -7,6 +7,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"rederinghub.io/internal/entity"
+	"rederinghub.io/internal/usecase/structure"
 	"rederinghub.io/utils"
 	"time"
 )
@@ -289,4 +290,120 @@ func (r Repository) AggregateModularInscriptions(ctx context.Context, projectID 
 	}
 
 	return aggregation, nil
+}
+
+func (r Repository) AggregateListModularInscriptions(ctx context.Context, filter structure.FilterTokens) (*entity.Pagination, error) {
+	match := bson.D{}
+
+	if filter.OwnerAddr != nil && *filter.OwnerAddr != "" {
+		match = append(match, bson.E{"owner_addrress", filter.OwnerAddr})
+	}
+
+	if filter.GenNFTAddr != nil && *filter.GenNFTAddr != "" {
+		match = append(match, bson.E{"project_id", filter.GenNFTAddr})
+	}
+
+	limit := int64(20)
+	page := int64(1)
+
+	if filter.Page > 0 {
+		page = filter.Page
+	}
+
+	if filter.Limit > 0 {
+		limit = filter.Limit
+	}
+
+	offset := (page - 1) * limit
+	f := bson.A{
+		bson.D{{"$match", match}},
+		bson.D{{"$sort", bson.D{{"_id", -1}}}},
+		//bson.D{{"$project", bson.D{
+		//	{"_id", 1},
+		//	{"token_id", 1},
+		//	{"owner_addrress", 1},
+		//}}},
+		bson.D{{"$skip", offset}},
+		bson.D{{"$limit", limit}},
+		bson.D{
+			{"$lookup",
+				bson.D{
+					{"from", "projects"},
+					{"localField", "project_id"},
+					{"foreignField", "tokenid"},
+					{"as", "project"},
+				},
+			},
+		},
+		bson.D{
+			{"$unwind",
+				bson.D{
+					{"path", "$project"},
+					{"preserveNullAndEmptyArrays", true},
+				},
+			},
+		},
+
+		bson.D{
+			{"$lookup",
+				bson.D{
+					{"from", "users"},
+					{"localField", "owner_addrress"},
+					{"foreignField", "wallet_address_btc_taproot"},
+					{"as", "owner"},
+				},
+			},
+		},
+		bson.D{
+			{"$unwind",
+				bson.D{
+					{"path", "$owner"},
+					{"preserveNullAndEmptyArrays", true},
+				},
+			},
+		},
+	}
+
+	cursor, err := r.DB.Collection(entity.TokenUri{}.TableName()).Aggregate(ctx, f)
+	if err != nil {
+		return nil, err
+	}
+
+	aggregation := []entity.ModularTokenUri{}
+	if err = cursor.All(ctx, &aggregation); err != nil {
+		return nil, err
+	}
+
+	countF := bson.A{
+		bson.D{{"$match", match}},
+		bson.D{
+			{"$group",
+				bson.D{
+					{"_id", "_id"},
+					{"total", bson.D{{"$sum", 1}}},
+				},
+			},
+		},
+	}
+	cursor1, err := r.DB.Collection(entity.TokenUri{}.TableName()).Aggregate(ctx, countF)
+	if err != nil {
+		return nil, err
+	}
+
+	aggregation1 := []entity.Total{}
+	if err = cursor1.All(ctx, &aggregation1); err != nil {
+		return nil, err
+	}
+
+	ap := entity.Total{}
+	if len(aggregation1) > 0 {
+		ap = aggregation1[0]
+	}
+	p := entity.Pagination{
+		Page:     page,
+		Total:    ap.Total,
+		PageSize: limit,
+		Result:   aggregation,
+	}
+	return &p, nil
 }

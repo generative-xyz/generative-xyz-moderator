@@ -1,6 +1,7 @@
 package http
 
 import (
+	"context"
 	"net/http"
 	"os"
 	"rederinghub.io/internal/delivery/http/response"
@@ -8,7 +9,7 @@ import (
 )
 
 func (h *httpDelivery) ModularInscriptions(w http.ResponseWriter, r *http.Request) {
-
+	ctx := context.Background()
 	//vars := mux.Vars(r)
 	//genNFTAddr := vars["genNFTAddr"]
 
@@ -27,7 +28,7 @@ func (h *httpDelivery) ModularInscriptions(w http.ResponseWriter, r *http.Reques
 	}
 
 	f.BaseFilters = *bf
-	resp, err := h.getTokensNew(f)
+	resp, err := h.Usecase.ListModulars(ctx, f)
 	if err != nil {
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return

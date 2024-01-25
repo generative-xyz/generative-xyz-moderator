@@ -7,6 +7,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.uber.org/zap"
 	"os"
+	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
 	"rederinghub.io/utils"
 	"rederinghub.io/utils/logger"
@@ -23,6 +24,17 @@ type InsOwner struct {
 type Ins struct {
 	InscriptionID string
 	OwnerAddress  string
+}
+
+func (u Usecase) ListModulars(ctx context.Context, f structure.FilterTokens) (*entity.Pagination, error) {
+	genNFTAddr := os.Getenv("MODULAR_PROJECT_ID")
+	f.GenNFTAddr = &genNFTAddr
+	inscriptions, err := u.Repo.AggregateListModularInscriptions(ctx, f)
+	if err != nil {
+		return nil, err
+	}
+
+	return inscriptions, nil
 }
 
 func (u Usecase) CrontabUpdateModularInscOwners(ctx context.Context) error {
