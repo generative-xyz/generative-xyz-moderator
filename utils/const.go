@@ -137,6 +137,7 @@ const (
 	COLLECTION_USER_VOLUMN                     string = "user_volumn"
 	COLLECTION_WITHDRAW                        string = "withdraw"
 	COLLECTION_TOKEN_URI                       string = "token_uri"
+	COLLECTION_MODULAR_INSCRIPTION             string = "modular_inscription"
 	COLLECTION_TOKEN_URI_HISTORIES             string = "token_uri_histories"
 	COLLECTION_TOKEN_URI_METADATA              string = "token_uri_metadata"
 	COLLECTION_FILES                           string = "files"

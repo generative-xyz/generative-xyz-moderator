@@ -2,15 +2,20 @@ package usecase
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.uber.org/zap"
+	"net/url"
 	"os"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
 	"rederinghub.io/utils"
+	"rederinghub.io/utils/btc"
+	"rederinghub.io/utils/helpers"
 	"rederinghub.io/utils/logger"
+	"strconv"
 	"strings"
 )
 
@@ -24,6 +29,17 @@ type InsOwner struct {
 type Ins struct {
 	InscriptionID string
 	OwnerAddress  string
+}
+
+type InscriptionResp struct {
+	Err    error         `json:"error"`
+	Status bool          `json:"status"`
+	Data   []Inscription `json:"data"`
+}
+
+type Inscription struct {
+	InscID      string
+	BlockHeight uint64
 }
 
 func (u Usecase) ListModulars(ctx context.Context, f structure.FilterTokens) (*entity.Pagination, error) {
@@ -144,7 +160,110 @@ func (u Usecase) UpdateModularInscOwner(insID string, ownerAddress string) (*mon
 
 // Crontab add modular inscriptions
 func (u Usecase) CrontabAddModularInscs(ctx context.Context) error {
-	//TODO - implement me
+	fBlockKey := "from_ord_block"
+	toBlockKey := "to_ord_block"
+	processedBlockKey := "processed_ord_block"
 
+	fBlock := uint64(0)
+	toBlock := uint64(0)
+	proccessedBlock := uint64(0)
+
+	errCached := u.Cache.GetObjectData(fBlockKey, &fBlock)
+	if errCached != nil {
+		fInt, _ := strconv.Atoi(os.Getenv("MODULAR_FROM_BLOCK"))
+		fBlock = uint64(fInt)
+	}
+
+	errCached2 := u.Cache.GetObjectData(toBlockKey, &toBlock)
+	if errCached2 != nil {
+		tInt, _ := strconv.Atoi(os.Getenv("MODULAR_TO_BLOCK"))
+		toBlock = uint64(tInt)
+	}
+
+	logKey := "CrontabAddModularInscs"
+	var err error
+	logP := new([]zap.Field)
+	logs := []zap.Field{}
+	logP = &logs
+
+	defer func() {
+		if err != nil {
+			logs = append(logs, zap.Error(err))
+			logger.AtLog.Logger.Error(logKey, *logP...)
+		} else {
+			logger.AtLog.Logger.Info(logKey, *logP...)
+		}
+	}()
+
+	u.Cache.GetObjectData(processedBlockKey, &proccessedBlock)
+	logs = append(logs, zap.Uint64("from_block", fBlock))
+	logs = append(logs, zap.Uint64("to_block", toBlock))
+	logs = append(logs, zap.Uint64("processed_block", proccessedBlock))
+
+	quickNode, err := btc.GetBlockCountfromQuickNode(u.Config.QuicknodeAPI)
+	if err != nil {
+		return err
+	}
+
+	fBlock = toBlock + 1
+	toBlock += 1000
+
+	if toBlock > quickNode.Result {
+		toBlock = quickNode.Result
+	}
+
+	if fBlock > quickNode.Result {
+		fBlock = quickNode.Result
+	}
+
+	if proccessedBlock == toBlock {
+		logs = append(logs, zap.String("message", "processed"))
+		return nil
+	}
+
+	queryParams := url.Values{}
+	queryParams.Set("fromBlock", fmt.Sprintf("%d", fBlock))
+	queryParams.Set("toBlock", fmt.Sprintf("%d", toBlock))
+
+	_url := fmt.Sprintf("%s/bvm-insc/list", os.Getenv("MODULAR_BRIDGES_API"))
+	_url += "?" + queryParams.Encode()
+	logs = append(logs, zap.String("url", _url))
+	_b, _, _, err := helpers.HttpRequest(_url, "GET", map[string]string{}, nil)
+	if err != nil {
+		return err
+	}
+	logs = append(logs, zap.Any("resp", _b))
+
+	resp := InscriptionResp{}
+	err = json.Unmarshal(_b, &resp)
+	if err != nil {
+		return err
+	}
+
+	logs = append(logs, zap.Int("total", len(resp.Data)))
+	for i, item := range resp.Data {
+		modulerObj := &entity.ModularInscription{
+			InscriptionID:  item.InscID,
+			BlockHeight:    item.BlockHeight,
+			IsCreatedToken: false, // created token will be handled by the other crontab
+		}
+
+		logs = append(logs, zap.String(fmt.Sprintf("InscID.%d", i), item.InscID))
+
+		//avoid duplicated by unique-index
+		inserted, err1 := u.Repo.InsertModular(modulerObj)
+		if err1 != nil {
+			logs = append(logs, zap.String(fmt.Sprintf("%s.inserted", item.InscID), err1.Error()))
+			continue
+		}
+
+		_ = inserted
+	}
+
+	u.Cache.SetData(processedBlockKey, toBlock)
+
+	//set data
+	u.Cache.SetData(fBlockKey, fBlock)
+	u.Cache.SetData(toBlockKey, toBlock)
 	return nil
 }

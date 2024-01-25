@@ -3,6 +3,7 @@ package redis
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"strconv"
 	"time"
 
@@ -21,6 +22,7 @@ type IRedisCache interface {
 	GetData(key string) (*string, error)
 	Delete(key string) error
 	SetDataWithExpireTime(key string, value interface{}, exipredIn int) error //exipredIn second
+	GetObjectData(key string, object interface{}) error
 
 	HSet(key, field string, value interface{}) error
 	HKeys(key string) ([]string, error)
@@ -160,4 +162,20 @@ func (r *redisCache) GetAll() ([]string, error) {
 	}
 
 	return keys, err
+}
+
+func (r *redisCache) GetObjectData(key string, object interface{}) error {
+	ex, _ := r.Exists(key)
+	if ex != nil && *ex == true {
+		cached, _ := r.GetData(key)
+		if cached != nil {
+			bytes := []byte(*cached)
+			err := json.Unmarshal(bytes, &object)
+			if err != nil {
+				return err
+			}
+			return nil
+		}
+	}
+	return errors.New("Cannot get data")
 }

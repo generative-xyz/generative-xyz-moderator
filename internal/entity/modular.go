@@ -1,6 +1,9 @@
 package entity
 
-import "time"
+import (
+	"rederinghub.io/utils"
+	"time"
+)
 
 type Total struct {
 	Total int64 `json:"total" bson:"total"`
@@ -50,4 +53,15 @@ type ModularUsers struct {
 	Avatar                  string `bson:"avatar" json:"avatar"`
 	Banner                  string `bson:"banner" json:"banner"`
 	IsUpdatedAvatar         *bool  `bson:"is_updated_avatar" json:"is_updated_avatar,omitempty"`
+}
+
+type ModularInscription struct {
+	BaseEntityNoID `bson:",inline"`
+	IsCreatedToken bool   `bson:"is_created_token" json:"is_created_token"`
+	InscriptionID  string `bson:"inscription_id" json:"inscription_id"`
+	BlockHeight    uint64 `bson:"block_height" json:"block_height"`
+}
+
+func (g *ModularInscription) TableName() string {
+	return utils.COLLECTION_MODULAR_INSCRIPTION
 }
