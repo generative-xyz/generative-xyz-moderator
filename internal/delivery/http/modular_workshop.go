@@ -53,7 +53,7 @@ func (h *httpDelivery) SaveModularWorkshop(w http.ResponseWriter, r *http.Reques
 	if data.ID.IsZero() {
 		data.BaseEntity.SetID()
 		data.BaseEntity.SetCreatedAt()
-		err = h.Usecase.Repo.SaveModularWorkshop(context.Background(), data)
+		data.ID, err = h.Usecase.Repo.SaveModularWorkshop(context.Background(), data)
 		if err != nil {
 			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 			return
@@ -67,7 +67,7 @@ func (h *httpDelivery) SaveModularWorkshop(w http.ResponseWriter, r *http.Reques
 		}
 	}
 
-	h.Response.RespondSuccess(w, http.StatusOK, response.Success, "", "")
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, data.ID.Hex(), "")
 }
 
 func (h *httpDelivery) RemoveModularWorkshop(w http.ResponseWriter, r *http.Request) {
