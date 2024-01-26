@@ -65,7 +65,7 @@ func (u *Usecase) CreateModularTraits(attrs []entity.TokenUriAttrStr) string {
 func (u Usecase) GroupListModulars(ctx context.Context, f structure.FilterTokens) (*entity.Pagination, error) {
 	genNFTAddr := os.Getenv("MODULAR_PROJECT_ID")
 	f.GenNFTAddr = &genNFTAddr
-	inscriptions, err := u.Repo.GroupModularInscByAttr(ctx, f)
+	inscriptions, count, err := u.Repo.GroupModularInscByAttr(ctx, f)
 	if err != nil {
 		return nil, err
 	}
@@ -122,8 +122,8 @@ func (u Usecase) GroupListModulars(ctx context.Context, f structure.FilterTokens
 		Result:    inscriptions,
 		Page:      f.Page,
 		PageSize:  f.Limit,
-		Total:     int64(len(inscriptions)),
-		TotalPage: int64(math.Ceil(float64(len(inscriptions)) / float64(f.Limit))),
+		Total:     int64(count),
+		TotalPage: int64(math.Ceil(float64(count) / float64(f.Limit))),
 	}, nil
 }
 

@@ -409,7 +409,7 @@ func (r Repository) AggregateListModularInscriptions(ctx context.Context, filter
 	return &p, nil
 }
 
-func (r Repository) GroupModularInscByAttr(ctx context.Context, filter structure.FilterTokens) ([]*entity.ModularTokenAttr, error) {
+func (r Repository) GroupModularInscByAttr(ctx context.Context, filter structure.FilterTokens) ([]*entity.ModularTokenAttr, int64, error) {
 	_match := bson.D{}
 
 	if filter.OwnerAddr != nil && *filter.OwnerAddr != "" {
@@ -485,15 +485,68 @@ func (r Repository) GroupModularInscByAttr(ctx context.Context, filter structure
 
 	cursor, err := r.DB.Collection(utils.COLLECTION_MODULAR_INSCRIPTION_ATTRIBUTE).Aggregate(ctx, f)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
 	aggregation := []*entity.ModularTokenAttr{}
 	if err = cursor.All(ctx, &aggregation); err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
-	return aggregation, nil
+	//count total
+	fCount := bson.A{
+		bson.D{
+			{"$lookup",
+				bson.D{
+					{"from", "token_uri"},
+					{"localField", "inscription_id"},
+					{"foreignField", "token_id"},
+					{"pipeline",
+						bson.A{
+							bson.D{
+								{"$match", _match},
+							},
+						},
+					},
+					{"as", "token_uri"},
+				},
+			},
+		},
+		bson.D{
+			{"$unwind",
+				bson.D{
+					{"path", "$token_uri"},
+					{"preserveNullAndEmptyArrays", false},
+				},
+			},
+		},
+
+		bson.D{
+			{"$group",
+				bson.D{
+					{"_id", ""},
+					{"total", bson.D{{"$sum", 1}}},
+				},
+			},
+		},
+	}
+
+	cursorCount, err := r.DB.Collection(utils.COLLECTION_MODULAR_INSCRIPTION_ATTRIBUTE).Aggregate(ctx, fCount)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	aggregationCount := []*entity.Total{}
+	if err = cursorCount.All(ctx, &aggregationCount); err != nil {
+		return nil, 0, err
+	}
+
+	count := int64(0)
+	if len(aggregationCount) > 0 {
+		count = aggregationCount[0].Total
+	}
+
+	return aggregation, count, nil
 }
 
 func (r Repository) AggregateListModularInscriptionsByTokenIDs(ctx context.Context, tokenIDs []string) ([]entity.ModularTokenUri, error) {
