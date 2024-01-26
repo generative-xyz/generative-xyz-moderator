@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"rederinghub.io/internal/entity"
 )
@@ -38,12 +39,12 @@ func (r Repository) GetTotalModularWorkShopByAddress(ctx context.Context, ownerA
 	return total, nil
 }
 
-func (r Repository) SaveModularWorkshop(ctx context.Context, data *entity.ModularWorkshopEntity) error {
-	_, err := r.DB.Collection(entity.ModularWorkshopEntity{}.TableName()).InsertOne(ctx, data)
+func (r Repository) SaveModularWorkshop(ctx context.Context, data *entity.ModularWorkshopEntity) (primitive.ObjectID, error) {
+	result, err := r.DB.Collection(entity.ModularWorkshopEntity{}.TableName()).InsertOne(ctx, data)
 	if err != nil {
-		return err
+		return primitive.NilObjectID, err
 	}
-	return nil
+	return result.InsertedID.(primitive.ObjectID), nil
 }
 
 func (r Repository) UpdateModularWorkshop(ctx context.Context, data *entity.ModularWorkshopEntity) error {
