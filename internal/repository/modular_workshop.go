@@ -11,8 +11,8 @@ func (r Repository) GetListModularWorkShopByAddress(ctx context.Context, ownerAd
 	filter := bson.M{"owner_addr": ownerAddr,
 		"delete_at": bson.M{"$exists": false},
 	}
-	projection := bson.M{"name": 1, "create_at": 1}
-	options := options.Find().SetSort(bson.M{"create_at": 1})
+	projection := bson.M{"name": 1, "created_at": 1}
+	options := options.Find().SetSort(bson.M{"created_at": 1})
 	options.SetProjection(projection)
 	options.SetSkip(offset)
 	options.SetLimit(limit)
@@ -54,6 +54,7 @@ func (r Repository) UpdateModularWorkshop(ctx context.Context, data *entity.Modu
 		"$set": bson.M{
 			"update_at": data.UpdatedAt,
 			"meta_data": data.MetaData,
+			"name":      data.Name,
 		},
 	}
 	_, err := r.DB.Collection(entity.ModularWorkshopEntity{}.TableName()).UpdateOne(ctx, filter, update)

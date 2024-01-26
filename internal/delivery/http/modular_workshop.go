@@ -71,7 +71,7 @@ func (h *httpDelivery) SaveModularWorkshop(w http.ResponseWriter, r *http.Reques
 }
 
 func (h *httpDelivery) RemoveModularWorkshop(w http.ResponseWriter, r *http.Request) {
-	uuid := r.URL.Query().Get("uuid")
+	uuid := r.URL.Query().Get("id")
 	address := r.URL.Query().Get("address")
 	err := h.Usecase.Repo.RemoveModularWorkshop(context.Background(), uuid, address)
 	if err != nil {
