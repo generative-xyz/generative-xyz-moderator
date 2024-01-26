@@ -612,3 +612,75 @@ func (r Repository) AggregateListModularInscriptionsByTokenIDs(ctx context.Conte
 
 	return aggregation, nil
 }
+
+func (r Repository) AllModularInscriptions(ctx context.Context, filter structure.FilterTokens) ([]entity.ModularTokenUri, error) {
+	_match := bson.D{}
+
+	if filter.OwnerAddr != nil && *filter.OwnerAddr != "" {
+		_match = append(_match, bson.E{"owner_addrress", filter.OwnerAddr})
+	}
+
+	if filter.GenNFTAddr != nil && *filter.GenNFTAddr != "" {
+		_match = append(_match, bson.E{"project_id", filter.GenNFTAddr})
+	}
+
+	f := bson.A{
+		bson.D{{"$match", _match}},
+		bson.D{{"$sort", bson.D{{"_id", -1}}}},
+		//bson.D{{"$project", bson.D{
+		//	{"_id", 1},
+		//	{"token_id", 1},
+		//	{"owner_addrress", 1},
+		//}}},
+
+		bson.D{
+			{"$lookup",
+				bson.D{
+					{"from", "projects"},
+					{"localField", "project_id"},
+					{"foreignField", "tokenid"},
+					{"as", "project"},
+				},
+			},
+		},
+		bson.D{
+			{"$unwind",
+				bson.D{
+					{"path", "$project"},
+					{"preserveNullAndEmptyArrays", true},
+				},
+			},
+		},
+
+		bson.D{
+			{"$lookup",
+				bson.D{
+					{"from", "users"},
+					{"localField", "owner_addrress"},
+					{"foreignField", "wallet_address_btc_taproot"},
+					{"as", "owner"},
+				},
+			},
+		},
+		bson.D{
+			{"$unwind",
+				bson.D{
+					{"path", "$owner"},
+					{"preserveNullAndEmptyArrays", true},
+				},
+			},
+		},
+	}
+
+	cursor, err := r.DB.Collection(entity.TokenUri{}.TableName()).Aggregate(ctx, f)
+	if err != nil {
+		return nil, err
+	}
+
+	aggregation := []entity.ModularTokenUri{}
+	if err = cursor.All(ctx, &aggregation); err != nil {
+		return nil, err
+	}
+
+	return aggregation, nil
+}

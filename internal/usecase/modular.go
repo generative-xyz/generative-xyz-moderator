@@ -18,6 +18,7 @@ import (
 	"rederinghub.io/utils/btc"
 	"rederinghub.io/utils/helpers"
 	"rederinghub.io/utils/logger"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -53,13 +54,18 @@ type Inscription struct {
 
 func (u *Usecase) CreateModularTraits(attrs []entity.TokenUriAttrStr) string {
 	t := ""
+
+	sort.SliceStable(attrs, func(i, j int) bool {
+		return attrs[i].TraitType > attrs[j].TraitType
+	})
+
 	for _, attr := range attrs {
-		if attr.TraitType != "Hash" {
-			t += strings.ToLower(fmt.Sprintf("%s.%s", attr.TraitType, attr.Value))
+		if !strings.EqualFold(attr.TraitType, "hash") {
+			t += strings.ToLower(strings.ReplaceAll(fmt.Sprintf("{%s:%s}", attr.TraitType, attr.Value), " ", ""))
 		}
 	}
 
-	return helpers.GenerateMd5String(t)
+	return t
 }
 
 func (u Usecase) GroupListModulars(ctx context.Context, f structure.FilterTokens) (*entity.Pagination, error) {
