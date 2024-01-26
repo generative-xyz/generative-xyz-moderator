@@ -181,6 +181,7 @@ const (
 	COLLECTION_DEX_BTC_TRACKING_INTERNAL       string = "dex_btc_tracking_internal"
 	COLLECTION_GLOBAL_VARIABLE                 string = "global_variables"
 	COLLECTION_SORALIS_SNAPSHOT_BALANCE        string = "soralis_snapshot_balance"
+	COLLECTION_MODULAR_WORKSHOP                string = "modular_workshop"
 	AI_SCHOOL_JOB                              string = "ai_school_jobs"
 	AI_SCHOOL_DATASET                          string = "ai_school_dataset"
 	TOKEN_FILE_FRAGMENT                        string = "token_file_fragments"
