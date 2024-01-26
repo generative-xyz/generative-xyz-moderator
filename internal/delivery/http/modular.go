@@ -28,7 +28,7 @@ func (h *httpDelivery) ModularInscriptions(w http.ResponseWriter, r *http.Reques
 	}
 
 	f.BaseFilters = *bf
-	resp, err := h.Usecase.ListModulars(ctx, f)
+	resp, err := h.Usecase.GroupListModulars(ctx, f)
 	if err != nil {
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return

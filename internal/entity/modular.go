@@ -65,3 +65,19 @@ type ModularInscription struct {
 func (g *ModularInscription) TableName() string {
 	return utils.COLLECTION_MODULAR_INSCRIPTION
 }
+
+type ModularInscriptionAttributes struct {
+	BaseEntityNoID `bson:",inline"`
+	Attribute      string `bson:"attribute" json:"attribute"`
+	InscriptionID  string `bson:"inscription_id" json:"inscription_id"`
+}
+
+func (g *ModularInscriptionAttributes) TableName() string {
+	return utils.COLLECTION_MODULAR_INSCRIPTION_ATTRIBUTE
+}
+
+type ModularTokenAttr struct {
+	ModularTokenUri `bson:"-"`
+	TotalItems      int                          `json:"total_items" bson:"total"`
+	Attr            ModularInscriptionAttributes `json:"-" bson:"attr"`
+}

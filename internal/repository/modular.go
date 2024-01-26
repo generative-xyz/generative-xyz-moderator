@@ -8,6 +8,17 @@ import (
 	"rederinghub.io/utils"
 )
 
+func (r Repository) InsertModularAttribute(obj *entity.ModularInscriptionAttributes) (*mongo.InsertOneResult, error) {
+	obj.SetCreatedAt()
+
+	inserted, err := r.DB.Collection(obj.TableName()).InsertOne(context.TODO(), obj)
+	if err != nil {
+		return nil, err
+	}
+
+	return inserted, nil
+}
+
 func (r Repository) InsertModular(obj *entity.ModularInscription) (*mongo.InsertOneResult, error) {
 	obj.SetCreatedAt()
 

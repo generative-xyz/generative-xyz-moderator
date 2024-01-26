@@ -8,6 +8,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.uber.org/zap"
+	"math"
 	"net/url"
 	"os"
 	"rederinghub.io/internal/entity"
@@ -48,6 +49,56 @@ type InscriptionResp struct {
 type Inscription struct {
 	InscID      string
 	BlockHeight uint64
+}
+
+func (u *Usecase) CreateModularTraits(attrs []entity.TokenUriAttrStr) string {
+	t := ""
+	for _, attr := range attrs {
+		if attr.TraitType != "Hash" {
+			t += strings.ToLower(fmt.Sprintf("%s.%s", attr.TraitType, attr.Value))
+		}
+	}
+
+	return helpers.GenerateMd5String(t)
+}
+
+func (u Usecase) GroupListModulars(ctx context.Context, f structure.FilterTokens) (*entity.Pagination, error) {
+	genNFTAddr := os.Getenv("MODULAR_PROJECT_ID")
+	f.GenNFTAddr = &genNFTAddr
+	inscriptions, err := u.Repo.GroupModularInscByAttr(ctx, f)
+	if err != nil {
+		return nil, err
+	}
+
+	inscriptionIDs := []string{}
+	for _, i := range inscriptions {
+		inscriptionIDs = append(inscriptionIDs, i.Attr.InscriptionID)
+	}
+
+	allTokens, err := u.Repo.AggregateListModularInscriptionsByTokenIDs(ctx, inscriptionIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	tokens := make(map[string]entity.ModularTokenUri)
+	for _, i := range allTokens {
+		tokens[i.TokenID] = i
+	}
+
+	for _, i := range inscriptions {
+		t, ok := tokens[i.Attr.InscriptionID]
+		if ok {
+			i.ModularTokenUri = t
+		}
+	}
+
+	return &entity.Pagination{
+		Result:    inscriptions,
+		Page:      f.Page,
+		PageSize:  f.Limit,
+		Total:     int64(len(inscriptions)),
+		TotalPage: int64(math.Ceil(float64(len(inscriptions)) / float64(f.Limit))),
+	}, nil
 }
 
 func (u Usecase) ListModulars(ctx context.Context, f structure.FilterTokens) (*entity.Pagination, error) {

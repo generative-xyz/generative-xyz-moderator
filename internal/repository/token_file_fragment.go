@@ -408,3 +408,164 @@ func (r Repository) AggregateListModularInscriptions(ctx context.Context, filter
 	}
 	return &p, nil
 }
+
+func (r Repository) GroupModularInscByAttr(ctx context.Context, filter structure.FilterTokens) ([]*entity.ModularTokenAttr, error) {
+	_match := bson.D{}
+
+	if filter.OwnerAddr != nil && *filter.OwnerAddr != "" {
+		_match = append(_match, bson.E{"owner_addrress", filter.OwnerAddr})
+	}
+
+	if filter.GenNFTAddr != nil && *filter.GenNFTAddr != "" {
+		_match = append(_match, bson.E{"project_id", filter.GenNFTAddr})
+	}
+
+	skip := int64(0)
+	limit := int64(20)
+
+	if filter.Limit > 0 {
+		limit = filter.Limit
+	}
+
+	if filter.Page > 0 {
+		skip = (filter.Page - 1) * limit
+	}
+
+	f := bson.A{
+		bson.D{
+			{"$lookup",
+				bson.D{
+					{"from", "token_uri"},
+					{"localField", "inscription_id"},
+					{"foreignField", "token_id"},
+					{"pipeline",
+						bson.A{
+							bson.D{
+								{"$match", _match},
+							},
+						},
+					},
+					{"as", "token_uri"},
+				},
+			},
+		},
+		bson.D{
+			{"$unwind",
+				bson.D{
+					{"path", "$token_uri"},
+					{"preserveNullAndEmptyArrays", false},
+				},
+			},
+		},
+		bson.D{
+			{"$group",
+				bson.D{
+					{"_id", "$attribute"},
+					{"total", bson.D{{"$sum", 1}}},
+				},
+			},
+		},
+		bson.D{{"$sort", bson.D{{"total", -1}}}},
+		bson.D{{"$skip", skip}},
+		bson.D{{"$limit", limit}},
+		bson.D{
+			{"$lookup",
+				bson.D{
+					{"from", "modular_inscription_attribute"},
+					{"localField", "_id"},
+					{"foreignField", "attribute"},
+					{"pipeline",
+						bson.A{
+							bson.D{{"$limit", 1}},
+						},
+					},
+					{"as", "attr"},
+				},
+			},
+		},
+		bson.D{
+			{"$unwind",
+				bson.D{
+					{"path", "$attr"},
+					{"preserveNullAndEmptyArrays", false},
+				},
+			},
+		},
+	}
+
+	cursor, err := r.DB.Collection(utils.COLLECTION_MODULAR_INSCRIPTION_ATTRIBUTE).Aggregate(ctx, f)
+	if err != nil {
+		return nil, err
+	}
+
+	aggregation := []*entity.ModularTokenAttr{}
+	if err = cursor.All(ctx, &aggregation); err != nil {
+		return nil, err
+	}
+
+	return aggregation, nil
+}
+
+func (r Repository) AggregateListModularInscriptionsByTokenIDs(ctx context.Context, tokenIDs []string) ([]entity.ModularTokenUri, error) {
+	_match := bson.D{}
+	_match = append(_match, bson.E{"token_id", bson.D{{"$in", tokenIDs}}})
+
+	f := bson.A{
+		bson.D{{"$match", _match}},
+		bson.D{{"$sort", bson.D{{"_id", -1}}}},
+		//bson.D{{"$project", bson.D{
+		//	{"_id", 1},
+		//	{"token_id", 1},
+		//	{"owner_addrress", 1},
+		//}}},
+		bson.D{
+			{"$lookup",
+				bson.D{
+					{"from", "projects"},
+					{"localField", "project_id"},
+					{"foreignField", "tokenid"},
+					{"as", "project"},
+				},
+			},
+		},
+		bson.D{
+			{"$unwind",
+				bson.D{
+					{"path", "$project"},
+					{"preserveNullAndEmptyArrays", true},
+				},
+			},
+		},
+
+		bson.D{
+			{"$lookup",
+				bson.D{
+					{"from", "users"},
+					{"localField", "owner_addrress"},
+					{"foreignField", "wallet_address_btc_taproot"},
+					{"as", "owner"},
+				},
+			},
+		},
+		bson.D{
+			{"$unwind",
+				bson.D{
+					{"path", "$owner"},
+					{"preserveNullAndEmptyArrays", true},
+				},
+			},
+		},
+	}
+
+	cursor, err := r.DB.Collection(entity.TokenUri{}.TableName()).Aggregate(ctx, f)
+	if err != nil {
+		return nil, err
+	}
+
+	aggregation := []entity.ModularTokenUri{}
+	if err = cursor.All(ctx, &aggregation); err != nil {
+		return nil, err
+	}
+
+	return aggregation, nil
+}
