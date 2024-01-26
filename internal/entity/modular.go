@@ -76,8 +76,20 @@ func (g *ModularInscriptionAttributes) TableName() string {
 	return utils.COLLECTION_MODULAR_INSCRIPTION_ATTRIBUTE
 }
 
+type GroupedModularTokenUri struct {
+	Image               string            `bson:"image" json:"image"`
+	AnimationURL        string            `bson:"animation_url" json:"animation_url"`
+	ParsedAttributesStr []TokenUriAttrStr `bson:"parsed_attributes_str" json:"attributes"`
+	Thumbnail           string            `bson:"thumbnail" json:"thumbnail"`
+
+	//accept duplicated data to query more faster
+	Project *ModularProjects `bson:"project" json:"project"`
+}
+
 type ModularTokenAttr struct {
-	ModularTokenUri `bson:"-"`
-	TotalItems      int                          `json:"total_items" bson:"total"`
-	Attr            ModularInscriptionAttributes `json:"-" bson:"attr"`
+	GroupedModularTokenUri `bson:"-"`
+	TotalItems             int                            `json:"total_items" bson:"total"`
+	Attr                   []ModularInscriptionAttributes `json:"-" bson:"attr"`
+	Items                  []string                       `json:"items" bson:"-"`
+	GroupID                string                         `bson:"_id" json:"group_id"`
 }

@@ -469,28 +469,18 @@ func (r Repository) GroupModularInscByAttr(ctx context.Context, filter structure
 		bson.D{{"$skip", skip}},
 		bson.D{{"$limit", limit}},
 		bson.D{
-			{"$lookup",
+			{"$graphLookup",
 				bson.D{
 					{"from", "modular_inscription_attribute"},
-					{"localField", "_id"},
-					{"foreignField", "attribute"},
-					{"pipeline",
-						bson.A{
-							bson.D{{"$limit", 1}},
-						},
-					},
+					{"startWith", "$_id"},
+					{"connectFromField", "attribute"},
+					{"connectToField", "attribute"},
+					{"as", "string"},
+					{"maxDepth", 1},
+					{"depthField", "string"},
 					{"as", "attr"},
 				},
-			},
-		},
-		bson.D{
-			{"$unwind",
-				bson.D{
-					{"path", "$attr"},
-					{"preserveNullAndEmptyArrays", false},
-				},
-			},
-		},
+			}},
 	}
 
 	cursor, err := r.DB.Collection(utils.COLLECTION_MODULAR_INSCRIPTION_ATTRIBUTE).Aggregate(ctx, f)
