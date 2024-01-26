@@ -12,7 +12,7 @@ func (r Repository) GetListModularWorkShopByAddress(ctx context.Context, ownerAd
 		"delete_at": bson.M{"$exists": false},
 	}
 	projection := bson.M{"name": 1, "created_at": 1}
-	options := options.Find().SetSort(bson.M{"created_at": 1})
+	options := options.Find().SetSort(bson.M{"created_at": -1})
 	options.SetProjection(projection)
 	options.SetSkip(offset)
 	options.SetLimit(limit)
