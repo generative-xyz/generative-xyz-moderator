@@ -418,9 +418,10 @@ func (h *httpDelivery) RegisterV1Routes() {
 	modular.HandleFunc("/magic-eden-format", h.GetListInscriptionWithMagicEdenFormat).Methods("GET")
 
 	modularWorkshop := api.PathPrefix("/modular-workshop").Subrouter()
-	modularWorkshop.HandleFunc("/list", nil).Methods("GET")
-	modularWorkshop.HandleFunc("/detail", nil).Methods("GET")
-	modularWorkshop.HandleFunc("/save", nil).Methods("POST")
+	modularWorkshop.HandleFunc("/list", h.GetListModularWorkshop).Methods("GET")
+	modularWorkshop.HandleFunc("/detail", h.GetModularWorkshopDetail).Methods("GET")
+	modularWorkshop.HandleFunc("/save", h.SaveModularWorkshop).Methods("POST")
+	modularWorkshop.HandleFunc("/delete", h.SaveModularWorkshop).Methods("POST")
 }
 
 func (h *httpDelivery) RegisterDocumentRoutes() {
