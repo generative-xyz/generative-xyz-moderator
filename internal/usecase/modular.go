@@ -240,7 +240,7 @@ func (u *Usecase) CrontabAddModularInscs(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	logs = append(logs, zap.Any("resp", _b))
+	//logs = append(logs, zap.Any("resp", string(_b)))
 
 	resp := InscriptionResp{}
 	err = json.Unmarshal(_b, &resp)
