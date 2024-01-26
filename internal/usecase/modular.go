@@ -50,7 +50,7 @@ type Inscription struct {
 	BlockHeight uint64
 }
 
-func (u *Usecase) ListModulars(ctx context.Context, f structure.FilterTokens) (*entity.Pagination, error) {
+func (u Usecase) ListModulars(ctx context.Context, f structure.FilterTokens) (*entity.Pagination, error) {
 	genNFTAddr := os.Getenv("MODULAR_PROJECT_ID")
 	f.GenNFTAddr = &genNFTAddr
 	inscriptions, err := u.Repo.AggregateListModularInscriptions(ctx, f)
@@ -62,7 +62,7 @@ func (u *Usecase) ListModulars(ctx context.Context, f structure.FilterTokens) (*
 }
 
 // 3. Crontab update owner of modular inscriptions
-func (u *Usecase) CrontabUpdateModularInscOwners() error {
+func (u Usecase) CrontabUpdateModularInscOwners() error {
 	ctx := context.Background()
 	page := 1
 	limit := 100
@@ -115,7 +115,7 @@ func (u *Usecase) CrontabUpdateModularInscOwners() error {
 	return nil
 }
 
-func (u *Usecase) FindModularInscOwner(in chan Ins, out chan InsOwner) {
+func (u Usecase) FindModularInscOwner(in chan Ins, out chan InsOwner) {
 	var err error
 	addr := ""
 	inscID := <-in
@@ -140,7 +140,7 @@ func (u *Usecase) FindModularInscOwner(in chan Ins, out chan InsOwner) {
 	addr = info.Address
 }
 
-func (u *Usecase) UpdateModularInscOwner(insID string, ownerAddress string) (*mongo.UpdateResult, error) {
+func (u Usecase) UpdateModularInscOwner(insID string, ownerAddress string) (*mongo.UpdateResult, error) {
 	f := bson.D{
 		{"token_id", insID},
 		{"project_id", os.Getenv("MODULAR_PROJECT_ID")},
@@ -167,7 +167,7 @@ func (u *Usecase) UpdateModularInscOwner(insID string, ownerAddress string) (*mo
 }
 
 // 1. Crontab add modular inscriptions
-func (u *Usecase) CrontabAddModularInscs() error {
+func (u Usecase) CrontabAddModularInscs() error {
 	fBlockKey := "from_ord_block"
 	toBlockKey := "to_ord_block"
 	processedBlockKey := "processed_ord_block"
@@ -277,7 +277,7 @@ func (u *Usecase) CrontabAddModularInscs() error {
 }
 
 // 2. Crontab Create token from modular inscriptions
-func (u *Usecase) CrontabCreateTokenFromInscriptions() error {
+func (u Usecase) CrontabCreateTokenFromInscriptions() error {
 	ctx := context.Background()
 	page := 1
 	limit := 5
@@ -309,7 +309,7 @@ func (u *Usecase) CrontabCreateTokenFromInscriptions() error {
 	return nil
 }
 
-func (u *Usecase) CreateTokenFromInscription(input entity.ModularInscription) (*entity.TokenUri, error) {
+func (u Usecase) CreateTokenFromInscription(input entity.ModularInscription) (*entity.TokenUri, error) {
 
 	var err error
 	token := &entity.TokenUri{}
