@@ -62,8 +62,8 @@ func (u *Usecase) ListModulars(ctx context.Context, f structure.FilterTokens) (*
 }
 
 // 3. Crontab update owner of modular inscriptions
-func (u *Usecase) CrontabUpdateModularInscOwners(ctx context.Context) error {
-
+func (u *Usecase) CrontabUpdateModularInscOwners() error {
+	ctx := context.Background()
 	page := 1
 	limit := 100
 	genNFTAddr := os.Getenv("MODULAR_PROJECT_ID")
@@ -167,7 +167,7 @@ func (u *Usecase) UpdateModularInscOwner(insID string, ownerAddress string) (*mo
 }
 
 // 1. Crontab add modular inscriptions
-func (u *Usecase) CrontabAddModularInscs(ctx context.Context) error {
+func (u *Usecase) CrontabAddModularInscs() error {
 	fBlockKey := "from_ord_block"
 	toBlockKey := "to_ord_block"
 	processedBlockKey := "processed_ord_block"
@@ -277,7 +277,8 @@ func (u *Usecase) CrontabAddModularInscs(ctx context.Context) error {
 }
 
 // 2. Crontab Create token from modular inscriptions
-func (u *Usecase) CrontabCreateTokenFromInscriptions(ctx context.Context) error {
+func (u *Usecase) CrontabCreateTokenFromInscriptions() error {
+	ctx := context.Background()
 	page := 1
 	limit := 5
 
