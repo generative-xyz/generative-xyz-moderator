@@ -1836,3 +1836,28 @@ func (r Repository) FindTokenForCaptureThumbnail(contractAddress string, tokenID
 
 	return resp, nil
 }
+
+func (r Repository) FindTokenByProjectIDWithMagicEdenMetadata(ctx context.Context, projectID string) ([]entity.TokenUri, error) {
+	f := bson.A{
+		bson.D{{"$match", bson.D{{"project_id", projectID}}}},
+		bson.D{{"$sort", bson.D{{"order_inscription_index", -1}}}},
+		bson.D{{"$project", bson.D{
+			{"_id", 1},
+			{"token_id", 1},
+			{"order_inscription_index", 1},
+			{"thumbnail", 1},
+			{"parsed_attributes_str", 1},
+		}}},
+	}
+	cursor, err := r.DB.Collection(entity.TokenUri{}.TableName()).Aggregate(ctx, f)
+	if err != nil {
+		return nil, err
+	}
+
+	aggregation := []entity.TokenUri{}
+	if err = cursor.All(ctx, &aggregation); err != nil {
+		return nil, err
+	}
+
+	return aggregation, nil
+}
