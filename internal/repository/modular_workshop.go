@@ -46,6 +46,22 @@ func (r Repository) SaveModularWorkshop(ctx context.Context, data *entity.Modula
 	return nil
 }
 
+func (r Repository) UpdateModularWorkshop(ctx context.Context, data *entity.ModularWorkshopEntity) error {
+	filter := bson.M{"_id": data.ID,
+		"owner_addr": data.OwnerAddr,
+	}
+	update := bson.M{
+		"$set": bson.M{
+			"update_at": data.UpdatedAt,
+			"meta_data": data.MetaData,
+		},
+	}
+	_, err := r.DB.Collection(entity.ModularWorkshopEntity{}.TableName()).UpdateOne(ctx, filter, update)
+	if err != nil {
+		return err
+	}
+	return nil
+}
 func (r Repository) RemoveModularWorkshop(ctx context.Context, uuid, ownerAddr string) error {
 	filter := bson.M{
 		"uuid":       uuid,
@@ -60,11 +76,11 @@ func (r Repository) RemoveModularWorkshop(ctx context.Context, uuid, ownerAddr s
 }
 
 func (r Repository) GetModularWorkshopById(ctx context.Context, id string) (*entity.ModularWorkshopEntity, error) {
-	filter := bson.M{"_id": id}
-	var data *entity.ModularWorkshopEntity
-	err := r.DB.Collection(entity.ModularWorkshopEntity{}.TableName()).FindOne(ctx, filter).Decode(data)
+	filter := bson.M{"uuid": id}
+	var data entity.ModularWorkshopEntity
+	err := r.DB.Collection(entity.ModularWorkshopEntity{}.TableName()).FindOne(ctx, filter).Decode(&data)
 	if err != nil {
 		return nil, err
 	}
-	return data, nil
+	return &data, nil
 }

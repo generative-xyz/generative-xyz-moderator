@@ -12,7 +12,7 @@ import (
 func (h *httpDelivery) GetListModularWorkshop(w http.ResponseWriter, r *http.Request) {
 	address := r.URL.Query().Get("address")
 	f, err := h.BaseFilters(r)
-	offset := f.Page * (f.Limit - 1)
+	offset := f.Limit * (f.Page - 1)
 	data, err := h.Usecase.Repo.GetListModularWorkShopByAddress(context.Background(), address, offset, f.Limit)
 	if err != nil {
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
@@ -23,14 +23,21 @@ func (h *httpDelivery) GetListModularWorkshop(w http.ResponseWriter, r *http.Req
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
+	totalPage := total / f.Limit
+	if total%f.Limit != 0 {
+		totalPage = totalPage + 1
+	}
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, response.PaginationResponse{
-		Result: data,
-		Total:  total,
+		Result:    data,
+		PageSize:  f.Limit,
+		Page:      f.Page,
+		Total:     total,
+		TotalPage: totalPage,
 	}, "")
 }
 
 func (h *httpDelivery) GetModularWorkshopDetail(w http.ResponseWriter, r *http.Request) {
-	uuid := r.URL.Query().Get("uuid")
+	uuid := r.URL.Query().Get("id")
 	data, err := h.Usecase.Repo.GetModularWorkshopById(context.Background(), uuid)
 	if err != nil {
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
@@ -43,17 +50,23 @@ func (h *httpDelivery) SaveModularWorkshop(w http.ResponseWriter, r *http.Reques
 	body, err := io.ReadAll(r.Body)
 	var data *entity.ModularWorkshopEntity
 	err = json.Unmarshal(body, &data)
-	if len(data.BaseEntity.UUID) == 0 {
+	if data.ID.IsZero() {
 		data.BaseEntity.SetID()
 		data.BaseEntity.SetCreatedAt()
+		err = h.Usecase.Repo.SaveModularWorkshop(context.Background(), data)
+		if err != nil {
+			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+			return
+		}
 	} else {
 		data.BaseEntity.SetUpdatedAt()
+		err = h.Usecase.Repo.UpdateModularWorkshop(context.Background(), data)
+		if err != nil {
+			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+			return
+		}
 	}
-	err = h.Usecase.Repo.SaveModularWorkshop(context.Background(), data)
-	if err != nil {
-		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
-		return
-	}
+
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, "", "")
 }
 
