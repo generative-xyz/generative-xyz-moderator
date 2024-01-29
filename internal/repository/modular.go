@@ -4,8 +4,10 @@ import (
 	"context"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/utils"
+	"time"
 )
 
 func (r Repository) InsertModularAttribute(obj *entity.ModularInscriptionAttributes) (*mongo.InsertOneResult, error) {
@@ -17,6 +19,28 @@ func (r Repository) InsertModularAttribute(obj *entity.ModularInscriptionAttribu
 	}
 
 	return inserted, nil
+}
+
+func (r Repository) UpsertModularAttribute(inscriptionID string, attribute string) (*mongo.UpdateResult, error) {
+
+	f := bson.D{
+		{"inscription_id", inscriptionID},
+	}
+
+	update := bson.D{
+		{"attribute", attribute},
+		{"updated_at", time.Now().UTC()},
+	}
+
+	opts := &options.UpdateOptions{}
+	opts.SetUpsert(true)
+
+	updated, err := r.UpdateOneWithOptions(utils.COLLECTION_MODULAR_INSCRIPTION_ATTRIBUTE, f, bson.M{"$set": update}, opts)
+	if err != nil {
+		return nil, err
+	}
+
+	return updated, nil
 }
 
 func (r Repository) InsertModular(obj *entity.ModularInscription) (*mongo.InsertOneResult, error) {

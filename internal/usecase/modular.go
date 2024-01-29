@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/davecgh/go-spew/spew"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.uber.org/zap"
@@ -61,7 +62,7 @@ func (u *Usecase) CreateModularTraits(attrs []entity.TokenUriAttrStr) string {
 
 	for _, attr := range attrs {
 		if !strings.EqualFold(attr.TraitType, "hash") {
-			t += strings.ToLower(strings.ReplaceAll(fmt.Sprintf("{%s:%s}", attr.TraitType, attr.Value), " ", ""))
+			t += strings.ToLower(strings.ReplaceAll(fmt.Sprintf("%s.%s", attr.TraitType, attr.Value), " ", ""))
 		}
 	}
 
@@ -193,6 +194,31 @@ func (u Usecase) CrontabUpdateModularInscOwners() error {
 		}
 
 		page++
+	}
+
+	return nil
+}
+
+// 4. Crontab update traits of modular inscriptions
+func (u Usecase) CrontabUpdateModularInscTraits() error {
+	f := structure.FilterTokens{}
+	genNFTAddr := os.Getenv("MODULAR_PROJECT_ID")
+	f.GenNFTAddr = &genNFTAddr
+	inscriptions, err := u.Repo.AllModularInscriptions(context.Background(), f)
+	if err != nil {
+		return err
+	}
+
+	for _, token := range inscriptions {
+		t := u.CreateModularTraits(token.ParsedAttributesStr)
+		fmt.Println(fmt.Sprintf("[modular traits] - %s %s", token.TokenID, t))
+
+		i, err := u.Repo.UpsertModularAttribute(token.TokenID, t)
+		if err != nil {
+			continue
+		}
+
+		spew.Dump(i)
 	}
 
 	return nil

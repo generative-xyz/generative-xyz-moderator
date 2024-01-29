@@ -516,3 +516,11 @@ func indirectType(reflectType reflect.Type) (_ reflect.Type, isPtr bool) {
 	}
 	return reflectType, isPtr
 }
+
+func (r *Repository) UpdateOneWithOptions(collectionName string, filter bson.D, updatedData bson.M, opts ...*options.UpdateOptions) (*mongo.UpdateResult, error) {
+	inserted, err := r.DB.Collection(collectionName).UpdateOne(context.TODO(), filter, updatedData, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return inserted, nil
+}
