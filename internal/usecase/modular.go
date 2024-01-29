@@ -190,7 +190,10 @@ func (u Usecase) CrontabUpdateModularInscOwners() error {
 				if err != nil {
 					logger.AtLog.Logger.Error("CrontabUpdateModularInscOwners", zap.Error(err), zap.String("token_id", outFChan.InscriptionID), zap.String("owner_address", outFChan.OwnerAddress))
 				}
+
 			}
+
+			u.Cache.SetStringData(helpers.GenerateCachedInscriptionOnweKey(outFChan.InscriptionID), outFChan.OwnerAddress)
 		}
 
 		page++
