@@ -24,7 +24,7 @@ func SerializeMagicEdenResponse(arr []entity.TokenUri) []response.MagicEdenOrdin
 		r := response.MagicEdenOrdinalResponse{
 			ID: a.TokenID,
 			Meta: &response.MagicEdenOrdinalMeta{
-				Name:          fmt.Sprintf("Modular #%d", a.OrderInscriptionIndex),
+				Name:          fmt.Sprintf("#%d", a.OrderInscriptionIndex),
 				Attributes:    attrs,
 				HighResImgUrl: a.Thumbnail,
 			},
