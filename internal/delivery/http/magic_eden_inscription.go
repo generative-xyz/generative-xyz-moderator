@@ -19,6 +19,7 @@ func SerializeMagicEdenResponse(arr []entity.TokenUri) []response.MagicEdenOrdin
 			if strings.ToLower(a.TraitType) == "hash" {
 				continue
 			}
+			a.TraitType = strings.ReplaceAll(a.TraitType, "Modular's ", "")
 			attrs = append(attrs, a)
 		}
 		r := response.MagicEdenOrdinalResponse{
