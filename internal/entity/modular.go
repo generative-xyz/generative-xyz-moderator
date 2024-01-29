@@ -93,3 +93,14 @@ type ModularTokenAttr struct {
 	Items                  []string                       `json:"items" bson:"-"`
 	GroupID                string                         `bson:"_id" json:"group_id"`
 }
+
+type QuriedModularTokenAttr struct {
+	GroupedModularTokenUri `bson:"-"`
+	TotalItems             int                                   `json:"total_items" bson:"total_items"`
+	Items                  []QueriedModularInscriptionAttributes `json:"items" bson:"items"`
+	GroupID                string                                `bson:"_id" json:"group_id"`
+}
+
+type QueriedModularInscriptionAttributes struct {
+	TokenID string `bson:"token_id" json:"token_id"`
+}

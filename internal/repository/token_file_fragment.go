@@ -433,62 +433,55 @@ func (r Repository) GroupModularInscByAttr(ctx context.Context, filter structure
 
 	f := bson.A{
 		bson.D{
+			{"$match", _match},
+		},
+		bson.D{
 			{"$lookup",
 				bson.D{
-					{"from", "token_uri"},
-					{"localField", "inscription_id"},
-					{"foreignField", "token_id"},
-					{"pipeline",
-						bson.A{
-							bson.D{
-								{"$match", _match},
-							},
-						},
-					},
-					{"as", "token_uri"},
+					{"from", utils.COLLECTION_MODULAR_INSCRIPTION_ATTRIBUTE},
+					{"localField", "token_id"},
+					{"foreignField", "inscription_id"},
+					{"as", "attr"},
 				},
 			},
 		},
 		bson.D{
 			{"$unwind",
 				bson.D{
-					{"path", "$token_uri"},
+					{"path", "$attr"},
 					{"preserveNullAndEmptyArrays", false},
 				},
 			},
 		},
+		bson.D{{"$addFields", bson.D{{"group_id", "$attr.attribute"}}}},
 		bson.D{
 			{"$group",
 				bson.D{
-					{"_id", "$attribute"},
-					{"total", bson.D{{"$sum", 1}}},
+					{"_id", "$group_id"},
+					{"total_items", bson.D{{"$sum", 1}}},
+					{"items",
+						bson.D{
+							{"$push",
+								bson.D{
+									{"token_id", "$token_id"},
+								},
+							},
+						},
+					},
 				},
 			},
 		},
-		bson.D{{"$sort", bson.D{{"total", -1}}}},
+		bson.D{{"$sort", bson.D{{"total_items", entity.SORT_DESC}}}},
 		bson.D{{"$skip", skip}},
 		bson.D{{"$limit", limit}},
-		bson.D{
-			{"$graphLookup",
-				bson.D{
-					{"from", "modular_inscription_attribute"},
-					{"startWith", "$_id"},
-					{"connectFromField", "attribute"},
-					{"connectToField", "attribute"},
-					{"as", "string"},
-					{"maxDepth", 1},
-					{"depthField", "string"},
-					{"as", "attr"},
-				},
-			}},
 	}
 
-	cursor, err := r.DB.Collection(utils.COLLECTION_MODULAR_INSCRIPTION_ATTRIBUTE).Aggregate(ctx, f)
+	cursor, err := r.DB.Collection(utils.COLLECTION_TOKEN_URI).Aggregate(ctx, f)
 	if err != nil {
 		return nil, 0, err
 	}
 
-	aggregation := []*entity.ModularTokenAttr{}
+	aggregation := []*entity.QuriedModularTokenAttr{}
 	if err = cursor.All(ctx, &aggregation); err != nil {
 		return nil, 0, err
 	}
@@ -496,31 +489,8 @@ func (r Repository) GroupModularInscByAttr(ctx context.Context, filter structure
 	//count total
 	fCount := bson.A{
 		bson.D{
-			{"$lookup",
-				bson.D{
-					{"from", "token_uri"},
-					{"localField", "inscription_id"},
-					{"foreignField", "token_id"},
-					{"pipeline",
-						bson.A{
-							bson.D{
-								{"$match", _match},
-							},
-						},
-					},
-					{"as", "token_uri"},
-				},
-			},
+			{"$match", _match},
 		},
-		bson.D{
-			{"$unwind",
-				bson.D{
-					{"path", "$token_uri"},
-					{"preserveNullAndEmptyArrays", false},
-				},
-			},
-		},
-
 		bson.D{
 			{"$group",
 				bson.D{
@@ -531,7 +501,7 @@ func (r Repository) GroupModularInscByAttr(ctx context.Context, filter structure
 		},
 	}
 
-	cursorCount, err := r.DB.Collection(utils.COLLECTION_MODULAR_INSCRIPTION_ATTRIBUTE).Aggregate(ctx, fCount)
+	cursorCount, err := r.DB.Collection(utils.COLLECTION_TOKEN_URI).Aggregate(ctx, fCount)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -546,7 +516,20 @@ func (r Repository) GroupModularInscByAttr(ctx context.Context, filter structure
 		count = aggregationCount[0].Total
 	}
 
-	return aggregation, count, nil
+	resp := []*entity.ModularTokenAttr{}
+	for _, i := range aggregation {
+		item := &entity.ModularTokenAttr{}
+		item.GroupID = i.GroupID
+		item.TotalItems = i.TotalItems
+		item.Items = []string{}
+		for _, i1 := range i.Items {
+			item.Items = append(item.Items, i1.TokenID)
+		}
+
+		resp = append(resp, item)
+	}
+
+	return resp, count, nil
 }
 
 func (r Repository) AggregateListModularInscriptionsByTokenIDs(ctx context.Context, tokenIDs []string) ([]entity.ModularTokenUri, error) {

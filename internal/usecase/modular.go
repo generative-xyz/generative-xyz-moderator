@@ -80,18 +80,18 @@ func (u Usecase) GroupListModulars(ctx context.Context, f structure.FilterTokens
 	inscriptionIDs := []string{}
 	groupInscriptionIDs := make(map[string][]string)
 	for _, i := range inscriptions {
-		inscriptionIDs = append(inscriptionIDs, i.Attr[0].InscriptionID)
+		inscriptionIDs = append(inscriptionIDs, i.Items[0])
 
 		ins := []string{}
-		for _, i1 := range i.Attr {
-			ins = append(ins, i1.InscriptionID)
+		for _, i1 := range i.Items {
+			ins = append(ins, i1)
 		}
 
 		groupInscriptionIDs[i.GroupID] = ins
 	}
 
 	for _, i := range inscriptions {
-		inscriptionIDs = append(inscriptionIDs, i.Attr[0].InscriptionID)
+		inscriptionIDs = append(inscriptionIDs, i.Items[0])
 	}
 
 	allTokens, err := u.Repo.AggregateListModularInscriptionsByTokenIDs(ctx, inscriptionIDs)
@@ -105,7 +105,7 @@ func (u Usecase) GroupListModulars(ctx context.Context, f structure.FilterTokens
 	}
 
 	for _, i := range inscriptions {
-		t, ok := tokens[i.Attr[0].InscriptionID]
+		t, ok := tokens[i.Items[0]]
 		if ok {
 			gPi := entity.GroupedModularTokenUri{
 				Image:               t.Image,
