@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"math"
 	"math/big"
 	"net/http"
 	"strings"
@@ -575,7 +576,7 @@ func (h *httpDelivery) projectToResp(input *entity.Projects) (*response.ProjectR
 
 				traitValueStats = append(traitValueStats, response.TraitValueStat{
 					Value:  vv.Value,
-					Rarity: r,
+					Rarity: math.Floor(r*100) / 100,
 				})
 			}
 			traitStat = append(traitStat, response.TraitStat{
