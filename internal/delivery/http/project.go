@@ -568,9 +568,14 @@ func (h *httpDelivery) projectToResp(input *entity.Projects) (*response.ProjectR
 		for _, v := range input.TraitsStat {
 			traitValueStats := make([]response.TraitValueStat, 0)
 			for _, vv := range v.TraitValuesStat {
+				r := vv.RarityF
+				if r == 0 {
+					r = float64(vv.Rarity)
+				}
+
 				traitValueStats = append(traitValueStats, response.TraitValueStat{
 					Value:  vv.Value,
-					Rarity: vv.Rarity,
+					Rarity: r,
 				})
 			}
 			traitStat = append(traitStat, response.TraitStat{

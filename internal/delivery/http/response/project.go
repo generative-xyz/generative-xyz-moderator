@@ -7,8 +7,8 @@ import (
 )
 
 type TraitValueStat struct {
-	Value  string `json:"value"`
-	Rarity int32  `json:"rarity"`
+	Value  string  `json:"value"`
+	Rarity float64 `json:"rarity"`
 }
 
 type TraitStat struct {
