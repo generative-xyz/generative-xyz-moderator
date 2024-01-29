@@ -18,6 +18,7 @@ type ModularTokenUri struct {
 	ParsedImage         *string           `bson:"parsed_image" json:"parsed_image"`
 	AnimationURL        string            `bson:"animation_url" json:"animation_url"`
 	ParsedAttributesStr []TokenUriAttrStr `bson:"parsed_attributes_str" json:"attributes"`
+	ParsedAttributes    []TokenUriAttr    `bson:"parsed_attributes" json:"parsed_attributes"`
 	ProjectID           string            `bson:"project_id" json:"project_id"`
 	BlockNumberMinted   *string           `bson:"block_number_minted" json:"block_number_minted"`
 	MintedTime          *time.Time        `bson:"minted_time" json:"minted_time"`

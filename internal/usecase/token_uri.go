@@ -199,6 +199,34 @@ func (u Usecase) RunAndCap(token *entity.TokenUri) (*structure.TokenAnimationURI
 		IsUpdated:   true,
 	}
 
+	if token.ProjectID == os.Getenv("MODULAR_PROJECT_ID") {
+		attrs1 := []entity.TokenUriAttr{}
+		attrs2 := []entity.TokenUriAttrStr{}
+
+		for _, i := range resp.Traits {
+			if strings.EqualFold(i.TraitType, "hash") {
+				continue
+			}
+			attr := entity.TokenUriAttr{}
+			attr.Value = i.Value
+			attr.TraitType = strings.ReplaceAll(i.TraitType, "Modular's ", "")
+			attrs1 = append(attrs1, attr)
+		}
+
+		for _, i := range resp.TraitsStr {
+			if strings.EqualFold(i.TraitType, "hash") {
+				continue
+			}
+			attr := entity.TokenUriAttrStr{}
+			attr.Value = i.Value
+			attr.TraitType = strings.ReplaceAll(i.TraitType, "Modular's ", "")
+			attrs2 = append(attrs2, attr)
+		}
+
+		resp.Traits = attrs1
+		resp.TraitsStr = attrs2
+	}
+
 	logger.AtLog.Logger.Info(fmt.Sprintf("RunAndCap - %s - %s", token.ProjectID, token.TokenID),
 		zap.String("contractAddress", token.ContractAddress),
 		zap.String("cenNFTAddr", token.GenNFTAddr),
