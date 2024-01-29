@@ -14,8 +14,9 @@ const DEFAULT_CAPTURE_TIME int = 20
 const DEFAULT_DELAY_OPEN_MINT_TIME_IN_HOUR = 3 // hours
 
 type TraitValueStat struct {
-	Value  string `bson:"value" json:"value"`
-	Rarity int32  `bson:"rarity" json:"rarity"`
+	Value   string  `bson:"value" json:"value"`
+	Rarity  int32   `bson:"rarity" json:"rarity"`
+	RarityF float64 `bson:"rarity_number" json:"rarity_number"`
 }
 
 type TraitStat struct {

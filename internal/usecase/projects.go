@@ -1481,9 +1481,11 @@ func (u Usecase) GetUpdatedProjectStats(req structure.GetProjectReq) (*entity.Pr
 	for k, cnt := range traitToCnt {
 		traitValueStat := make([]entity.TraitValueStat, 0)
 		for value, cntValue := range traitValueToCnt[k] {
+			r := (float64(cntValue) / float64(cnt)) * 100
 			traitValueStat = append(traitValueStat, entity.TraitValueStat{
-				Value:  value,
-				Rarity: int32(cntValue * 100 / cnt),
+				Value:   value,
+				Rarity:  int32(cntValue * 100 / cnt),
+				RarityF: r,
 			})
 		}
 		traitsStat = append(traitsStat, entity.TraitStat{
