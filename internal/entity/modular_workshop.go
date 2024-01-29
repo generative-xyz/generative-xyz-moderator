@@ -7,6 +7,7 @@ type ModularWorkshopEntity struct {
 	Name       string `bson:"name" json:"name"`
 	OwnerAddr  string `bson:"owner_addr" json:"owner_addr" `
 	MetaData   string `bson:"meta_data" json:"meta_data"`
+	Thumbnail  string `bson:"thumbnail" json:"thumbnail"`
 }
 
 func (u ModularWorkshopEntity) TableName() string {
