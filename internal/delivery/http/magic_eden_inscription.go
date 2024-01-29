@@ -8,16 +8,24 @@ import (
 	"rederinghub.io/internal/delivery/http/response"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
+	"strings"
 )
 
 func SerializeMagicEdenResponse(arr []entity.TokenUri) []response.MagicEdenOrdinalResponse {
 	var magicEdenResponse []response.MagicEdenOrdinalResponse
 	for _, a := range arr {
+		attrs := []entity.TokenUriAttrStr{}
+		for _, a := range a.ParsedAttributesStr {
+			if strings.ToLower(a.TraitType) == "hash" {
+				continue
+			}
+			attrs = append(attrs, a)
+		}
 		r := response.MagicEdenOrdinalResponse{
 			ID: a.TokenID,
 			Meta: &response.MagicEdenOrdinalMeta{
 				Name:          fmt.Sprintf("Modular #%d", a.OrderInscriptionIndex),
-				Attributes:    a.ParsedAttributesStr,
+				Attributes:    attrs,
 				HighResImgUrl: a.Thumbnail,
 			},
 		}
