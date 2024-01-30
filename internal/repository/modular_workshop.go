@@ -9,8 +9,11 @@ import (
 )
 
 func (r Repository) GetListModularWorkShopByAddress(ctx context.Context, ownerAddr string, offset, limit int64) ([]entity.ModularWorkshopEntity, error) {
-	filter := bson.M{"owner_addr": ownerAddr,
+	filter := bson.M{
 		"delete_at": bson.M{"$exists": false},
+	}
+	if len(ownerAddr) > 0 {
+		filter["owner_addr"] = ownerAddr
 	}
 	projection := bson.M{"name": 1, "created_at": 1}
 	options := options.Find().SetSort(bson.M{"created_at": -1})
@@ -64,13 +67,17 @@ func (r Repository) UpdateModularWorkshop(ctx context.Context, data *entity.Modu
 	}
 	return nil
 }
-func (r Repository) RemoveModularWorkshop(ctx context.Context, uuid, ownerAddr string) error {
+func (r Repository) RemoveModularWorkshop(ctx context.Context, id, ownerAddr string) error {
+	objectID, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return err
+	}
 	filter := bson.M{
-		"uuid":       uuid,
+		"_id":        objectID,
 		"owner_addr": ownerAddr,
 		"delete_at":  bson.M{"$exists": false},
 	}
-	_, err := r.DB.Collection(entity.ModularWorkshopEntity{}.TableName()).DeleteOne(ctx, filter)
+	_, err = r.DB.Collection(entity.ModularWorkshopEntity{}.TableName()).DeleteOne(ctx, filter)
 	if err != nil {
 		return err
 	}
@@ -78,9 +85,13 @@ func (r Repository) RemoveModularWorkshop(ctx context.Context, uuid, ownerAddr s
 }
 
 func (r Repository) GetModularWorkshopById(ctx context.Context, id string) (*entity.ModularWorkshopEntity, error) {
-	filter := bson.M{"uuid": id}
+	objectID, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return nil, err
+	}
+	filter := bson.M{"_id": objectID}
 	var data entity.ModularWorkshopEntity
-	err := r.DB.Collection(entity.ModularWorkshopEntity{}.TableName()).FindOne(ctx, filter).Decode(&data)
+	err = r.DB.Collection(entity.ModularWorkshopEntity{}.TableName()).FindOne(ctx, filter).Decode(&data)
 	if err != nil {
 		return nil, err
 	}

@@ -30,6 +30,19 @@ func (b *BaseEntity) GetID() string {
 	return b.UUID
 }
 
+type BaseNewEntity struct {
+	ID             primitive.ObjectID `json:"id" bson:"_id"`
+	BaseEntityNoID `bson:",inline"`
+}
+
+func (b *BaseNewEntity) SetID() {
+	b.ID = primitive.NewObjectID()
+}
+
+func (b *BaseNewEntity) GetID() string {
+	return b.ID.Hex()
+}
+
 func (b *BaseEntityNoID) SetCreatedAt() {
 	now := time.Now().UTC()
 	b.CreatedAt = &now
