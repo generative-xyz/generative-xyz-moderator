@@ -64,8 +64,8 @@ func (h *httpDelivery) SaveModularWorkshop(w http.ResponseWriter, r *http.Reques
 			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 			return
 		}
-		data.BaseEntity.SetID()
-		data.BaseEntity.SetCreatedAt()
+		data.SetID()
+		data.SetCreatedAt()
 		data.ID, err = h.Usecase.Repo.SaveModularWorkshop(context.Background(), data)
 		if err != nil {
 			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
@@ -77,7 +77,7 @@ func (h *httpDelivery) SaveModularWorkshop(w http.ResponseWriter, r *http.Reques
 			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 			return
 		}
-		data.BaseEntity.SetUpdatedAt()
+		data.SetUpdatedAt()
 		err = h.Usecase.Repo.UpdateModularWorkshop(context.Background(), data)
 		if err != nil {
 			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
