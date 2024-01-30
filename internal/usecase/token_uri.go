@@ -1830,6 +1830,6 @@ func (u Usecase) PreviewTokenByTokenID(tokenID string) (string, error) {
 	}
 
 	str := string(_b)
-	str = strings.ReplaceAll(str, "/content", "")
+	str = strings.ReplaceAll(str, "/content", "https://preview.generativeexplorer.com/content")
 	return str, nil
 }
