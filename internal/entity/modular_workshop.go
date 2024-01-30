@@ -3,6 +3,7 @@ package entity
 import (
 	"encoding/json"
 	"rederinghub.io/utils"
+	"strings"
 )
 
 type ModularWorkshopEntity struct {
@@ -30,7 +31,7 @@ func (u ModularWorkshopEntity) GetListInscriptionIds() []string {
 	json.Unmarshal([]byte(u.MetaData), &info)
 	var inscriptionIds []string
 	for _, data := range info {
-		inscriptionIds = append(inscriptionIds, data.InscriptionId)
+		inscriptionIds = append(inscriptionIds, strings.TrimSpace(strings.ToLower(data.InscriptionId)))
 	}
 	return inscriptionIds
 }
