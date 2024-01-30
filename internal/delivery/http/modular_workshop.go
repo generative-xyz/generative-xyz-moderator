@@ -5,8 +5,10 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"os"
 	"rederinghub.io/internal/delivery/http/response"
 	"rederinghub.io/internal/entity"
+	"strconv"
 )
 
 func (h *httpDelivery) GetListModularWorkshop(w http.ResponseWriter, r *http.Request) {
@@ -50,7 +52,18 @@ func (h *httpDelivery) SaveModularWorkshop(w http.ResponseWriter, r *http.Reques
 	body, err := io.ReadAll(r.Body)
 	var data *entity.ModularWorkshopEntity
 	err = json.Unmarshal(body, &data)
+	if err != nil {
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+	checkOwner, _ := strconv.ParseBool(os.Getenv("MODULAR_WORKSHOP_CHECK_OWNER"))
+	data.Public = !checkOwner
 	if data.ID.IsZero() {
+		err = h.Usecase.ValidateModularWorkshopEntity(data, true, checkOwner)
+		if err != nil {
+			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+			return
+		}
 		data.BaseEntity.SetID()
 		data.BaseEntity.SetCreatedAt()
 		data.ID, err = h.Usecase.Repo.SaveModularWorkshop(context.Background(), data)
@@ -59,6 +72,11 @@ func (h *httpDelivery) SaveModularWorkshop(w http.ResponseWriter, r *http.Reques
 			return
 		}
 	} else {
+		err = h.Usecase.ValidateModularWorkshopEntity(data, false, checkOwner)
+		if err != nil {
+			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+			return
+		}
 		data.BaseEntity.SetUpdatedAt()
 		err = h.Usecase.Repo.UpdateModularWorkshop(context.Background(), data)
 		if err != nil {
