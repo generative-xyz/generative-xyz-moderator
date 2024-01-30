@@ -1748,25 +1748,7 @@ func (r Repository) AnalyticsTokenUriOwner(f entity.FilterTokenUris) ([]*entity.
 				},
 			},
 		},
-		bson.D{
-			{"$lookup",
-				bson.D{
-					{"from", "users"},
-					{"localField", "owner_addrress"},
-					{"foreignField", "wallet_address_btc"},
-					{"as", "owner"},
-				},
-			},
-		},
-		bson.D{
-			{"$unwind",
-				bson.D{
-					{"path", "$owner"},
-					{"includeArrayIndex", "string"},
-					{"preserveNullAndEmptyArrays", true},
-				},
-			},
-		},
+
 		bson.D{
 			{"$project",
 				bson.D{
