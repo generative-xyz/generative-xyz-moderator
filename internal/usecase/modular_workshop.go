@@ -12,6 +12,12 @@ func (u Usecase) ValidateModularWorkshopEntity(entity *entity.ModularWorkshopEnt
 	if len(inscriptionIds) == 0 && checkEmpty {
 		return errors.New(fmt.Sprintf("No inscription found in the metadata."))
 	}
+	if len(entity.Thumbnail) == 0 {
+		return errors.New(fmt.Sprintf("No thumbnail found in the metadata."))
+	}
+	if len(entity.OwnerAddr) == 0 {
+		return errors.New(fmt.Sprintf("No Owner Addr found in the metadata."))
+	}
 	for i, id := range inscriptionIds {
 		if len(id) == 0 {
 			return errors.New(fmt.Sprintf("Empty inscription id at index %d", i))
