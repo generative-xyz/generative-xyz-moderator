@@ -27,15 +27,21 @@ func (u Usecase) ValidateModularWorkshopEntity(entity *entity.ModularWorkshopEnt
 		}
 		mapInscriptionIds[id] = true
 		if checkOwner {
-			info, err := u.GetInscriptionByIDFromOrd(id)
-			if err != nil {
-				return errors.New(fmt.Sprintf("Cannot check owner of inscription id %s due to Oridinal error: %s", id, err.Error()))
+			inscriptionOwnerAddress := ""
+			tokenURI, err := u.GetTokenByTokenID(id, 0)
+			if err == nil && tokenURI != nil {
+				inscriptionOwnerAddress = tokenURI.OwnerAddr
+			} else {
+				info, err := u.GetInscriptionByIDFromOrd(id)
+				if err == nil && info != nil {
+					inscriptionOwnerAddress = info.Address
+				}
 			}
-			if info == nil {
-				return errors.New(fmt.Sprintf("Can not check owner of inscription id %s due to Oridinal info == nil", id))
+			if len(inscriptionOwnerAddress) == 0 {
+				return errors.New(fmt.Sprintf("Can not check owner of inscription id %s due to Oridinal & DB . Try again", id))
 			}
-			if entity.OwnerAddr != info.Address {
-				return errors.New(fmt.Sprintf("Error occurred when checking the owner of inscription id %s from Original, sender: %s, owner: %s.", id, entity.OwnerAddr, info.Address))
+			if entity.OwnerAddr != inscriptionOwnerAddress {
+				return errors.New(fmt.Sprintf("Error occurred when checking the owner of inscription id %s from Original, sender: %s, owner: %s.", id, entity.OwnerAddr, inscriptionOwnerAddress))
 			}
 		}
 	}
