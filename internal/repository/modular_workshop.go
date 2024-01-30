@@ -15,7 +15,11 @@ func (r Repository) GetListModularWorkShopByAddress(ctx context.Context, ownerAd
 	if len(ownerAddr) > 0 {
 		filter["owner_addr"] = ownerAddr
 	}
-	projection := bson.M{"name": 1, "created_at": 1}
+	projection := bson.M{
+		"name":       1,
+		"created_at": 1,
+		"thumbnail":  1,
+	}
 	options := options.Find().SetSort(bson.M{"created_at": -1})
 	options.SetProjection(projection)
 	options.SetSkip(offset)
