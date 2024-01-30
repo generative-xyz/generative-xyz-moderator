@@ -1816,3 +1816,20 @@ func (u Usecase) InsertDataTokenWoker(nftInput chan entity.NFT, outputChan chan 
 	outputChan <- item
 
 }
+
+func (u Usecase) PreviewTokenByTokenID(tokenID string) (string, error) {
+	tokenUri, err := u.Repo.FindTokenByTokenID(tokenID)
+	if err != nil {
+		return "", err
+	}
+
+	animationURL := tokenUri.AnimationURL
+	_b, _, _, err := helpers.HttpRequest(animationURL, "GET", map[string]string{}, nil)
+	if err != nil {
+		return "", err
+	}
+
+	str := string(_b)
+	str = strings.ReplaceAll(str, "/content", "")
+	return str, nil
+}

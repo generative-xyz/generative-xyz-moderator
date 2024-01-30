@@ -2,6 +2,8 @@ package http
 
 import (
 	"context"
+	"fmt"
+	"github.com/gorilla/mux"
 	"net/http"
 	"os"
 	"rederinghub.io/internal/delivery/http/response"
@@ -36,4 +38,19 @@ func (h *httpDelivery) ModularInscriptions(w http.ResponseWriter, r *http.Reques
 
 	//
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
+}
+
+func (h *httpDelivery) PreviewModularInscriptions(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	inscriptionID := vars["tokenID"]
+
+	html, err := h.Usecase.PreviewTokenByTokenID(inscriptionID)
+	if err != nil {
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	fmt.Fprint(w, html)
+	return
 }

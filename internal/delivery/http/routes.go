@@ -415,6 +415,7 @@ func (h *httpDelivery) RegisterV1Routes() {
 
 	modular := api.PathPrefix("/modular").Subrouter()
 	modular.HandleFunc("/inscriptions", h.ModularInscriptions).Methods("GET")
+	modular.HandleFunc("/inscriptions/preview/{tokenID}.html", h.PreviewModularInscriptions).Methods("GET")
 	modular.HandleFunc("/magic-eden-format", h.GetListInscriptionWithMagicEdenFormat).Methods("GET")
 
 	modularWorkshop := api.PathPrefix("/modular-workshop").Subrouter()
