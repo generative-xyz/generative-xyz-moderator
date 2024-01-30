@@ -63,6 +63,7 @@ func (r Repository) UpdateModularWorkshop(ctx context.Context, data *entity.Modu
 			"update_at": data.UpdatedAt,
 			"meta_data": data.MetaData,
 			"name":      data.Name,
+			"thumbnail": data.Thumbnail,
 		},
 	}
 	_, err := r.DB.Collection(entity.ModularWorkshopEntity{}.TableName()).UpdateOne(ctx, filter, update)
