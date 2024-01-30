@@ -3,17 +3,11 @@ name: Docker production build
 on:
   push:
     tags:
-      - 'v*_api'
-      - 'v*_api_general'
-      - 'v*_job_general'
-      - 'v*_job_inscribe_btc'
-      - 'v*_job_developer'
-      - 'v*_job_mint_project'
-      - 'v*_job_ai_school'
+      - 'v*_job_pubsub'
 env:
   DOCKER_REGISTRY: gcr.io
   DOCKER_IMAGE_NAME: generative-365207/generative-moderator
-  DOCKERFILE_NAME: Dockerfile
+  DOCKERFILE_NAME: worker-pubsub.Dockerfile
 
 jobs:
   build-and-push-to-gcr:
