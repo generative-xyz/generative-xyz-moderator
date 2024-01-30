@@ -395,8 +395,7 @@ func getInscriptionByID(ordServer, id string) (*structure.InscriptionOrdInfoByID
 		return nil, err
 	}
 
-	client := &http.Client{}
-	res, err := client.Do(req)
+	res, err := http.DefaultClient.Do(req)
 
 	if err != nil {
 		return nil, err
