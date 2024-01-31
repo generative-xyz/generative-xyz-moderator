@@ -54,3 +54,18 @@ func (h *httpDelivery) PreviewModularInscriptions(w http.ResponseWriter, r *http
 	fmt.Fprint(w, html)
 	return
 }
+
+func (h *httpDelivery) LoadContent(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	inscriptionID := vars["inscriptionID"]
+
+	html, err := h.Usecase.LoadContent(inscriptionID)
+	if err != nil {
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	fmt.Fprint(w, html)
+	return
+}

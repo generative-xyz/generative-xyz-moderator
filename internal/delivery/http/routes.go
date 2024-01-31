@@ -23,6 +23,8 @@ func (h *httpDelivery) registerRoutes() {
 func (h *httpDelivery) RegisterV1Routes() {
 	h.Handler.Use(h.MiddleWare.LoggingMiddleware)
 	h.Handler.HandleFunc("/", h.healthCheck).Methods("GET")
+	content := h.Handler.PathPrefix("/content").Subrouter()
+	content.HandleFunc("/{inscriptionID}", h.LoadContent).Methods("GET")
 
 	//api
 	api := h.Handler.PathPrefix("/generative/api").Subrouter()

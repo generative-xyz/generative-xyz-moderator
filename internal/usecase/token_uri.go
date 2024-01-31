@@ -1895,6 +1895,17 @@ func (u Usecase) PreviewTokenByTokenID(tokenID string) (string, error) {
 	str1 = strings.ReplaceAll(str1, fmt.Sprintf(`<script data-s="%s"></script>`, dataS), fmt.Sprintf(`<script data-s="%s">%s</script>`, dataS, scriptContents[0]))
 
 	return str1, nil
+
+}
+
+func (u Usecase) LoadContent(tokenID string) (string, error) {
+	_b, _, _, err := helpers.HttpRequest(fmt.Sprintf(`https://ordinals.com/content/%s`, tokenID), "GET", map[string]string{}, nil)
+	if err != nil {
+		return "", err
+	}
+
+	return string(_b), nil
+
 }
 
 func (u *Usecase) findDocByName(doc *html.Node, name string) []string {
