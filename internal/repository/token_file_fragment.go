@@ -488,8 +488,32 @@ func (r Repository) GroupModularInscByAttr(ctx context.Context, filter structure
 
 	//count total
 	fCount := bson.A{
+		bson.D{{"$match", _match}},
 		bson.D{
-			{"$match", _match},
+			{"$lookup",
+				bson.D{
+					{"from", "modular_inscription_attribute"},
+					{"localField", "token_id"},
+					{"foreignField", "inscription_id"},
+					{"as", "attr"},
+				},
+			},
+		},
+		bson.D{
+			{"$unwind",
+				bson.D{
+					{"path", "$attr"},
+					{"preserveNullAndEmptyArrays", false},
+				},
+			},
+		},
+		bson.D{
+			{"$group",
+				bson.D{
+					{"_id", "$attr.attribute"},
+					{"total", bson.D{{"$sum", 1}}},
+				},
+			},
 		},
 		bson.D{
 			{"$group",

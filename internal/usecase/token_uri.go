@@ -6,6 +6,9 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"github.com/antchfx/htmlquery"
+	"github.com/davecgh/go-spew/spew"
+	"golang.org/x/net/html"
 	"io/ioutil"
 	"math/big"
 	"net/http"
@@ -1830,6 +1833,109 @@ func (u Usecase) PreviewTokenByTokenID(tokenID string) (string, error) {
 	}
 
 	str := string(_b)
-	str = strings.ReplaceAll(str, "/content", "https://preview.generativeexplorer.com/content")
-	return str, nil
+
+	doc, err2 := htmlquery.Parse(strings.NewReader(str))
+	if err2 != nil {
+		err = err2
+		return "", err
+	}
+
+	f := "//script"
+	found := u.FindNode(doc, f)
+
+	dataS := ""
+	scriptContents := make(map[int]string)
+	for k, i := range found {
+		for _, attr := range i.Attr {
+			if attr.Key == "src" {
+				scriptUrl := fmt.Sprintf("https://ordinals.com%s", attr.Val)
+				_bS, _, _, err := helpers.HttpRequest(scriptUrl, "GET", map[string]string{}, nil)
+				if err != nil {
+					return "", err
+				}
+
+				scriptContent := string(_bS)
+				scriptContent = strings.ReplaceAll(scriptContent, "/content", "https://ordinals.com/content")
+				scriptContents[k] = scriptContent
+			}
+
+			if attr.Key == "data-s" {
+				dataS = attr.Val
+			}
+		}
+
+	}
+
+	found1 := htmlquery.Find(doc, f)
+	for k, node := range found1 {
+		newAttrs := []html.Attribute{}
+
+		for _, attr := range node.Attr {
+			if attr.Key == "src" {
+				continue
+			}
+			newAttrs = append(newAttrs, attr)
+		}
+
+		node.Attr = newAttrs
+		//node.FirstChild = &html.Node{}
+		//node.FirstChild.Data = scriptContents[k]
+
+		spew.Dump(node.Attr)
+		spew.Dump(k)
+	}
+
+	var b bytes.Buffer
+	err = html.Render(&b, doc)
+	if err != nil {
+		return "", err
+	}
+
+	str1 := b.String()
+	str1 = strings.ReplaceAll(str1, fmt.Sprintf(`<script data-s="%s"></script>`, dataS), fmt.Sprintf(`<script data-s="%s">%s</script>`, dataS, scriptContents[0]))
+
+	return str1, nil
+}
+
+func (u *Usecase) findDocByName(doc *html.Node, name string) []string {
+	content := []string{}
+	f := "//script"
+	found := htmlquery.Find(doc, f)
+	for _, f1 := range found {
+		for _, f2 := range f1.Attr {
+			if f2.Key == "src" {
+				content1 := f2.Val
+				if content1 != "" {
+					content = append(content, content1)
+				}
+			}
+		}
+	}
+
+	return content
+
+}
+
+func (u *Usecase) FindNode(doc *html.Node, find string) []*html.Node {
+	found := htmlquery.Find(doc, find)
+	if len(found) > 0 {
+		return found
+	}
+
+	if doc.FirstChild == nil {
+		return []*html.Node{}
+	}
+
+	if doc.LastChild == nil {
+		return []*html.Node{}
+	}
+
+	res := []*html.Node{}
+	fC := u.FindNode(doc.FirstChild, find)
+	lC := u.FindNode(doc.LastChild, find)
+
+	res = append(res, fC...)
+	res = append(res, lC...)
+
+	return res
 }
