@@ -622,6 +622,7 @@ func (r Repository) AggregateListModularInscriptionsByTokenIDs(ctx context.Conte
 
 func (r Repository) AllModularInscriptions(ctx context.Context, filter structure.FilterTokens) ([]entity.ModularTokenUri, error) {
 	_match := bson.D{}
+	_match = append(_match, bson.E{"order_inscription_index", bson.D{{"$gte", 241}}})
 
 	if filter.OwnerAddr != nil && *filter.OwnerAddr != "" {
 		_match = append(_match, bson.E{"owner_addrress", filter.OwnerAddr})
@@ -634,6 +635,38 @@ func (r Repository) AllModularInscriptions(ctx context.Context, filter structure
 	f := bson.A{
 		bson.D{{"$match", _match}},
 		bson.D{{"$sort", bson.D{{"_id", -1}}}},
+	}
+
+	cursor, err := r.DB.Collection(entity.TokenUri{}.TableName()).Aggregate(ctx, f)
+	if err != nil {
+		return nil, err
+	}
+
+	aggregation := []entity.ModularTokenUri{}
+	if err = cursor.All(ctx, &aggregation); err != nil {
+		return nil, err
+	}
+
+	return aggregation, nil
+}
+
+func (r Repository) AllModularInscriptionsP(ctx context.Context, filter structure.FilterTokens, skip int, limit int) ([]entity.ModularTokenUri, error) {
+	_match := bson.D{}
+	_match = append(_match, bson.E{"order_inscription_index", bson.D{{"$gte", 286}}})
+
+	if filter.OwnerAddr != nil && *filter.OwnerAddr != "" {
+		_match = append(_match, bson.E{"owner_addrress", filter.OwnerAddr})
+	}
+
+	if filter.GenNFTAddr != nil && *filter.GenNFTAddr != "" {
+		_match = append(_match, bson.E{"project_id", filter.GenNFTAddr})
+	}
+
+	f := bson.A{
+		bson.D{{"$match", _match}},
+		bson.D{{"$sort", bson.D{{"_id", -1}}}},
+		bson.D{{"$skip", skip}},
+		bson.D{{"$limit", limit}},
 	}
 
 	cursor, err := r.DB.Collection(entity.TokenUri{}.TableName()).Aggregate(ctx, f)

@@ -137,13 +137,22 @@ func (u Usecase) RunAndCap(token *entity.TokenUri) (*structure.TokenAnimationURI
 	}
 
 	traits := make(map[string]interface{})
-	err = chromedp.Run(ackCtx,
+
+	actions := []chromedp.Action{
 		chromedp.EmulateViewport(960, 960),
 		chromedp.Navigate(imageURL),
 		chromedp.WaitReady("body", chromedp.ByQuery),
-		chromedp.Sleep(time.Second*time.Duration(captureTimeout)),
+		chromedp.Sleep(time.Second * time.Duration(captureTimeout)),
 		chromedp.CaptureScreenshot(&buf),
 		chromedp.EvaluateAsDevTools("window.$generativeTraits", &traits),
+	}
+
+	if token.ProjectID == os.Getenv("MODULAR_PROJECT_ID") {
+		actions = append(actions, u.elementScreenshot("#defaultCanvas0", &buf))
+	}
+
+	err = chromedp.Run(ackCtx,
+		actions...,
 	)
 
 	if err != nil {
@@ -1949,4 +1958,10 @@ func (u *Usecase) FindNode(doc *html.Node, find string) []*html.Node {
 	res = append(res, lC...)
 
 	return res
+}
+
+func (u Usecase) elementScreenshot(sel string, res *[]byte) chromedp.Tasks {
+	return chromedp.Tasks{
+		chromedp.Screenshot(sel, res, chromedp.NodeVisible),
+	}
 }
