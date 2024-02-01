@@ -58,7 +58,7 @@ func (r Repository) UpdateFieldModularWorkshop(ctx context.Context) (int64, erro
 	filter := bson.M{}
 	update := bson.M{
 		"$set": bson.M{
-			"updated_at": "$created_at",
+			"updated_at": "$created",
 		},
 	}
 	result, err := r.DB.Collection(entity.ModularWorkshopEntity{}.TableName()).UpdateMany(ctx, filter, update)
