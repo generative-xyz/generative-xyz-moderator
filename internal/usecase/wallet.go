@@ -373,18 +373,16 @@ func getInscriptionByID(ordServer, id string) (*structure.InscriptionOrdInfoByID
 			GenesisHeight: hiroInsc.GenesisBlockHeight,
 		}
 		v, err := strconv.ParseInt(hiroInsc.Value, 10, 64)
-		if err != nil {
-			return nil, err
-		}
-		result.Output.Value = int(v)
+		if err == nil {
+			result.Output.Value = int(v)
 
-		fee, err := strconv.ParseInt(hiroInsc.GenesisFee, 10, 64)
-		if err != nil {
-			return nil, err
-		}
-		result.GenesisFee = int(fee)
+			fee, err := strconv.ParseInt(hiroInsc.GenesisFee, 10, 64)
+			if err == nil {
+				result.GenesisFee = int(fee)
 
-		return &result, nil
+				return &result, nil
+			}
+		}
 	}
 
 	url := fmt.Sprintf("%s/api/inscription/%s", ordServer, id)
