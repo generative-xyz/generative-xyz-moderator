@@ -5,6 +5,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"math"
 	"rederinghub.io/internal/entity"
 )
 
@@ -54,18 +55,20 @@ func (r Repository) SaveModularWorkshop(ctx context.Context, data *entity.Modula
 	return result.InsertedID.(primitive.ObjectID), nil
 }
 
-func (r Repository) UpdateFieldModularWorkshop(ctx context.Context) (int64, error) {
-	filter := bson.M{}
-	update := bson.M{
-		"$set": bson.M{
-			"updated_at": "$created_at",
-		},
+func (r Repository) UpdateFieldModularWorkshop(ctx context.Context) (int, error) {
+	entities, _ := r.GetListModularWorkShopByAddress(ctx, "", 0, math.MaxInt)
+	for _, entity := range entities {
+		filter := bson.M{"_id": entity.ID,
+			"owner_addr": entity.OwnerAddr,
+		}
+		update := bson.M{
+			"$set": bson.M{
+				"updated_at": entity.CreatedAt,
+			},
+		}
+		r.DB.Collection(entity.TableName()).UpdateOne(ctx, filter, update)
 	}
-	result, err := r.DB.Collection(entity.ModularWorkshopEntity{}.TableName()).UpdateMany(ctx, filter, update)
-	if err != nil {
-		return 0, err
-	}
-	return result.ModifiedCount, nil
+	return len(entities), nil
 }
 
 func (r Repository) UpdateModularWorkshop(ctx context.Context, data *entity.ModularWorkshopEntity) error {
