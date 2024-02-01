@@ -58,9 +58,7 @@ func (r Repository) SaveModularWorkshop(ctx context.Context, data *entity.Modula
 func (r Repository) UpdateFieldModularWorkshop(ctx context.Context) (int, error) {
 	entities, _ := r.GetListModularWorkShopByAddress(ctx, "", 0, math.MaxInt)
 	for _, entity := range entities {
-		filter := bson.M{"_id": entity.ID,
-			"owner_addr": entity.OwnerAddr,
-		}
+		filter := bson.M{"_id": entity.ID}
 		update := bson.M{
 			"$set": bson.M{
 				"updated_at": entity.CreatedAt,
