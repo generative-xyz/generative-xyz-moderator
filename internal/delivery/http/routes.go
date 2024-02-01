@@ -422,7 +422,7 @@ func (h *httpDelivery) RegisterV1Routes() {
 	modularWorkshop.HandleFunc("/list", h.GetListModularWorkshop).Methods("GET")
 	modularWorkshop.HandleFunc("/detail", h.GetModularWorkshopDetail).Methods("GET")
 	modularWorkshop.HandleFunc("/save", h.SaveModularWorkshop).Methods("POST")
-	modularWorkshop.HandleFunc("/delete", h.SaveModularWorkshop).Methods("POST")
+	modularWorkshop.HandleFunc("/fix-data", h.UpdateFieldModularWorkshop).Methods("POST")
 }
 
 func (h *httpDelivery) RegisterDocumentRoutes() {

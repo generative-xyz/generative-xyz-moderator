@@ -66,6 +66,7 @@ func (h *httpDelivery) SaveModularWorkshop(w http.ResponseWriter, r *http.Reques
 		}
 		data.SetID()
 		data.SetCreatedAt()
+		data.SetUpdatedAt()
 		data.ID, err = h.Usecase.Repo.SaveModularWorkshop(context.Background(), data)
 		if err != nil {
 			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
@@ -97,4 +98,13 @@ func (h *httpDelivery) RemoveModularWorkshop(w http.ResponseWriter, r *http.Requ
 		return
 	}
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, "", "")
+}
+
+func (h *httpDelivery) UpdateFieldModularWorkshop(w http.ResponseWriter, r *http.Request) {
+	count, err := h.Usecase.Repo.UpdateFieldModularWorkshop(context.Background())
+	if err != nil {
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, count, "")
 }

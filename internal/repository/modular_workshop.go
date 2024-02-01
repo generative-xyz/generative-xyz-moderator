@@ -54,16 +54,30 @@ func (r Repository) SaveModularWorkshop(ctx context.Context, data *entity.Modula
 	return result.InsertedID.(primitive.ObjectID), nil
 }
 
+func (r Repository) UpdateFieldModularWorkshop(ctx context.Context) (int64, error) {
+	filter := bson.M{}
+	update := bson.M{
+		"$set": bson.M{
+			"updated_at": "$created",
+		},
+	}
+	result, err := r.DB.Collection(entity.ModularWorkshopEntity{}.TableName()).UpdateMany(ctx, filter, update)
+	if err != nil {
+		return 0, err
+	}
+	return result.ModifiedCount, nil
+}
+
 func (r Repository) UpdateModularWorkshop(ctx context.Context, data *entity.ModularWorkshopEntity) error {
 	filter := bson.M{"_id": data.ID,
 		"owner_addr": data.OwnerAddr,
 	}
 	update := bson.M{
 		"$set": bson.M{
-			"update_at": data.UpdatedAt,
-			"meta_data": data.MetaData,
-			"name":      data.Name,
-			"thumbnail": data.Thumbnail,
+			"updated_at": data.UpdatedAt,
+			"meta_data":  data.MetaData,
+			"name":       data.Name,
+			"thumbnail":  data.Thumbnail,
 		},
 	}
 	_, err := r.DB.Collection(entity.ModularWorkshopEntity{}.TableName()).UpdateOne(ctx, filter, update)
