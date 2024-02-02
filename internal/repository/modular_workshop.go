@@ -5,7 +5,6 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"math"
 	"rederinghub.io/internal/entity"
 )
 
@@ -55,20 +54,6 @@ func (r Repository) SaveModularWorkshop(ctx context.Context, data *entity.Modula
 	return result.InsertedID.(primitive.ObjectID), nil
 }
 
-func (r Repository) UpdateFieldModularWorkshop(ctx context.Context) (int, error) {
-	entities, _ := r.GetListModularWorkShopByAddress(ctx, "", 0, math.MaxInt)
-	for _, entity := range entities {
-		filter := bson.M{"_id": entity.ID}
-		update := bson.M{
-			"$set": bson.M{
-				"updated_at": entity.CreatedAt,
-			},
-		}
-		r.DB.Collection(entity.TableName()).UpdateOne(ctx, filter, update)
-	}
-	return len(entities), nil
-}
-
 func (r Repository) UpdateModularWorkshop(ctx context.Context, data *entity.ModularWorkshopEntity) error {
 	filter := bson.M{"_id": data.ID,
 		"owner_addr": data.OwnerAddr,
@@ -116,4 +101,62 @@ func (r Repository) GetModularWorkshopById(ctx context.Context, id string) (*ent
 		return nil, err
 	}
 	return &data, nil
+}
+
+func (r Repository) GetStatModularWorkShop(ctx context.Context) *entity.ModularWorkshopStatistic {
+	stat := &entity.ModularWorkshopStatistic{}
+	filter := bson.M{
+		"delete_at": bson.M{
+			"$exists": false,
+		},
+	}
+	totalDocument, err := r.DB.Collection(entity.ModularWorkshopEntity{}.TableName()).CountDocuments(ctx, filter)
+	if err != nil {
+		return stat
+	}
+
+	pipeline := []bson.M{
+		{
+			"$match": bson.M{
+				"delete_at": bson.M{
+					"$exists": false,
+				},
+			},
+		},
+		{
+			"$group": bson.M{
+				"_id": "$owner_addr",
+				"count": bson.M{
+					"$sum": 1,
+				},
+			},
+		},
+		{
+			"$group": bson.M{
+				"_id": nil,
+				"total": bson.M{
+					"$sum": 1,
+				},
+			},
+		},
+	}
+
+	// Thực hiện pipeline aggregation
+	cursor, err := r.DB.Collection(entity.ModularWorkshopEntity{}.TableName()).Aggregate(ctx, pipeline)
+	if err != nil {
+		return stat
+	}
+	defer cursor.Close(ctx)
+
+	var result struct {
+		Total int `bson:"total"`
+	}
+	for cursor.Next(context.Background()) {
+		if err := cursor.Decode(&result); err != nil {
+			return stat
+		}
+	}
+	stat.TotalModel = totalDocument
+	stat.TotalOwner = result.Total
+	return stat
 }

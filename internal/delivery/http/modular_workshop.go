@@ -100,11 +100,7 @@ func (h *httpDelivery) RemoveModularWorkshop(w http.ResponseWriter, r *http.Requ
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, "", "")
 }
 
-func (h *httpDelivery) UpdateFieldModularWorkshop(w http.ResponseWriter, r *http.Request) {
-	count, err := h.Usecase.Repo.UpdateFieldModularWorkshop(context.Background())
-	if err != nil {
-		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
-		return
-	}
-	h.Response.RespondSuccess(w, http.StatusOK, response.Success, count, "")
+func (h *httpDelivery) GetStatisticModularWorkshop(w http.ResponseWriter, r *http.Request) {
+	stat := h.Usecase.Repo.GetStatModularWorkShop(r.Context())
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, stat, "")
 }
