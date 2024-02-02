@@ -35,3 +35,8 @@ func (u ModularWorkshopEntity) GetListInscriptionIds() []string {
 	}
 	return inscriptionIds
 }
+
+type ModularWorkshopStatistic struct {
+	TotalOwner int   `json:"total_owner"`
+	TotalModel int64 `json:"total_model"`
+}
