@@ -372,15 +372,18 @@ func getInscriptionByID(ordServer, id string) (*structure.InscriptionOrdInfoByID
 			Timestamp:     timestamp,
 			GenesisHeight: hiroInsc.GenesisBlockHeight,
 		}
-		v, err := strconv.ParseInt(hiroInsc.Value, 10, 64)
-		if err == nil {
-			result.Output.Value = int(v)
-
-			fee, err := strconv.ParseInt(hiroInsc.GenesisFee, 10, 64)
+		if hiroInsc.Value != "" {
+			v, err := strconv.ParseInt(hiroInsc.Value, 10, 64)
 			if err == nil {
-				result.GenesisFee = int(fee)
+				result.Output.Value = int(v)
+				if hiroInsc.GenesisFee != "" {
+					fee, err := strconv.ParseInt(hiroInsc.GenesisFee, 10, 64)
+					if err == nil {
+						result.GenesisFee = int(fee)
 
-				return &result, nil
+						return &result, nil
+					}
+				}
 			}
 		}
 	}
