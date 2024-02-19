@@ -56,7 +56,11 @@ func (h *httpDelivery) SaveModularWorkshop(w http.ResponseWriter, r *http.Reques
 	}
 	//checkOwner, _ := strconv.ParseBool(os.Getenv("MODULAR_WORKSHOP_CHECK_OWNER"))
 	//data.Public = !checkOwner
-	data.Public = data.IsGuestMode
+	data.Public = true
+	if data.IsGuestMode != nil {
+		data.Public = *data.IsGuestMode
+	}
+
 	checkOwner := !data.Public
 	if data.ID.IsZero() {
 		err = h.Usecase.ValidateModularWorkshopEntity(data, true, checkOwner)

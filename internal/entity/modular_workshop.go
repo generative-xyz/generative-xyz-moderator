@@ -13,7 +13,7 @@ type ModularWorkshopEntity struct {
 	MetaData      string `bson:"meta_data" json:"meta_data"`
 	Thumbnail     string `bson:"thumbnail" json:"thumbnail"`
 	Public        bool   `bson:"public" json:"public"`   // save to DB
-	IsGuestMode   bool   `bson:"-" json:"is_guest_mode"` //from FE - Public, private keys are denied by FE code.
+	IsGuestMode   *bool  `bson:"-" json:"is_guest_mode"` //from FE - Public, private keys are denied by FE code.
 }
 
 func (u ModularWorkshopEntity) TableName() string {
