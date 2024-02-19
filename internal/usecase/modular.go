@@ -72,10 +72,10 @@ func (u *Usecase) CreateModularTraits(attrs []entity.TokenUriAttrStr) string {
 func (u Usecase) GroupListModulars(ctx context.Context, f structure.FilterTokens) (*entity.Pagination, error) {
 	genNFTAddr := os.Getenv("MODULAR_PROJECT_ID")
 	f.GenNFTAddr = &genNFTAddr
-	checkOwner, _ := strconv.ParseBool(os.Getenv("MODULAR_WORKSHOP_CHECK_OWNER"))
-	if !checkOwner {
-		f.OwnerAddr = nil
-	}
+	//checkOwner, _ := strconv.ParseBool(os.Getenv("MODULAR_WORKSHOP_CHECK_OWNER"))
+	//if !checkOwner {
+	//	f.OwnerAddr = nil
+	//}
 	inscriptions, count, err := u.Repo.GroupModularInscByAttr(ctx, f)
 	if err != nil {
 		return nil, err
