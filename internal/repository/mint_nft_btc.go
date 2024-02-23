@@ -449,3 +449,46 @@ func (r Repository) ListEvmTempWallets() ([]entity.EvmTempWallets, error) {
 
 	return resp, nil
 }
+
+func (r Repository) InsertOrder(obj *entity.OrdersAddress) error {
+	obj.SetCreatedAt()
+
+	bData, err := obj.ToBson()
+	if err != nil {
+		return err
+	}
+
+	inserted, err := r.DB.Collection(obj.TableName()).InsertOne(context.TODO(), &bData)
+	if err != nil {
+		return err
+	}
+
+	objIDObject := inserted.InsertedID.(primitive.ObjectID)
+	objIDStr := objIDObject.Hex()
+
+	r.CreateCache(obj.TableName(), objIDStr, obj)
+	err = obj.Decode(bData)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (r Repository) FindOrderBy(orderID, payType string) (*entity.OrdersAddress, error) {
+	resp := &entity.OrdersAddress{}
+	usr, err := r.FilterOne(entity.OrdersAddress{}.TableName(), bson.D{
+		{"order_id", orderID},
+		{"address_type", payType},
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	err = helpers.Transform(usr, resp)
+	if err != nil {
+		return nil, err
+	}
+	return resp, nil
+}

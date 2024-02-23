@@ -189,6 +189,7 @@ const (
 	TOKEN_FILE_FRAGMENT_JOB                    string = "token_file_fragment_jobs"
 
 	MINT_NFT_BTC string = "mint_nft_btc"
+	ORDERS       string = "orders"
 
 	REDIS_KEY_LOCK_TX_CONSUMER_CONSUMER_BLOCK string = "lock-tx-consumer-update-last-processed-block"
 	EVM_NULL_ADDRESS                          string = "0x0000000000000000000000000000000000000000"

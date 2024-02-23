@@ -11,3 +11,8 @@ type CreateMintReceiveAddressReq struct {
 	IsCustomFeeRate bool        `json:"isCustomFeeRate"`
 	EstMintFeeInfo  interface{} `json:"estMintFeeInfo"`
 }
+
+type CreateOrderReceiveAddressReq struct {
+	OrderID string `json:"orderID"`
+	PayType string `json:"payType"`
+}

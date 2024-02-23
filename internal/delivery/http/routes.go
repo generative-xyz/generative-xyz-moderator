@@ -422,6 +422,9 @@ func (h *httpDelivery) RegisterV1Routes() {
 	modularWorkshop.HandleFunc("/detail", h.GetModularWorkshopDetail).Methods("GET")
 	modularWorkshop.HandleFunc("/save", h.SaveModularWorkshop).Methods("POST")
 	modularWorkshop.HandleFunc("/statistic", h.GetStatisticModularWorkshop).Methods("GET")
+
+	orders := api.PathPrefix("/orders").Subrouter()
+	orders.HandleFunc("/receive-address", h.ordersGetReceiveWalletAddress).Methods("POST")
 }
 
 func (h *httpDelivery) RegisterDocumentRoutes() {

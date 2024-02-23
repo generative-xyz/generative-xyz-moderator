@@ -4,6 +4,11 @@ import (
 	"time"
 )
 
+type OrderBtcData struct {
+	OrderID string `json:"orderID"`
+	PayType string `json:"payType"`
+}
+
 type MintNftBtcData struct {
 	UserAddress       string `json:"userAddress"`
 	WalletAddress     string `json:"walletAddress"`
