@@ -2,6 +2,7 @@ package http
 
 import (
 	"encoding/json"
+	"errors"
 	"github.com/jinzhu/copier"
 	"net/http"
 	"rederinghub.io/internal/delivery/http/request"
@@ -41,5 +42,34 @@ func (h *httpDelivery) ordersGetReceiveWalletAddress(w http.ResponseWriter, r *h
 	}
 
 	//resp := h.MintNftBtcToResp(mintNftBtcWallet)
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
+}
+
+// UserCredits godoc
+// @Summary List Orders
+// @Description List Orders
+// @Tags Orders
+// @Accept  json
+// @Produce  json
+// @Param request body request.CreateBtcWalletAddressReq true "Create a btc wallet address request"
+// @Success 200 {object} response.JsonResponse{}
+// @Router /orders/list [GET]
+func (h *httpDelivery) listOrders(w http.ResponseWriter, r *http.Request) {
+	email := r.URL.Query().Get("email")
+	if email == "" {
+		err := errors.New("email is required")
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+
+	f := structure.FilterOrders{
+		Email: &email,
+	}
+	resp, err := h.Usecase.ListOrders(f)
+	if err != nil {
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
 }

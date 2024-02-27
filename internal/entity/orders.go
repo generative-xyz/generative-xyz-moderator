@@ -6,12 +6,22 @@ import (
 	"rederinghub.io/utils/helpers"
 )
 
+type OrderStatus int
+
+const (
+	Order_Pending OrderStatus = iota // 0: pending: waiting for payment
+	Order_Paid                       // 1:paid
+	Order_Cancel                     // 2: cancel
+
+)
+
 type OrdersAddress struct {
 	BaseEntityNoID `bson:",inline"`
-	Address        string `bson:"address" json:"address"`
-	AddressType    string `bson:"address_type" json:"addressType"`
-	PrivateKey     string `bson:"private_key" json:"-"`
-	OrderID        string `bson:"order_id" json:"orderID"`
+	Status         OrderStatus `bson:"status" json:"status"`
+	Address        string      `bson:"address" json:"address"`          //payment address
+	AddressType    string      `bson:"address_type" json:"addressType"` //payment address_type
+	PrivateKey     string      `bson:"private_key" json:"-"`            //payment private_key
+	OrderID        string      `bson:"order_id" json:"orderID"`
 }
 
 func (u OrdersAddress) TableName() string {

@@ -425,6 +425,7 @@ func (h *httpDelivery) RegisterV1Routes() {
 
 	orders := api.PathPrefix("/orders").Subrouter()
 	orders.HandleFunc("/receive-address", h.ordersGetReceiveWalletAddress).Methods("POST")
+	orders.HandleFunc("/list", h.listOrders).Methods("GET")
 }
 
 func (h *httpDelivery) RegisterDocumentRoutes() {

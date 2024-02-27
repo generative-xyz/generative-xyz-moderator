@@ -1,13 +1,17 @@
 package usecase
 
 import (
+	"encoding/json"
 	"errors"
+	"fmt"
 	"go.uber.org/zap"
+	"os"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
 	"rederinghub.io/utils"
 	"rederinghub.io/utils/btc"
 	"rederinghub.io/utils/eth"
+	"rederinghub.io/utils/helpers"
 	"rederinghub.io/utils/logger"
 	"strings"
 )
@@ -71,4 +75,59 @@ func (u Usecase) CreateOrderReceiveAddress(input structure.OrderBtcData) (*entit
 	}
 
 	return walletAddress, nil
+}
+
+func (u Usecase) ListOrders(f structure.FilterOrders) (interface{}, error) {
+	d, err := u.ListOrdersFromApi(f)
+	if err != nil {
+		return nil, err
+	}
+
+	//TODO - process here
+	for i, item := range d.Orders {
+		item.PayType = string(entity.ETH)
+
+		item.Status = int(entity.Order_Pending)
+		if i%2 == 0 {
+			item.Status = int(entity.Order_Paid)
+		}
+
+	}
+
+	return d, nil
+}
+
+func (u Usecase) ListOrdersFromApi(f structure.FilterOrders) (*structure.ApiOrderDataResp, error) {
+	grailAPI := os.Getenv("GRAIL_API")
+	if grailAPI == "" {
+		grailAPI = "https://generative.xyz/api/v1"
+	}
+
+	if f.Email == nil {
+		return nil, errors.New("email is required")
+	}
+
+	if *f.Email == "" {
+		return nil, errors.New("email is not empty")
+	}
+
+	_url := fmt.Sprintf("%s/order/by-email/list?email=%s", grailAPI, *f.Email)
+	_b, _, _, err := helpers.HttpRequest(_url, "GET", map[string]string{}, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	resp := &structure.ApiOrderResp{}
+	err = json.Unmarshal(_b, resp)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.Message != nil {
+		err = errors.New(resp.Message.Message)
+		return nil, err
+	}
+
+	_d := resp.Data
+	return &_d, nil
 }
