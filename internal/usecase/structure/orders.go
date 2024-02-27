@@ -10,6 +10,14 @@ type ApiOrderResp struct {
 	Message *ApiOrderMessageResp `json:"message"`
 }
 
+type ApiOrderDetailResp struct {
+	Status int `json:"status"`
+	Data   struct {
+		Order ApiOrderItemResp `json:"order"`
+	} `json:"data"`
+	Message *ApiOrderMessageResp `json:"message"`
+}
+
 type ApiOrderMessageResp struct {
 	Code    int    `json:"Code"`
 	Message string `json:"Message"`
@@ -23,6 +31,7 @@ type ApiOrderDataResp struct {
 type ApiOrderItemResp struct {
 	Id                 string                   `json:"id"`
 	Amount             string                   `json:"amount"`
+	PaymentAddress     string                   `json:"payment_address"`
 	Status             int                      `json:"status"`
 	PayType            string                   `json:"pay_type"`
 	ShippingFirstname  string                   `json:"shipping_firstname"`
@@ -56,8 +65,10 @@ type ApiOrderItemDetailResp struct {
 }
 
 type OrderStatusChan struct {
-	OrderID string
-	PayType string
-	Err     error
-	Status  int
+	OrderID        string
+	PayType        string
+	Err            error
+	Status         int
+	OrderAmount    string
+	PaymentAddress string
 }

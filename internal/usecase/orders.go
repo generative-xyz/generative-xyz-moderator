@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/davecgh/go-spew/spew"
 	"go.uber.org/zap"
 	"math/big"
 	"os"
@@ -98,49 +99,21 @@ func (u Usecase) ListOrders(f structure.FilterOrders) (interface{}, error) {
 		return nil, err
 	}
 
-	inchan := make(chan entity.OrdersAddress, len(orders))
-	outChan := make(chan structure.OrderStatusChan, len(orders))
-	wg := sync.WaitGroup{}
-	wg.Add(len(orders))
-
-	for range orders {
-		go u.CheckOrderStatus(&wg, inchan, outChan)
-	}
-
+	orderDetails := make(map[string]entity.OrdersAddress)
 	for _, i := range orders {
-		a, ok := amount[i.OrderID]
+		orderDetails[i.OrderID] = *i
+	}
+
+	for _, item := range d.Orders {
+		d1, ok := orderDetails[item.Id] // from DB
 		if ok {
-			i.Amount = a
-		} else {
-			i.Amount = "0"
+			item.PayType = d1.AddressType
+			item.Status = int(d1.Status)
+			item.PaymentAddress = d1.Address
 		}
 
-		if i != nil {
-			inchan <- *i
-		}
 	}
 
-	_resp := make(map[string]structure.OrderStatusChan)
-	for range orders {
-		data := <-outChan
-		if data.Err != nil {
-			continue
-		}
-
-		_resp[data.OrderID] = data
-	}
-
-	for _, i := range d.Orders {
-		a, ok := _resp[i.Id]
-		if !ok {
-			continue
-		}
-
-		i.Status = a.Status
-		i.PayType = a.PayType
-	}
-
-	wg.Wait()
 	return d, nil
 }
 
@@ -179,6 +152,42 @@ func (u Usecase) ListOrdersFromApi(f structure.FilterOrders) (*structure.ApiOrde
 	return &_d, nil
 }
 
+func (u Usecase) GetOrderByIDFromApi(id string) (*structure.ApiOrderItemResp, error) {
+	cachedKey := fmt.Sprintf("order.%s", id)
+	respData := &structure.ApiOrderItemResp{}
+
+	err := u.Cache.GetObjectData(cachedKey, respData)
+	if err != nil || respData == nil {
+		grailAPI := os.Getenv("GRAIL_API")
+		if grailAPI == "" {
+			grailAPI = "https://generative.xyz/api/v1"
+		}
+
+		_url := fmt.Sprintf("%s/order/by-id/%s", grailAPI, id)
+		_b, _, _, err := helpers.HttpRequest(_url, "GET", map[string]string{}, nil)
+		if err != nil {
+			return nil, err
+		}
+
+		resp := &structure.ApiOrderDetailResp{}
+		err = json.Unmarshal(_b, resp)
+		if err != nil {
+			return nil, err
+		}
+
+		if resp.Message != nil {
+			err = errors.New(resp.Message.Message)
+			return nil, err
+		}
+
+		respData = &resp.Data.Order
+		u.Cache.SetDataWithExpireTime(cachedKey, respData, 86400*10) // 10 days
+		return respData, nil
+	}
+
+	return respData, nil
+}
+
 func (u Usecase) CheckOrderStatus(wg *sync.WaitGroup, input chan entity.OrdersAddress, output chan structure.OrderStatusChan) {
 	order := <-input
 	var err error
@@ -190,10 +199,12 @@ func (u Usecase) CheckOrderStatus(wg *sync.WaitGroup, input chan entity.OrdersAd
 
 	defer func() {
 		output <- structure.OrderStatusChan{
-			OrderID: order.OrderID,
-			Err:     err,
-			Status:  *statusP,
-			PayType: string(order.AddressType),
+			OrderID:        order.OrderID,
+			Err:            err,
+			Status:         *statusP,
+			PayType:        string(order.AddressType),
+			OrderAmount:    order.Amount,
+			PaymentAddress: order.Address,
 		}
 
 		//TODO update db's status
@@ -246,4 +257,47 @@ func (u Usecase) CheckOrderStatus(wg *sync.WaitGroup, input chan entity.OrdersAd
 		}
 	}
 
+}
+
+func (u Usecase) JobSyncPaymentStatus() error {
+	orders, err := u.Repo.FindOrderByStatus([]entity.OrderStatus{entity.Order_Pending})
+	if err != nil {
+		return err
+	}
+
+	inchan := make(chan entity.OrdersAddress, len(orders))
+	outChan := make(chan structure.OrderStatusChan, len(orders))
+	wg := sync.WaitGroup{}
+	wg.Add(len(orders))
+
+	for range orders {
+		go u.CheckOrderStatus(&wg, inchan, outChan)
+	}
+
+	for _, i := range orders {
+		od, err := u.GetOrderByIDFromApi(i.OrderID)
+		if err == nil {
+			i.Amount = od.Amount
+		} else {
+			i.Amount = "99999" // cannot update status with this amount
+		}
+
+		inchan <- *i
+	}
+
+	for range orders {
+		data := <-outChan
+		if data.Err != nil {
+			continue
+		}
+
+		status := data.Status
+		amount := data.OrderAmount
+
+		//TODO - update status here
+		spew.Dump(data.OrderID, data.PaymentAddress, status, amount)
+	}
+
+	wg.Wait()
+	return nil
 }

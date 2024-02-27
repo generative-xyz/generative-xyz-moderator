@@ -67,3 +67,19 @@ func (r Repository) FindOrderByIDs(orderIDs []string) ([]*entity.OrdersAddress, 
 
 	return resp, nil
 }
+
+func (r Repository) FindOrderByStatus(statuses []entity.OrderStatus) ([]*entity.OrdersAddress, error) {
+	resp := []*entity.OrdersAddress{}
+	f := bson.D{{"status", bson.D{{"$in", statuses}}}}
+
+	cursor, err := r.DB.Collection(utils.ORDERS).Find(context.TODO(), f, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = cursor.All(context.TODO(), &resp); err != nil {
+		return nil, err
+	}
+
+	return resp, nil
+}
