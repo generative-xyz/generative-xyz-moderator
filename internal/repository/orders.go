@@ -4,9 +4,11 @@ import (
 	"context"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/utils"
 	"rederinghub.io/utils/helpers"
+	"time"
 )
 
 func (r Repository) InsertOrder(obj *entity.OrdersAddress) error {
@@ -82,4 +84,21 @@ func (r Repository) FindOrderByStatus(statuses []entity.OrderStatus) ([]*entity.
 	}
 
 	return resp, nil
+}
+
+func (r Repository) UpdateOrderStatus(orderID string, status entity.OrderStatus) (*mongo.UpdateResult, error) {
+	f := bson.D{
+		{"order_id", orderID},
+	}
+	update := bson.M{"$set": bson.M{
+		"status":     status,
+		"updated_at": time.Now().UTC(),
+	}}
+
+	result, err := r.DB.Collection(utils.ORDERS).UpdateOne(context.TODO(), f, update)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
 }

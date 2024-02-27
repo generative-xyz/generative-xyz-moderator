@@ -188,6 +188,76 @@ func (u Usecase) GetOrderByIDFromApi(id string) (*structure.ApiOrderItemResp, er
 	return respData, nil
 }
 
+func (u Usecase) ProcessOrderPaymentApi(orderID, txHash, walletAddress string) (interface{}, error) {
+	//TODO - implement me
+	//grailAPI := os.Getenv("GRAIL_API")
+	//if grailAPI == "" {
+	//	grailAPI = "https://generative.xyz/api/v1"
+	//}
+	//
+	//postData := make(map[string]interface{})
+	//postData["order_id"] = orderID
+	//postData["tx_hash"] = txHash
+	//postData["wallet_address"] = walletAddress
+	//
+	//_url := fmt.Sprintf("%s/order/complete", grailAPI)
+	//_b, _, _, err := helpers.HttpRequest(_url, "POST", map[string]string{}, postData)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//
+	//resp := &structure.ApiOrderDetailResp{}
+	//err = json.Unmarshal(_b, resp)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//
+	//if resp.Message != nil {
+	//	err = errors.New(resp.Message.Message)
+	//	return nil, err
+	//}
+	//
+	//respData = &resp.Data.Order
+	//return respData, nil
+
+	return nil, nil
+}
+
+func (u Usecase) ProcessCancelOrderApi(orderID string) (interface{}, error) {
+	//TODO - implement me
+	//grailAPI := os.Getenv("GRAIL_API")
+	//if grailAPI == "" {
+	//	grailAPI = "https://generative.xyz/api/v1"
+	//}
+	//
+	//postData := make(map[string]interface{})
+	//postData["order_id"] = orderID
+	//postData["tx_hash"] = txHash
+	//postData["wallet_address"] = walletAddress
+	//
+	//_url := fmt.Sprintf("%s/order/complete", grailAPI)
+	//_b, _, _, err := helpers.HttpRequest(_url, "POST", map[string]string{}, postData)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//
+	//resp := &structure.ApiOrderDetailResp{}
+	//err = json.Unmarshal(_b, resp)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//
+	//if resp.Message != nil {
+	//	err = errors.New(resp.Message.Message)
+	//	return nil, err
+	//}
+	//
+	//respData = &resp.Data.Order
+	//return respData, nil
+
+	return nil, nil
+}
+
 func (u Usecase) CheckOrderStatus(wg *sync.WaitGroup, input chan entity.OrdersAddress, output chan structure.OrderStatusChan) {
 	order := <-input
 	var err error
@@ -198,6 +268,12 @@ func (u Usecase) CheckOrderStatus(wg *sync.WaitGroup, input chan entity.OrdersAd
 	defer wg.Done()
 
 	defer func() {
+
+		isUpdateStatus := false
+		if *statusP != int(order.Status) {
+			isUpdateStatus = true
+		}
+
 		output <- structure.OrderStatusChan{
 			OrderID:        order.OrderID,
 			Err:            err,
@@ -205,9 +281,8 @@ func (u Usecase) CheckOrderStatus(wg *sync.WaitGroup, input chan entity.OrdersAd
 			PayType:        string(order.AddressType),
 			OrderAmount:    order.Amount,
 			PaymentAddress: order.Address,
+			IsUpdated:      isUpdateStatus,
 		}
-
-		//TODO update db's status
 
 	}()
 
@@ -264,6 +339,7 @@ func (u Usecase) JobSyncPaymentStatus() error {
 	if err != nil {
 		return err
 	}
+	logger.AtLog.Logger.Info("JobSyncPaymentStatus", zap.Int("orders", len(orders)))
 
 	inchan := make(chan entity.OrdersAddress, len(orders))
 	outChan := make(chan structure.OrderStatusChan, len(orders))
@@ -291,11 +367,22 @@ func (u Usecase) JobSyncPaymentStatus() error {
 			continue
 		}
 
-		status := data.Status
-		amount := data.OrderAmount
+		if data.IsUpdated {
+			_, err := u.Repo.UpdateOrderStatus(data.OrderID, entity.OrderStatus(data.Status))
+			if err != nil {
+				continue
+			}
 
-		//TODO - update status here
-		spew.Dump(data.OrderID, data.PaymentAddress, status, amount)
+			//call API
+			switch entity.OrderStatus(data.Status) {
+			case entity.Order_Paid:
+				u.ProcessOrderPaymentApi(data.OrderID, fmt.Sprintf("https://etherscan.io/address/%s", data.PaymentAddress), data.PaymentAddress)
+			case entity.Order_Cancel:
+				u.ProcessCancelOrderApi(data.OrderID)
+			default:
+				spew.Dump("handle default")
+			}
+		}
 	}
 
 	wg.Wait()

@@ -71,4 +71,5 @@ type OrderStatusChan struct {
 	Status         int
 	OrderAmount    string
 	PaymentAddress string
+	IsUpdated      bool
 }
