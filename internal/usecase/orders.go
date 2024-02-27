@@ -334,12 +334,12 @@ func (u Usecase) CheckOrderStatus(wg *sync.WaitGroup, input chan entity.OrdersAd
 
 }
 
-func (u Usecase) JobSyncPaymentStatus() error {
+func (u Usecase) JobSyncOrderPaymentStatus() error {
 	orders, err := u.Repo.FindOrderByStatus([]entity.OrderStatus{entity.Order_Pending})
 	if err != nil {
 		return err
 	}
-	logger.AtLog.Logger.Info("JobSyncPaymentStatus", zap.Int("orders", len(orders)))
+	logger.AtLog.Logger.Info("JobSyncOrderPaymentStatus", zap.Int("orders", len(orders)))
 
 	inchan := make(chan entity.OrdersAddress, len(orders))
 	outChan := make(chan structure.OrderStatusChan, len(orders))
