@@ -14,6 +14,7 @@ type TokenPaidType string
 const (
 	ETH   TokenPaidType = "eth"
 	BIT   TokenPaidType = "btc"
+	BTC   TokenPaidType = "btc"
 	PEPE  TokenPaidType = "pepe"
 	TURBO TokenPaidType = "turbo"
 )

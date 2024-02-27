@@ -54,3 +54,10 @@ type ApiOrderItemDetailResp struct {
 	EthRate         string `json:"eth_rate"`
 	EthRateTime     string `json:"eth_rate_time"`
 }
+
+type OrderStatusChan struct {
+	OrderID string
+	PayType string
+	Err     error
+	Status  int
+}

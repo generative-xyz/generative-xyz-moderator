@@ -22,6 +22,7 @@ type OrdersAddress struct {
 	AddressType    string      `bson:"address_type" json:"addressType"` //payment address_type
 	PrivateKey     string      `bson:"private_key" json:"-"`            //payment private_key
 	OrderID        string      `bson:"order_id" json:"orderID"`
+	Amount         string      `bson:"-" json:"-"`
 }
 
 func (u OrdersAddress) TableName() string {

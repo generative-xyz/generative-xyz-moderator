@@ -1,10 +1,12 @@
 package usecase
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"go.uber.org/zap"
+	"math/big"
 	"os"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
@@ -14,6 +16,7 @@ import (
 	"rederinghub.io/utils/helpers"
 	"rederinghub.io/utils/logger"
 	"strings"
+	"sync"
 )
 
 func (u Usecase) CreateOrderReceiveAddress(input structure.OrderBtcData) (*entity.OrdersAddress, error) {
@@ -83,17 +86,61 @@ func (u Usecase) ListOrders(f structure.FilterOrders) (interface{}, error) {
 		return nil, err
 	}
 
-	//TODO - process here
-	for i, item := range d.Orders {
-		item.PayType = string(entity.ETH)
-
-		item.Status = int(entity.Order_Pending)
-		if i%2 == 0 {
-			item.Status = int(entity.Order_Paid)
-		}
-
+	orderIDs := []string{}
+	amount := make(map[string]string)
+	for _, item := range d.Orders {
+		orderIDs = append(orderIDs, item.Id)
+		amount[item.Id] = item.Amount
 	}
 
+	orders, err := u.Repo.FindOrderByIDs(orderIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	inchan := make(chan entity.OrdersAddress, len(orders))
+	outChan := make(chan structure.OrderStatusChan, len(orders))
+	wg := sync.WaitGroup{}
+	wg.Add(len(orders))
+
+	for range orders {
+		go u.CheckOrderStatus(&wg, inchan, outChan)
+	}
+
+	for _, i := range orders {
+		a, ok := amount[i.OrderID]
+		if ok {
+			i.Amount = a
+		} else {
+			i.Amount = "0"
+		}
+
+		if i != nil {
+			inchan <- *i
+		}
+	}
+
+	_resp := make(map[string]structure.OrderStatusChan)
+	for range orders {
+		data := <-outChan
+		if data.Err != nil {
+			continue
+		}
+
+		_resp[data.OrderID] = data
+	}
+
+	for _, i := range d.Orders {
+		a, ok := _resp[i.Id]
+		if !ok {
+			continue
+		}
+
+		i.Status = a.Status
+		i.PayType = a.PayType
+	}
+
+	wg.Wait()
 	return d, nil
 }
 
@@ -130,4 +177,73 @@ func (u Usecase) ListOrdersFromApi(f structure.FilterOrders) (*structure.ApiOrde
 
 	_d := resp.Data
 	return &_d, nil
+}
+
+func (u Usecase) CheckOrderStatus(wg *sync.WaitGroup, input chan entity.OrdersAddress, output chan structure.OrderStatusChan) {
+	order := <-input
+	var err error
+	statusP := new(int)
+	status := 0
+	statusP = &status
+
+	defer wg.Done()
+
+	defer func() {
+		output <- structure.OrderStatusChan{
+			OrderID: order.OrderID,
+			Err:     err,
+			Status:  *statusP,
+			PayType: string(order.AddressType),
+		}
+
+		//TODO update db's status
+
+	}()
+
+	if strings.EqualFold(order.AddressType, string(entity.ETH)) {
+		//address := "0x13BB7Bf390B55A7d5bF44c4dcEcdFEB1Dd2a884a"
+		address := order.Address
+		balance, err := u.EthClient.GetBalance(context.TODO(), address)
+		if err != nil {
+			return
+		}
+
+		aF, _ := big.NewFloat(0).SetString(order.Amount)
+		aF = aF.Mul(aF, big.NewFloat(1e18))
+		balanceF := big.NewFloat(0).SetInt(balance)
+
+		if balanceF.Cmp(aF) >= 0 { //balance >= amount
+			status = int(entity.Order_Paid)
+		}
+
+	}
+
+	if strings.EqualFold(order.AddressType, string(entity.BTC)) {
+		_, bs, err := u.buildBTCClient()
+		if err != nil {
+			return
+		}
+		//address := "bc1pv47nhns0xeljuzkdtvdk3qxm5zk42cmmwgrz3tt4x4he6kvwcjzqm2ml2h"
+		address := order.Address
+		balance, _, err := bs.GetBalance(address)
+		if err != nil {
+			// get balance from quicknode:
+			var balanceQuickNode *structure.BlockCypherWalletInfo
+			balanceQuickNode, err = btc.GetBalanceFromQuickNode(order.Address, u.Config.QuicknodeAPI)
+			if err == nil {
+				if balanceQuickNode != nil {
+					balance = big.NewInt(int64(balanceQuickNode.Balance))
+				}
+			}
+		}
+
+		aF, _ := big.NewFloat(0).SetString(order.Amount)
+		aF = aF.Mul(aF, big.NewFloat(1e8))
+		balanceF := big.NewFloat(0).SetInt(balance)
+
+		if balanceF.Cmp(aF) >= 0 { //balance >= amount
+			status = int(entity.Order_Paid)
+		}
+	}
+
 }
