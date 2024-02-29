@@ -18,6 +18,10 @@ type ApiOrderDetailResp struct {
 	Message *ApiOrderMessageResp `json:"message"`
 }
 
+type EmailPaymentOrderResp struct {
+	Result bool `json:"result"`
+}
+
 type ApiOrderMessageResp struct {
 	Code    int    `json:"Code"`
 	Message string `json:"Message"`

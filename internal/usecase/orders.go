@@ -189,73 +189,91 @@ func (u Usecase) GetOrderByIDFromApi(id string) (*structure.ApiOrderItemResp, er
 }
 
 func (u Usecase) ProcessOrderPaymentApi(orderID, txHash, walletAddress string) (interface{}, error) {
-	//TODO - implement me
-	//grailAPI := os.Getenv("GRAIL_API")
-	//if grailAPI == "" {
-	//	grailAPI = "https://generative.xyz/api/v1"
-	//}
-	//
-	//postData := make(map[string]interface{})
-	//postData["order_id"] = orderID
-	//postData["tx_hash"] = txHash
-	//postData["wallet_address"] = walletAddress
-	//
-	//_url := fmt.Sprintf("%s/order/complete", grailAPI)
-	//_b, _, _, err := helpers.HttpRequest(_url, "POST", map[string]string{}, postData)
-	//if err != nil {
-	//	return nil, err
-	//}
-	//
-	//resp := &structure.ApiOrderDetailResp{}
-	//err = json.Unmarshal(_b, resp)
-	//if err != nil {
-	//	return nil, err
-	//}
-	//
-	//if resp.Message != nil {
-	//	err = errors.New(resp.Message.Message)
-	//	return nil, err
-	//}
-	//
-	//respData = &resp.Data.Order
-	//return respData, nil
+	grailAPI := os.Getenv("GRAIL_API")
+	if grailAPI == "" {
+		grailAPI = "https://generative.xyz/api/v1"
+	}
 
-	return nil, nil
+	postData := make(map[string]interface{})
+	postData["order_id"] = orderID
+	postData["tx_hash"] = txHash
+	postData["wallet_address"] = walletAddress
+
+	_url := fmt.Sprintf("%s/order/complete", grailAPI)
+	_b, _, _, err := helpers.HttpRequest(_url, "POST", map[string]string{}, postData)
+	if err != nil {
+		return nil, err
+	}
+
+	resp := &structure.ApiOrderDetailResp{}
+	err = json.Unmarshal(_b, resp)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.Message != nil {
+		err = errors.New(resp.Message.Message)
+		return nil, err
+	}
+
+	respData := &resp.Data.Order
+	return respData, nil
 }
 
 func (u Usecase) ProcessCancelOrderApi(orderID string) (interface{}, error) {
-	//TODO - implement me
-	//grailAPI := os.Getenv("GRAIL_API")
-	//if grailAPI == "" {
-	//	grailAPI = "https://generative.xyz/api/v1"
-	//}
-	//
-	//postData := make(map[string]interface{})
-	//postData["order_id"] = orderID
-	//postData["tx_hash"] = txHash
-	//postData["wallet_address"] = walletAddress
-	//
-	//_url := fmt.Sprintf("%s/order/complete", grailAPI)
-	//_b, _, _, err := helpers.HttpRequest(_url, "POST", map[string]string{}, postData)
-	//if err != nil {
-	//	return nil, err
-	//}
-	//
-	//resp := &structure.ApiOrderDetailResp{}
-	//err = json.Unmarshal(_b, resp)
-	//if err != nil {
-	//	return nil, err
-	//}
-	//
-	//if resp.Message != nil {
-	//	err = errors.New(resp.Message.Message)
-	//	return nil, err
-	//}
-	//
-	//respData = &resp.Data.Order
-	//return respData, nil
+	grailAPI := os.Getenv("GRAIL_API")
+	if grailAPI == "" {
+		grailAPI = "https://generative.xyz/api/v1"
+	}
 
-	return nil, nil
+	postData := make(map[string]interface{})
+	postData["order_id"] = orderID
+
+	_url := fmt.Sprintf("%s/order/cancel", grailAPI)
+	_b, _, _, err := helpers.HttpRequest(_url, "POST", map[string]string{}, postData)
+	if err != nil {
+		return nil, err
+	}
+
+	resp := &structure.ApiOrderDetailResp{}
+	err = json.Unmarshal(_b, resp)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.Message != nil {
+		err = errors.New(resp.Message.Message)
+		return nil, err
+	}
+
+	respData := &resp.Data.Order
+	return respData, nil
+}
+
+func (u Usecase) ProcessSendEmailOrderApi(orderID, amount, walletAddress string) (interface{}, error) {
+	grailAPI := os.Getenv("GRAIL_API")
+	if grailAPI == "" {
+		grailAPI = "https://generative.xyz/api/v1"
+	}
+
+	postData := make(map[string]interface{})
+	postData["order_id"] = orderID
+	postData["amount"] = amount
+	postData["wallet_address"] = walletAddress
+
+	_url := fmt.Sprintf("%s/order/email/payment", grailAPI)
+	_b, _, _, err := helpers.HttpRequest(_url, "POST", map[string]string{}, postData)
+	if err != nil {
+		return nil, err
+	}
+
+	resp := &structure.EmailPaymentOrderResp{}
+	err = json.Unmarshal(_b, resp)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.Result, nil
 }
 
 func (u Usecase) CheckOrderStatus(wg *sync.WaitGroup, input chan entity.OrdersAddress, output chan structure.OrderStatusChan) {
@@ -376,7 +394,7 @@ func (u Usecase) JobSyncRailOrderPaymentStatus() error {
 			//call API
 			switch entity.OrderStatus(data.Status) {
 			case entity.Order_Paid:
-				u.ProcessOrderPaymentApi(data.OrderID, fmt.Sprintf("https://etherscan.io/address/%s", data.PaymentAddress), data.PaymentAddress)
+				u.ProcessOrderPaymentApi(data.OrderID, "", data.PaymentAddress)
 			case entity.Order_Cancel:
 				u.ProcessCancelOrderApi(data.OrderID)
 			default:
