@@ -78,6 +78,13 @@ func (u Usecase) CreateOrderReceiveAddress(input structure.OrderBtcData) (*entit
 		return nil, err
 	}
 
+	go func(order entity.OrdersAddress) {
+		o, _ := u.GetOrderByIDFromApi(walletAddress.OrderID)
+		if o != nil {
+			u.ProcessSendEmailOrderApi(walletAddress.OrderID, fmt.Sprintf("%s %s", walletAddress.Amount, walletAddress.AddressType), walletAddress.Address)
+		}
+	}(*walletAddress)
+
 	return walletAddress, nil
 }
 
