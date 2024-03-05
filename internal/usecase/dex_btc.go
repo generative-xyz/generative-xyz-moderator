@@ -290,6 +290,15 @@ func (u Usecase) preCheckPendingDexBTCListingTx(pendingOrders []entity.DexBTCLis
 		if order.CancelTx == "" {
 			inscriptionTx := strings.Split(order.Inputs[0], ":")
 			txNeedToCheck = append(txNeedToCheck, inscriptionTx[0])
+			if len(order.Inputs) > 1 {
+				for idx, v := range order.Inputs {
+					if idx == 0 {
+						continue
+					}
+					tx := strings.Split(v, ":")
+					txNeedToCheck = append(txNeedToCheck, tx[0])
+				}
+			}
 		}
 	}
 	log.Println("preCheckPendingDexBTCListingTx len(txNeedToCheck)", len(txNeedToCheck))
@@ -535,6 +544,41 @@ func (u Usecase) watchPendingDexBTCListing() error {
 							continue
 						}
 					}
+				}
+			}
+			if len(order.Inputs) > 1 {
+				for idx, vin := range order.Inputs {
+					if idx == 0 {
+						continue
+					}
+					tx := strings.Split(vin, ":")
+					idx, err := strconv.Atoi(tx[1])
+					if err != nil {
+						log.Printf("JobWatchPendingDexBTCListing2 strconv.Atoi(tx[1]) %v\n", order.Inputs)
+						continue
+					}
+					txStatus, exist := preCheckTxs[tx[0]]
+					if exist {
+						if len(txStatus.Outputs) == 0 {
+							continue
+						}
+
+						if txStatus.Outputs[idx].SpentBy != "" {
+							spentTx = txStatus.Outputs[idx].SpentBy
+
+							currentTime := time.Now()
+							order.CancelAt = &currentTime
+							order.Cancelled = true
+							order.InvalidMatch = true
+							order.InvalidMatchTx = spentTx
+							_, err = u.Repo.UpdateDexBTCListingOrderInvalidMatch(&order)
+							if err != nil {
+								log.Printf("JobWatchPendingDexBTCListing2 UpdateDexBTCListingOrderCancelTx err %v\n", err)
+								continue
+							}
+						}
+					}
+
 				}
 			}
 		} else {
