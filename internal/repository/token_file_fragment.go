@@ -634,7 +634,14 @@ func (r Repository) AllModularInscriptions(ctx context.Context, filter structure
 
 	f := bson.A{
 		bson.D{{"$match", _match}},
-		bson.D{{"$sort", bson.D{{"_id", -1}}}},
+		bson.D{{"$project", bson.D{
+			{"_id", 1},
+			{"token_id", 1},
+			{"thumbnail", 1},
+			{"order_inscription_index", 1},
+			{"parsed_attributes_str", 1},
+		}}},
+		bson.D{{"$sort", bson.D{{"order_inscription_index", -1}}}},
 	}
 
 	cursor, err := r.DB.Collection(entity.TokenUri{}.TableName()).Aggregate(ctx, f)

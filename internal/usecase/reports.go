@@ -1045,7 +1045,7 @@ func (u *Usecase) ExportMagicEdend(collection string) {
 	type magicedenMeta struct {
 		Name          string                    `json:"name"`
 		HighResImgURL string                    `json:"high_res_img_url"`
-		Attributes    []magicedenMetaAttributes `json:"attributes"`
+		Attributes    []magicedenMetaAttributes `json:"attributes,omitempty"`
 	}
 
 	type magiceden struct {
