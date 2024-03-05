@@ -622,7 +622,7 @@ func (r Repository) AggregateListModularInscriptionsByTokenIDs(ctx context.Conte
 
 func (r Repository) AllModularInscriptions(ctx context.Context, filter structure.FilterTokens) ([]entity.ModularTokenUri, error) {
 	_match := bson.D{}
-	_match = append(_match, bson.E{"order_inscription_index", bson.D{{"$gte", 241}}})
+	//_match = append(_match, bson.E{"order_inscription_index", bson.D{{"$gte", 241}}})
 
 	if filter.OwnerAddr != nil && *filter.OwnerAddr != "" {
 		_match = append(_match, bson.E{"owner_addrress", filter.OwnerAddr})

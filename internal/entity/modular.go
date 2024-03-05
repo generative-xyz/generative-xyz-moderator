@@ -26,8 +26,9 @@ type ModularTokenUri struct {
 
 	OwnerAddr string `bson:"owner_addrress" json:"owner_address"`
 	//accept duplicated data to query more faster
-	Owner   *ModularUsers    `bson:"owner" json:"owner"`
-	Project *ModularProjects `bson:"project" json:"project"`
+	Owner                 *ModularUsers    `bson:"owner" json:"owner"`
+	Project               *ModularProjects `bson:"project" json:"project"`
+	OrderInscriptionIndex int              `bson:"order_inscription_index" json:"order_inscription_index"`
 }
 
 type ModularProjects struct {

@@ -1,6 +1,7 @@
 package usecase
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/antchfx/htmlquery"
@@ -1016,4 +1017,64 @@ func (u *Usecase) CalculateBuyer2ndSale(wg *sync.WaitGroup, userType string, use
 		w := mapBtcVsEth[i.WalletAddressBTC]
 		i.WalletAddress = w
 	}
+}
+
+func (u *Usecase) ExportMagicEdend(collection string) {
+	f := structure.FilterTokens{}
+	genNFTAddr := collection
+	cached := fmt.Sprintf("_exp.%s", genNFTAddr)
+	data := []entity.ModularTokenUri{}
+
+	//cache.Delete(cached)
+	err := u.Cache.GetObjectData(cached, &data)
+	if err != nil {
+		f.GenNFTAddr = &genNFTAddr
+		inscriptions, err := u.Repo.AllModularInscriptions(context.Background(), f)
+		if err != nil {
+			return
+		}
+		u.Cache.SetDataWithExpireTime(cached, inscriptions, 86400)
+		data = inscriptions
+	}
+
+	type magicedenMetaAttributes struct {
+		TraitType string `json:"trait_type"`
+		Value     string `json:"value"`
+	}
+
+	type magicedenMeta struct {
+		Name          string                    `json:"name"`
+		HighResImgURL string                    `json:"high_res_img_url"`
+		Attributes    []magicedenMetaAttributes `json:"attributes"`
+	}
+
+	type magiceden struct {
+		ID   string        `json:"id"`
+		Meta magicedenMeta `json:"meta"`
+	}
+
+	jsonData := []magiceden{}
+	for _, i := range data {
+
+		attrs := []magicedenMetaAttributes{}
+
+		for _, _attr := range i.ParsedAttributesStr {
+			attrs = append(attrs, magicedenMetaAttributes{
+				TraitType: _attr.TraitType,
+				Value:     _attr.Value,
+			})
+		}
+
+		jsonDataItem := magiceden{
+			ID: i.TokenID,
+			Meta: magicedenMeta{
+				Name:          fmt.Sprintf("Timechain #%d", i.OrderInscriptionIndex),
+				HighResImgURL: i.Thumbnail,
+				Attributes:    attrs,
+			},
+		}
+		jsonData = append(jsonData, jsonDataItem)
+	}
+
+	helpers.CreateFile("exported-timechain.json", jsonData)
 }
