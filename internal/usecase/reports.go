@@ -1020,13 +1020,18 @@ func (u *Usecase) CalculateBuyer2ndSale(wg *sync.WaitGroup, userType string, use
 }
 
 func (u *Usecase) ExportMagicEdend(collection string) {
+	project, err := u.Repo.FindProjectByTokenID(collection)
+	if err != nil {
+		return
+	}
+
 	f := structure.FilterTokens{}
 	genNFTAddr := collection
 	cached := fmt.Sprintf("_exp.%s", genNFTAddr)
 	data := []entity.ModularTokenUri{}
 
 	u.Cache.Delete(cached)
-	err := u.Cache.GetObjectData(cached, &data)
+	err = u.Cache.GetObjectData(cached, &data)
 	if err != nil {
 		f.GenNFTAddr = &genNFTAddr
 		inscriptions, err := u.Repo.AllModularInscriptions(context.Background(), f)
@@ -1068,7 +1073,7 @@ func (u *Usecase) ExportMagicEdend(collection string) {
 		jsonDataItem := magiceden{
 			ID: i.TokenID,
 			Meta: magicedenMeta{
-				Name:          fmt.Sprintf("Timechain #%d", i.OrderInscriptionIndex),
+				Name:          fmt.Sprintf("%s #%d", project.Name, i.OrderInscriptionIndex),
 				HighResImgURL: i.Thumbnail,
 				Attributes:    attrs,
 			},
@@ -1076,7 +1081,7 @@ func (u *Usecase) ExportMagicEdend(collection string) {
 		jsonData = append(jsonData, jsonDataItem)
 	}
 
-	helpers.CreateFile("exported-timechain.json", jsonData)
+	helpers.CreateFile("exported.json", jsonData)
 }
 
 func (u *Usecase) CaptureThumbnails(collectionID string) {
