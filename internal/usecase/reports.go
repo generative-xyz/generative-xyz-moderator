@@ -1025,7 +1025,7 @@ func (u *Usecase) ExportMagicEdend(collection string) {
 	cached := fmt.Sprintf("_exp.%s", genNFTAddr)
 	data := []entity.ModularTokenUri{}
 
-	//cache.Delete(cached)
+	u.Cache.Delete(cached)
 	err := u.Cache.GetObjectData(cached, &data)
 	if err != nil {
 		f.GenNFTAddr = &genNFTAddr
@@ -1077,4 +1077,11 @@ func (u *Usecase) ExportMagicEdend(collection string) {
 	}
 
 	helpers.CreateFile("exported-timechain.json", jsonData)
+}
+
+func (u *Usecase) CaptureThumbnails(collectionID string) {
+	u.Capture(&structure.TokenImagePayload{
+		TokenID:         "d7b0c6e9e8b143288973bc77dfb9ddac44534e26dd01ffce1a60134b9564efcai0",
+		ContractAddress: "0x0000000000000000000000000000000000000000",
+	})
 }

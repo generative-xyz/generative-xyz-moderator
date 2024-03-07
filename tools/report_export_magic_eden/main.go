@@ -19,7 +19,7 @@ func main() {
 
 	uc := tools.StartFactory()
 	if uc != nil {
-		uc.ExportMagicEdend("1000001")
+		uc.ExportMagicEdend("1002573")
 	}
 
 	fmt.Println("Reports have been created")
