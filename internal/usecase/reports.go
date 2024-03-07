@@ -1081,7 +1081,7 @@ func (u *Usecase) ExportMagicEdend(collection string) {
 		jsonData = append(jsonData, jsonDataItem)
 	}
 
-	helpers.CreateFile("exported.json", jsonData)
+	helpers.CreateFile(strings.ToLower(fmt.Sprintf("exported-%s.json", project.Name)), jsonData)
 }
 
 func (u *Usecase) CaptureThumbnails(collectionID string) {
